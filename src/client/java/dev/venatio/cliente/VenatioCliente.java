@@ -1,6 +1,7 @@
 package dev.venatio.cliente;
 
 import dev.venatio.Venatio;
+import dev.venatio.cliente.minimapa.Minimapa;
 import dev.venatio.red.Paquetes;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -30,6 +31,7 @@ public final class VenatioCliente implements ClientModInitializer {
 		ayudas = tecla("ayudas", InputConstants.KEY_H);
 		marca = tecla("marca", InputConstants.KEY_N);
 		minimapa = tecla("minimapa", InputConstants.KEY_M);
+		Minimapa.registrar(minimapa, () -> EstadoCliente.estado);
 
 		ClientPlayNetworking.registerGlobalReceiver(Paquetes.Estado.TYPE, (estado, ctx) -> EstadoCliente.recibir(estado));
 		ClientPlayNetworking.registerGlobalReceiver(Paquetes.Evento.TYPE, (evento, ctx) -> EstadoCliente.evento(evento, ctx.client()));
@@ -57,8 +59,8 @@ public final class VenatioCliente implements ClientModInitializer {
 		while (carton.consumeClick()) {
 			if (mc.gui.screen() == null) mc.gui.setScreen(new PantallaCarton());
 		}
-		// Ayudas, marcas y minimapa llegan en las fases 3 y 4.
-		for (KeyMapping k : new KeyMapping[]{ayudas, marca, minimapa}) {
+		// Ayudas y marcas llegan en las fases 3 y 4. La M (minimapa) la atiende Minimapa.
+		for (KeyMapping k : new KeyMapping[]{ayudas, marca}) {
 			while (k.consumeClick()) {
 				mc.player.sendOverlayMessage(Component.translatable("venatio.aviso.pronto", Component.translatable(k.getName())));
 			}
