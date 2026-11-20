@@ -2,6 +2,7 @@ package dev.venatio.juego;
 
 import dev.venatio.Venatio;
 import dev.venatio.carton.Carton;
+import dev.venatio.carton.Objetivo;
 import dev.venatio.mundo.MundosPartida;
 import dev.venatio.red.Paquetes;
 import dev.venatio.stats.ModuloStats;
@@ -65,8 +66,12 @@ public final class Partida {
 	private ColorEquipo primerGanador;
 	private final Set<ColorEquipo> anunciados = java.util.EnumSet.noneOf(ColorEquipo.class);
 
-	Partida(Juego juego, Configuracion cfg, long semilla, Carton carton, MundosPartida mundos, Map<UUID, ColorEquipo> participantes) {
+	/** Solo en modo Rastreo: la lista de items y por cuál va cada equipo. En Rastreo, carton es el historial de encontrados. */
+	final Rastreo rastreo;
+
+	Partida(Juego juego, Configuracion cfg, long semilla, Carton carton, Rastreo rastreo, MundosPartida mundos, Map<UUID, ColorEquipo> participantes) {
 		this.juego = juego;
+		this.rastreo = rastreo;
 		this.cfg = cfg;
 		this.semilla = semilla;
 		this.carton = carton;
@@ -78,6 +83,10 @@ public final class Partida {
 
 	public Fase fase() {
 		return fase;
+	}
+
+	public Rastreo rastreo() {
+		return rastreo;
 	}
 
 	public Carton carton() {
@@ -240,6 +249,10 @@ public final class Partida {
 	// ---------------------------------------------------------------- detección
 
 	private void detectar() {
+		if (rastreo != null) {
+			detectarRastreo();
+			return;
+		}
 		for (ServerPlayer p : jugadoresEnLinea()) {
 			ColorEquipo equipo = equipoDe(p);
 			if (equipo == null || p.isSpectator() || !MundosPartida.esDePartida(p.level())) continue;
@@ -254,13 +267,49 @@ public final class Partida {
 	}
 
 	private static ItemStack buscar(ServerPlayer p, Carton.Casilla cas) {
+		return buscar(p, cas.objetivo);
+	}
+
+	private static ItemStack buscar(ServerPlayer p, Objetivo objetivo) {
 		Inventory inv = p.getInventory();
 		for (int s = 0; s < inv.getContainerSize(); s++) {
 			ItemStack st = inv.getItem(s);
-			if (cas.objetivo.cumple(st)) return st;
+			if (objetivo.cumple(st)) return st;
 		}
 		ItemStack enCursor = p.containerMenu.getCarried();
-		return cas.objetivo.cumple(enCursor) ? enCursor : null;
+		return objetivo.cumple(enCursor) ? enCursor : null;
+	}
+
+	private void detectarRastreo() {
+		for (ServerPlayer p : jugadoresEnLinea()) {
+			ColorEquipo equipo = equipoDe(p);
+			if (equipo == null || p.isSpectator() || !MundosPartida.esDePartida(p.level()) || fase != Fase.JUGANDO) continue;
+			Objetivo objetivo = rastreo.actual(equipo);
+			ItemStack encontrado = buscar(p, objetivo);
+			if (encontrado == null) continue;
+			carton.anotar(objetivo, equipo, segundos(), p.getUUID());
+			rastreo.avanzar(equipo);
+			juego.difundir(Component.translatable("venatio.rastreo.encontrado", p.getDisplayName(), encontrado.getHoverName(), equipo.nombre()));
+			juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.CASILLA, equipo.ordinal(), 0));
+			juego.enviarEstadoATodos();
+			comprobarVictoria();
+		}
+	}
+
+	/** Un participante pide saltar el item actual (compartido: para todos; independiente: para su equipo). */
+	Component saltar(ServerPlayer p) {
+		if (rastreo == null) return Component.translatable("venatio.rastreo.error.no_rastreo");
+		if (fase != Fase.JUGANDO || !participa(p)) return Component.translatable("venatio.rastreo.error.no_jugando");
+		ColorEquipo equipo = equipoDe(p);
+		int espera = rastreo.esperaParaSaltar(equipo, segundos());
+		if (espera > 0) return Component.translatable("venatio.rastreo.error.espera", espera);
+		Objetivo saltado = rastreo.actual(equipo);
+		rastreo.registrarSalto(equipo, segundos());
+		rastreo.avanzar(equipo);
+		juego.difundir(Component.translatable(rastreo.independiente() ? "venatio.rastreo.salto_equipo" : "venatio.rastreo.salto",
+			p.getDisplayName(), saltado.icono().getHoverName(), equipo.nombre()));
+		juego.enviarEstadoATodos();
+		return null;
 	}
 
 	private void marcar(int indice, ColorEquipo equipo, ServerPlayer p, ItemStack item) {
@@ -284,9 +333,11 @@ public final class Partida {
 				case LINEA -> carton.tieneLinea(c);
 				case APAGON, CONTRARRELOJ -> puntos == total;
 				case LOCKOUT -> carton.tieneLinea(c) || puntos > maxOtros(c) + carton.sinReclamar();
+				case RASTREO -> false;
+				case RASTREO_CARRERA -> puntos >= cfg.meta;
 			};
 			if (!gana) continue;
-			if (cfg.finAutomatico || puntos == total) {
+			if (cfg.finAutomatico || puntos == total || rastreo != null) {
 				declarar(primerGanador != null ? primerGanador : c, false);
 				return;
 			}
@@ -436,7 +487,11 @@ public final class Partida {
 		};
 		int segundosRed = fase == Fase.CUENTA_ATRAS ? Math.max(0, SEGUNDOS_CUENTA - ticks / 20) : segundos();
 		List<Paquetes.CasillaRed> casillas = new ArrayList<>();
-		for (Carton.Casilla cas : carton.casillas) {
+		if (rastreo != null) {
+			// En Rastreo el cliente ve una sola casilla: el item que su equipo busca ahora.
+			ColorEquipo quien = miEquipo != null ? miEquipo : equipos.isEmpty() ? null : equipos.get(0);
+			casillas.add(new Paquetes.CasillaRed(rastreo.actual(quien).icono(), List.of()));
+		} else for (Carton.Casilla cas : carton.casillas) {
 			List<Paquetes.Logro> logros = new ArrayList<>();
 			cas.logros.forEach((c, s) -> logros.add(new Paquetes.Logro(c.ordinal(), s)));
 			casillas.add(new Paquetes.CasillaRed(cas.icono, logros));
@@ -450,7 +505,7 @@ public final class Partida {
 			equiposRed.add(new Paquetes.EquipoRed(c.ordinal(), carton.puntos(c), miembros));
 		}
 		int ganadorRed = fase != Fase.FINAL ? -1 : ganador != null ? ganador.ordinal() : empate ? -2 : -3;
-		return new Paquetes.Estado(faseRed, cfg.modo.id(), segundosRed, cfg.limiteSegundos(), cfg.pvp, progreso,
-			carton.tamano, casillas, equiposRed, miEquipo == null ? -1 : miEquipo.ordinal(), ganadorRed);
+		return new Paquetes.Estado(faseRed, cfg.modo.id(), segundosRed, cfg.limiteSegundos(), cfg.pvp, progreso, cfg.meta,
+			rastreo != null ? 1 : carton.tamano, casillas, equiposRed, miEquipo == null ? -1 : miEquipo.ordinal(), ganadorRed);
 	}
 }

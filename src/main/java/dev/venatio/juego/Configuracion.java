@@ -12,6 +12,8 @@ public final class Configuracion {
 	/** Distancia entre los puntos de aparición de los equipos, en bloques. */
 	public int distancia = 400;
 	public int tamano = 5;
+	/** Rastreo carrera: items para ganar. */
+	public int meta = 10;
 
 	// Opciones de partida (las de MCBingo más el minado en veta)
 	public boolean vision = true;
@@ -22,9 +24,11 @@ public final class Configuracion {
 	public boolean minado = true;
 	/** Terminar en cuanto alguien gana; si no, se anuncia y se sigue jugando hasta que el anfitrión termine o se acabe el tiempo. */
 	public boolean finAutomatico = true;
+	/** Rastreo: cada equipo avanza por su propia lista en vez de buscar todos el mismo item. */
+	public boolean rastreoIndependiente = false;
 
 	public int limiteSegundos() {
-		int min = minutos > 0 ? minutos : (modo == Modo.CONTRARRELOJ ? 25 : 0);
+		int min = minutos > 0 ? minutos : modo == Modo.CONTRARRELOJ ? 25 : modo == Modo.RASTREO ? 15 : 0;
 		return min * 60;
 	}
 
@@ -43,6 +47,8 @@ public final class Configuracion {
 		c.recetas = recetas;
 		c.minado = minado;
 		c.finAutomatico = finAutomatico;
+		c.meta = meta;
+		c.rastreoIndependiente = rastreoIndependiente;
 		return c;
 	}
 }

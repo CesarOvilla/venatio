@@ -40,6 +40,10 @@ public final class Ajustes {
 			: Component.translatable("venatio.config.semilla", String.valueOf(semilla)));
 	}
 
+	public static Component meta(int items) {
+		return cambiar(c -> c.meta = items, Component.translatable("venatio.config.meta", items));
+	}
+
 	public static Component pvp(boolean activo) {
 		return cambiar(c -> c.pvp = activo, Component.translatable(activo ? "venatio.config.pvp_si" : "venatio.config.pvp_no"));
 	}

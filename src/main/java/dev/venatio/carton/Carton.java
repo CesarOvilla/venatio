@@ -56,6 +56,18 @@ public final class Carton {
 		return new Carton(tamano, List.copyOf(casillas));
 	}
 
+	/** Historial del modo Rastreo: empieza vacío y cada item encontrado se agrega como casilla de quien lo encontró. */
+	public static Carton historial() {
+		return new Carton(1, new ArrayList<>());
+	}
+
+	public void anotar(Objetivo objetivo, ColorEquipo equipo, int segundo, java.util.UUID jugador) {
+		Casilla cas = new Casilla(objetivo);
+		cas.logros.put(equipo, segundo);
+		cas.jugadores.put(equipo, jugador);
+		casillas.add(cas);
+	}
+
 	public int puntos(ColorEquipo c) {
 		int n = 0;
 		for (Casilla cas : casillas) if (cas.logros.containsKey(c)) n++;
@@ -76,6 +88,7 @@ public final class Carton {
 	}
 
 	public boolean tieneLinea(ColorEquipo c) {
+		if (casillas.size() != tamano * tamano) return false; // historial de Rastreo: no hay cuadrícula
 		int n = tamano;
 		boolean diag1 = true, diag2 = true;
 		for (int i = 0; i < n; i++) {

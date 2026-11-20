@@ -5,7 +5,7 @@
   "key.venatio.marca": "Marca de equipo",
   "key.venatio.minimapa": "Minimapa",
   "venatio.aviso.pronto": "%s: todavía no está disponible",
-  "venatio.ayuda": "Venatio %s\n/venatio equipo <color> · /venatio equipo salir\nAnfitrión: /venatio modo, tiempo, semilla, pvp, distancia, opcion, equipos aleatorios, iniciar, terminar",
+  "venatio.ayuda": "Venatio %s\n/venatio equipo <color> · /venatio equipo salir · /venatio saltar (Rastreo)\nAnfitrión: /venatio modo, tiempo, meta, semilla, pvp, distancia, opcion, equipos aleatorios, iniciar, terminar",
   "venatio.equipo.rojo": "Rojo",
   "venatio.equipo.azul": "Azul",
   "venatio.equipo.verde": "Verde",
@@ -85,5 +85,17 @@
   "venatio.bingo.sigue": "¡El equipo %s hizo bingo! La partida sigue.",
   "venatio.pantalla.tu_carton": "Tu cartón (%s)",
   "venatio.pantalla.carton_de": "Cartón del equipo %s",
-  "venatio.pantalla.cambiar_vista": "← → o clic: ver otro equipo"
+  "venatio.pantalla.cambiar_vista": "← → o clic: ver otro equipo",
+  "venatio.modo.rastreo": "Rastreo",
+  "venatio.modo.rastreo_carrera": "Rastreo: carrera",
+  "venatio.opcion.rastreo_independiente": "Rastreo: cada equipo con su lista",
+  "venatio.config.meta": "Meta del Rastreo: %s items",
+  "venatio.rastreo.encontrado": "%1$s encontró %2$s para el equipo %3$s",
+  "venatio.rastreo.salto": "%1$s saltó %2$s: todos pasan al siguiente item",
+  "venatio.rastreo.salto_equipo": "%1$s saltó %2$s para el equipo %3$s",
+  "venatio.rastreo.error.no_rastreo": "Solo se puede saltar en el modo Rastreo.",
+  "venatio.rastreo.error.no_jugando": "Solo se puede saltar mientras juegas una partida.",
+  "venatio.rastreo.error.espera": "Todavía no puedes saltar: faltan %s s.",
+  "venatio.hud.busca": "Busca:",
+  "venatio.hud.meta": "Meta: %s"
 }

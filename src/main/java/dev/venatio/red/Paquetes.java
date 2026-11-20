@@ -49,7 +49,7 @@ public final class Paquetes {
 	 * segundos: transcurridos en juego, o restantes en la cuenta atrás.
 	 * ganador: ordinal del color, -1 sin ganador todavía, -2 empate, -3 cancelada por el anfitrión.
 	 */
-	public record Estado(int fase, String modo, int segundos, int limite, boolean pvp, int progreso,
+	public record Estado(int fase, String modo, int segundos, int limite, boolean pvp, int progreso, int meta,
 						 int tamano, List<CasillaRed> casillas, List<EquipoRed> equipos, int miEquipo, int ganador)
 		implements CustomPacketPayload {
 
@@ -70,6 +70,7 @@ public final class Paquetes {
 			buf.writeVarInt(e.limite);
 			buf.writeBoolean(e.pvp);
 			buf.writeVarInt(e.progreso);
+			buf.writeVarInt(e.meta);
 			buf.writeVarInt(e.tamano);
 			buf.writeVarInt(e.casillas.size());
 			for (CasillaRed c : e.casillas) {
@@ -98,6 +99,7 @@ public final class Paquetes {
 			int limite = buf.readVarInt();
 			boolean pvp = buf.readBoolean();
 			int progreso = buf.readVarInt();
+			int meta = buf.readVarInt();
 			int tamano = buf.readVarInt();
 			int n = buf.readVarInt();
 			List<CasillaRed> casillas = new ArrayList<>(n);
@@ -120,7 +122,7 @@ public final class Paquetes {
 			}
 			int miEquipo = buf.readVarInt() - 1;
 			int ganador = buf.readVarInt() - 3;
-			return new Estado(fase, modo, segundos, limite, pvp, progreso, tamano, casillas, equipos, miEquipo, ganador);
+			return new Estado(fase, modo, segundos, limite, pvp, progreso, meta, tamano, casillas, equipos, miEquipo, ganador);
 		}
 	}
 

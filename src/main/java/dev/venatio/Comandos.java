@@ -55,6 +55,11 @@ public final class Comandos {
 			.then(Commands.literal("si").executes(ctx -> responder(ctx, Ajustes.pvp(true), null)))
 			.then(Commands.literal("no").executes(ctx -> responder(ctx, Ajustes.pvp(false), null))));
 
+		raiz.then(anfitrion("meta").then(Commands.argument("items", IntegerArgumentType.integer(1, 100))
+			.executes(ctx -> responder(ctx, Ajustes.meta(IntegerArgumentType.getInteger(ctx, "items")), null))));
+
+		raiz.then(Commands.literal("saltar").executes(ctx -> responder(ctx, j.saltar(ctx.getSource().getPlayerOrException()), null)));
+
 		raiz.then(anfitrion("distancia").then(Commands.argument("bloques", IntegerArgumentType.integer(0, Ajustes.MAX_DISTANCIA))
 			.executes(ctx -> responder(ctx, Ajustes.distancia(IntegerArgumentType.getInteger(ctx, "bloques")), null))));
 

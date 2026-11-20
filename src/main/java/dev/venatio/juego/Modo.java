@@ -13,7 +13,11 @@ public enum Modo {
 	/** Cada casilla solo la puede tener un equipo. Gana quien hace línea o tiene una mayoría que ya no se puede alcanzar. */
 	LOCKOUT,
 	/** Gana quien tenga más casillas al acabarse el tiempo. */
-	CONTRARRELOJ;
+	CONTRARRELOJ,
+	/** Rastreo (ItemFinder): un item a la vez; gana quien encuentre más antes de que se acabe el tiempo. */
+	RASTREO,
+	/** Rastreo (ItemFinder): un item a la vez; gana el primero en llegar a la meta. */
+	RASTREO_CARRERA;
 
 	public String id() {
 		return name().toLowerCase(Locale.ROOT);
@@ -21,6 +25,10 @@ public enum Modo {
 
 	public MutableComponent nombre() {
 		return Component.translatable("venatio.modo." + id());
+	}
+
+	public boolean esRastreo() {
+		return this == RASTREO || this == RASTREO_CARRERA;
 	}
 
 	public boolean exclusivo() {

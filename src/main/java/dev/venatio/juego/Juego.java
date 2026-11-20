@@ -249,9 +249,11 @@ public final class Juego {
 		for (ServerPlayer p : jugadores) participantes.put(p.getUUID(), equipos.get(p.getUUID()));
 
 		long semilla = config.semilla != null ? config.semilla : new Random().nextLong();
-		Carton carton = Carton.generar(pool, semilla, config.tamano);
+		boolean esRastreo = config.modo.esRastreo();
+		Carton carton = esRastreo ? Carton.historial() : Carton.generar(pool, semilla, config.tamano);
+		Rastreo rastreo = esRastreo ? Rastreo.crear(pool, semilla, config.rastreoIndependiente) : null;
 		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp);
-		partida = new Partida(this, config.copia(), semilla, carton, mundos, participantes);
+		partida = new Partida(this, config.copia(), semilla, carton, rastreo, mundos, participantes);
 		difundir(Component.translatable("venatio.partida.preparando", config.modo.nombre(), String.valueOf(semilla)));
 		enviarEstadoATodos();
 		return null;
@@ -264,6 +266,11 @@ public final class Juego {
 			if (c != null) conteo.merge(c, 1, Integer::sum);
 		}
 		return conteo.entrySet().stream().min(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(ColorEquipo.ROJO);
+	}
+
+	/** /venatio saltar: en Rastreo, pasar al siguiente item. */
+	public Component saltar(ServerPlayer p) {
+		return partida == null ? Component.translatable("venatio.error.sin_partida") : partida.saltar(p);
 	}
 
 	/** El anfitrión corta la partida. Si ya se estaba jugando, se muestra el final; si no, se vuelve directo al lobby. */
@@ -320,7 +327,7 @@ public final class Juego {
 			if (!miembros.isEmpty()) lista.add(new Paquetes.EquipoRed(c.ordinal(), 0, miembros));
 		}
 		ColorEquipo mio = equipos.get(p.getUUID());
-		return new Paquetes.Estado(Paquetes.Estado.LOBBY, config.modo.id(), 0, config.limiteSegundos(), config.pvp, 0,
+		return new Paquetes.Estado(Paquetes.Estado.LOBBY, config.modo.id(), 0, config.limiteSegundos(), config.pvp, 0, config.meta,
 			0, List.of(), lista, mio == null ? -1 : mio.ordinal(), -1);
 	}
 

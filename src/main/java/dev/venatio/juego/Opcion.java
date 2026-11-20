@@ -14,7 +14,8 @@ public enum Opcion {
 	ELITRO("elitro", c -> c.elitro, (c, v) -> c.elitro = v),
 	RECETAS("recetas", c -> c.recetas, (c, v) -> c.recetas = v),
 	MINADO("minado", c -> c.minado, (c, v) -> c.minado = v),
-	FIN_AUTOMATICO("fin_automatico", c -> c.finAutomatico, (c, v) -> c.finAutomatico = v);
+	FIN_AUTOMATICO("fin_automatico", c -> c.finAutomatico, (c, v) -> c.finAutomatico = v),
+	RASTREO_INDEPENDIENTE("rastreo_independiente", c -> c.rastreoIndependiente, (c, v) -> c.rastreoIndependiente = v);
 
 	public final String id;
 	private final Predicate<Configuracion> lector;

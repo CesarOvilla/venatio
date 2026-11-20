@@ -34,6 +34,11 @@ public final class HudCarton {
 			return;
 		}
 
+		if (Modo.porId(e.modo()).esRastreo()) {
+			dibujarRastreo(g, font, e);
+			return;
+		}
+
 		int n = e.tamano();
 		int lado = n * CELDA + 4;
 		int x0 = MARGEN, y0 = MARGEN;
@@ -82,6 +87,41 @@ public final class HudCarton {
 		Component fase = lineaFase(e);
 		if (fase != null) lineas.add(fase);
 		int y = y0 + lado + 3;
+		for (Component l : lineas) {
+			g.text(font, l, x0, y, BLANCO, true);
+			y += font.lineHeight + 1;
+		}
+	}
+
+	/** Rastreo: el item que busca mi equipo, en grande, con su nombre; debajo reloj, marcador y meta. */
+	private static void dibujarRastreo(GuiGraphicsExtractor g, Font font, Paquetes.Estado e) {
+		Paquetes.CasillaRed c = e.casillas().get(0);
+		Component nombre = c.icono().getHoverName();
+		int ancho = Math.max(150, 44 + font.width(nombre) + 6);
+		int alto = 44;
+		int x0 = MARGEN, y0 = MARGEN;
+		g.fill(x0, y0, x0 + ancho, y0 + alto, 0x90000000);
+		Long inicio = EstadoCliente.animaciones.get(0);
+		if (inicio != null) {
+			long t = Util.getMillis() - inicio;
+			if (t > EstadoCliente.DURACION_ANIMACION) EstadoCliente.animaciones.remove(0);
+			else g.fill(x0, y0, x0 + ancho, y0 + alto, ((int) (160 * (1 - (double) t / EstadoCliente.DURACION_ANIMACION)) << 24) | color(e.miEquipo()));
+		}
+		g.text(font, Component.translatable("venatio.hud.busca"), x0 + 44, y0 + 8, GRIS, true);
+		g.text(font, nombre, x0 + 44, y0 + 22, BLANCO, true);
+		g.pose().pushMatrix();
+		g.pose().translate(x0 + 6, y0 + 6);
+		g.pose().scale(2f, 2f);
+		g.item(c.icono(), 0, 0);
+		g.pose().popMatrix();
+
+		List<Component> lineas = new ArrayList<>();
+		lineas.add(lineaReloj(e));
+		lineas.add(marcador(e));
+		if (Modo.porId(e.modo()) == Modo.RASTREO_CARRERA) lineas.add(Component.translatable("venatio.hud.meta", e.meta()).withColor(GRIS));
+		Component fase = lineaFase(e);
+		if (fase != null) lineas.add(fase);
+		int y = y0 + alto + 3;
 		for (Component l : lineas) {
 			g.text(font, l, x0, y, BLANCO, true);
 			y += font.lineHeight + 1;
