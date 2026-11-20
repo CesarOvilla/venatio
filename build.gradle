@@ -48,11 +48,12 @@ processResources {
 	inputs.property "version", version
 	filesMatching("fabric.mod.json") { expand "version": version }
 
-	// Un solo archivo de textos (es_mx). Se copia como en_us y es_es para que todo salga en español
-	// aunque el jugador tenga el juego en otro idioma.
+	// Textos: cada módulo tiene su es_mx.json en assets/<namespace>/lang/. Se copia como en_us y es_es
+	// para que todo salga en español aunque el jugador tenga el juego en otro idioma.
 	["en_us", "es_es"].each { idioma ->
-		from("src/main/resources/assets/venatio/lang/es_mx.json") {
-			into "assets/venatio/lang"
+		from("src/main/resources/assets") {
+			include "*/lang/es_mx.json"
+			into "assets"
 			rename { "${idioma}.json" }
 		}
 	}
