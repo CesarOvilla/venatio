@@ -1,6 +1,7 @@
 package dev.venatio;
 
 import dev.venatio.juego.Juego;
+import dev.venatio.minimapa.ComandoMinimapaDev;
 import dev.venatio.red.Paquetes;
 import dev.venatio.red.PaquetesAyudas;
 import net.fabricmc.api.ModInitializer;
@@ -19,6 +20,7 @@ public final class Venatio implements ModInitializer {
 		PaquetesAyudas.registrar();
 		Juego.INSTANCIA.registrar();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Comandos.registrar(dispatcher));
+		ComandoMinimapaDev.registrar(); // solo pruebas: /venatiodev minimapa <segundos> <radio>
 	}
 
 	public static String version() {

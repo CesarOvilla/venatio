@@ -1,0 +1,11 @@
+{
+  "venatio.minimapa.sin_permiso": "No tienes minimapa. Cómpralo en Ayudas (H)",
+  "venatio.minimapa.activado": "Minimapa activo por %s · M para mostrarlo u ocultarlo",
+  "venatio.minimapa.expirado": "Se acabó tu minimapa",
+  "venatio.minimapa.apagado": "Tu minimapa se apagó",
+  "venatio.minimapa.dimension": "El minimapa no funciona en esta dimensión",
+  "venatio.minimapa.restante": "Minimapa: %s",
+  "venatio.minimapa.norte": "N",
+  "venatio.minimapa.dev.activado": "Minimapa de prueba: %1$s segundos con radio de %2$s bloques",
+  "venatio.minimapa.dev.apagado": "Minimapa de prueba apagado"
+}
