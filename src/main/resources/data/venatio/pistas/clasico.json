@@ -1,0 +1,400 @@
+{
+  "descripcion": "Pistas para el pool clásico (Minecraft 26.3). Clave: id del item, o #tag para las casillas de 'cualquier X'. Campos opcionales: biomas, estructuras y mobs donde buscarlo; la ficha los muestra con botón Guíame.",
+  "pistas": {
+    "minecraft:glass_bottle": {
+      "texto": "Cocina arena en el horno para hacer vidrio y pon 3 bloques de vidrio en V. Las brujas a veces sueltan botellas."
+    },
+    "minecraft:rail": {
+      "texto": "Lleva hierro y palos. En las minas abandonadas hay vías tendidas: rómpelas con pico y te las llevas.",
+      "estructuras": ["minecraft:mineshaft"]
+    },
+    "minecraft:mushroom_stew": {
+      "texto": "Un hongo rojo, uno café y un tazón. Los hongos crecen a la sombra y en el campo fúngico; ordeñar una mooshroom con un tazón también da sopa.",
+      "biomas": ["minecraft:mushroom_fields"],
+      "mobs": ["minecraft:mooshroom"]
+    },
+    "minecraft:cauldron": {
+      "texto": "7 lingotes de hierro en forma de U. Las aldeas tienen calderos (es la estación del peletero) y las cabañas de bruja también.",
+      "estructuras": ["minecraft:village_plains", "minecraft:swamp_hut"]
+    },
+    "minecraft:leather_horse_armor": {
+      "texto": "Solo pide cuero: lo sueltan vacas, caballos, llamas y burros. El peletero también la vende."
+    },
+    "minecraft:repeater": {
+      "texto": "Piedra, polvo de redstone y antorchas de redstone. La redstone sale de minar mena de redstone bajo tierra."
+    },
+    "#minecraft:chest_boats": {
+      "texto": "Vale cualquier bote con cofre: pon un bote y un cofre juntos en la mesa."
+    },
+    "minecraft:emerald": {
+      "texto": "Comercia con aldeanos: casi todos pagan esmeraldas por cosas sencillas (el agricultor por cosechas). También hay mena de esmeralda en las montañas."
+    },
+    "minecraft:beetroot_soup": {
+      "texto": "6 betabeles y un tazón. El betabel crece en las granjas de las aldeas.",
+      "estructuras": ["minecraft:village_plains"]
+    },
+    "minecraft:name_tag": {
+      "texto": "Papel y una pepita de metal (hierro, oro o cobre). También sale en cofres de minas abandonadas y mazmorras, y pescando como tesoro."
+    },
+    "minecraft:spruce_sapling": {
+      "texto": "Rompe hojas de abeto: a veces sueltan el retoño. Los abetos llenan las taigas.",
+      "biomas": ["minecraft:taiga"]
+    },
+    "minecraft:acacia_sapling": {
+      "texto": "Rompe hojas de acacia: a veces sueltan el retoño. Las acacias crecen en la sabana.",
+      "biomas": ["minecraft:savanna"]
+    },
+    "minecraft:dark_oak_sapling": {
+      "texto": "Rompe hojas de roble oscuro en el bosque oscuro: a veces sueltan el retoño.",
+      "biomas": ["minecraft:dark_forest"]
+    },
+    "minecraft:cobweb": {
+      "texto": "Hay muchas en las minas abandonadas y en las cámaras de desafío. Rómpela con tijeras: con espada solo suelta hilo.",
+      "estructuras": ["minecraft:mineshaft", "minecraft:trial_chambers"]
+    },
+    "minecraft:music_disc_cat": {
+      "texto": "Haz que un esqueleto mate a un creeper: suelta un disco al azar. También aparece en cofres de mazmorras, mansiones y ciudades antiguas."
+    },
+    "minecraft:enchanted_book": {
+      "texto": "Encanta un libro en la mesa de encantamientos o cómpraselo al bibliotecario (atril). También sale en muchos cofres y pescando."
+    },
+    "minecraft:milk_bucket": {
+      "texto": "Usa una cubeta vacía sobre una vaca, una cabra o una mooshroom.",
+      "mobs": ["minecraft:cow", "minecraft:goat"]
+    },
+    "#minecraft:eggs": {
+      "texto": "Las gallinas ponen un huevo cada pocos minutos. Vale cualquier color: normal, café o azul.",
+      "mobs": ["minecraft:chicken"]
+    },
+    "minecraft:cake": {
+      "texto": "3 cubetas de leche, 2 de azúcar, 1 huevo y 3 de trigo. Las cubetas vacías se te devuelven."
+    },
+    "minecraft:painting": {
+      "texto": "8 palos alrededor de un bloque de lana. La lana sale de trasquilar ovejas."
+    },
+    "minecraft:item_frame": {
+      "texto": "8 palos alrededor de un cuero. El cuero lo sueltan vacas, caballos y llamas."
+    },
+    "minecraft:glow_item_frame": {
+      "texto": "Un marco y un saco de tinta brillante. El saco lo suelta el calamar luminoso, que nada en el agua de cuevas oscuras.",
+      "mobs": ["minecraft:glow_squid"]
+    },
+    "minecraft:golden_sword": {
+      "texto": "2 lingotes de oro y un palo. El oro sale de mena de oro (abunda en las badlands) o de juntar pepitas del Nether; los portales en ruinas traen oro."
+    },
+    "minecraft:clock": {
+      "texto": "4 lingotes de oro alrededor de un polvo de redstone."
+    },
+    "minecraft:powered_rail": {
+      "texto": "6 lingotes de oro, un palo y redstone. Los cofres de las minas abandonadas a veces traen.",
+      "estructuras": ["minecraft:mineshaft"]
+    },
+    "minecraft:hopper": {
+      "texto": "5 lingotes de hierro en V con un cofre en medio."
+    },
+    "minecraft:hopper_minecart": {
+      "texto": "Una tolva encima de un vagón. Ambos piden hierro: junta 10 lingotes."
+    },
+    "minecraft:cocoa_beans": {
+      "texto": "Las vainas crecen pegadas a los troncos de los árboles de la jungla; rómpelas cuando estén naranjas.",
+      "biomas": ["minecraft:jungle", "minecraft:sparse_jungle"]
+    },
+    "minecraft:cookie": {
+      "texto": "2 de trigo y un grano de cacao (salen 8). El cacao crece en los árboles de la jungla."
+    },
+    "minecraft:pumpkin_seeds": {
+      "texto": "Pon una calabaza en la mesa o tállala con tijeras. Las calabazas salen sueltas sobre el pasto en casi cualquier bioma."
+    },
+    "minecraft:pumpkin_pie": {
+      "texto": "Una calabaza, azúcar y un huevo. Las calabazas salen sueltas sobre el pasto en casi cualquier bioma."
+    },
+    "minecraft:sugar": {
+      "texto": "Pon caña de azúcar en la mesa. La caña crece en la orilla del agua."
+    },
+    "minecraft:spider_eye": {
+      "texto": "Lo sueltan las arañas (salen de noche y en cuevas), las arañas de cueva y las brujas.",
+      "mobs": ["minecraft:spider"]
+    },
+    "minecraft:fermented_spider_eye": {
+      "texto": "Ojo de araña, hongo café y azúcar, en cualquier orden."
+    },
+    "minecraft:green_dye": {
+      "texto": "Cocina un cactus en el horno. Los cactus crecen en desiertos y badlands.",
+      "biomas": ["minecraft:desert"]
+    },
+    "minecraft:lime_dye": {
+      "texto": "Tinte verde más tinte blanco (harina de hueso), o cocina un pepino de mar en el horno."
+    },
+    "minecraft:blue_dye": {
+      "texto": "Un aciano o un lapislázuli en la mesa. Los acianos crecen en llanuras, praderas y el bosque floral."
+    },
+    "minecraft:magenta_dye": {
+      "texto": "Un allium en la mesa, o mezcla tintes (morado con rosa). Los allium crecen en el bosque floral y las praderas.",
+      "biomas": ["minecraft:flower_forest", "minecraft:meadow"]
+    },
+    "minecraft:cyan_dye": {
+      "texto": "Tinte azul más tinte verde (de cactus cocinado)."
+    },
+    "minecraft:pointed_dripstone": {
+      "texto": "Cuelga del techo y sale del piso en las cuevas kársticas; rómpela con pico.",
+      "biomas": ["minecraft:dripstone_caves"]
+    },
+    "minecraft:glow_berries": {
+      "texto": "Cuelgan de las lianas de cueva en las cuevas frondosas: recógelas con clic derecho.",
+      "biomas": ["minecraft:lush_caves"]
+    },
+    "minecraft:firefly_bush": {
+      "texto": "Crece junto al agua, sobre todo en los pantanos. El comerciante nómada a veces lo vende.",
+      "biomas": ["minecraft:swamp"]
+    },
+    "minecraft:furnace_minecart": {
+      "texto": "Un horno encima de un vagón. El vagón pide 5 lingotes de hierro."
+    },
+    "minecraft:chest_minecart": {
+      "texto": "Un cofre encima de un vagón. El vagón pide 5 lingotes de hierro."
+    },
+    "minecraft:tnt_minecart": {
+      "texto": "Una TNT encima de un vagón. La TNT lleva pólvora y arena."
+    },
+    "minecraft:gunpowder": {
+      "texto": "La sueltan los creepers, los ghasts y las brujas. También sale en cofres de templos del desierto y mazmorras."
+    },
+    "minecraft:firework_rocket": {
+      "texto": "Un papel y pólvora en la mesa. La pólvora la sueltan los creepers."
+    },
+    "minecraft:compass": {
+      "texto": "4 lingotes de hierro alrededor de un polvo de redstone."
+    },
+    "minecraft:map": {
+      "texto": "8 papeles alrededor de una brújula. El cartógrafo también lo vende."
+    },
+    "minecraft:diamond": {
+      "texto": "Mina mena de diamante en lo más profundo, cerca de la roca madre, con pico de hierro o mejor. También sale en cofres de templos, naufragios y tesoros enterrados."
+    },
+    "minecraft:diamond_hoe": {
+      "texto": "2 diamantes y 2 palos. Los diamantes se minan en lo más profundo del mundo."
+    },
+    "minecraft:diamond_axe": {
+      "texto": "3 diamantes y 2 palos. Los diamantes se minan en lo más profundo del mundo."
+    },
+    "minecraft:bone": {
+      "texto": "Lo sueltan los esqueletos y sus variantes. También sale pescando y en cofres de mazmorras y templos."
+    },
+    "minecraft:gray_dye": {
+      "texto": "Tinte negro (saco de tinta) más tinte blanco (harina de hueso), o una miraflor cerrada del jardín pálido."
+    },
+    "minecraft:ender_pearl": {
+      "texto": "La sueltan los enderman: salen de noche en casi todo el mundo y abundan en el valle de almas del Nether. Los piglins también la dan a cambio de oro.",
+      "mobs": ["minecraft:enderman"]
+    },
+    "minecraft:slime_ball": {
+      "texto": "La sueltan los slimes: salen de noche en los pantanos y bajo tierra en ciertas zonas. Los pandas bebé a veces la estornudan.",
+      "biomas": ["minecraft:swamp"]
+    },
+    "minecraft:fern": {
+      "texto": "Crece en las taigas; córtalo con tijeras para que suelte el helecho.",
+      "biomas": ["minecraft:taiga"]
+    },
+    "minecraft:vine": {
+      "texto": "Cuelgan de los árboles de la jungla y del pantano; córtalas con tijeras.",
+      "biomas": ["minecraft:jungle", "minecraft:swamp"]
+    },
+    "minecraft:dead_bush": {
+      "texto": "Crece en desiertos y badlands; córtalo con tijeras, si no solo suelta palos.",
+      "biomas": ["minecraft:desert", "minecraft:badlands"]
+    },
+    "minecraft:brick": {
+      "texto": "Cocina bolas de arcilla en el horno. La arcilla está en el fondo de ríos, lagos y pantanos poco profundos."
+    },
+    "minecraft:flower_pot": {
+      "texto": "3 ladrillos en V. Los ladrillos se cocinan con arcilla del fondo de ríos y lagos."
+    },
+    "minecraft:field_masoned_banner_pattern": {
+      "texto": "Un papel y un bloque de ladrillos, sin orden fijo. Los ladrillos se cocinan con arcilla."
+    },
+    "minecraft:melon_slice": {
+      "texto": "Rompe una sandía: suelta varias rebanadas. Las sandías crecen sueltas en las junglas.",
+      "biomas": ["minecraft:jungle"]
+    },
+    "minecraft:glistering_melon_slice": {
+      "texto": "Una rebanada de sandía rodeada de 8 pepitas de oro. Las sandías crecen en las junglas."
+    },
+    "minecraft:ink_sac": {
+      "texto": "Lo sueltan los calamares, que nadan en ríos y océanos. También sale pescando.",
+      "mobs": ["minecraft:squid"]
+    },
+    "minecraft:book": {
+      "texto": "3 papeles y un cuero (el papel se hace con caña de azúcar). Romper un librero suelta 3 libros."
+    },
+    "minecraft:writable_book": {
+      "texto": "Un libro, un saco de tinta y una pluma. La pluma la sueltan las gallinas y el saco, los calamares."
+    },
+    "minecraft:apple": {
+      "texto": "A veces cae al romper hojas de roble o de roble oscuro."
+    },
+    "minecraft:golden_shovel": {
+      "texto": "Un lingote de oro y 2 palos. Los portales en ruinas suelen traer oro en su cofre."
+    },
+    "minecraft:golden_apple": {
+      "texto": "Una manzana rodeada de 8 lingotes de oro. También aparece en cofres de muchas estructuras."
+    },
+    "minecraft:flint": {
+      "texto": "Rompe grava: a veces suelta pedernal en lugar de grava."
+    },
+    "minecraft:flint_and_steel": {
+      "texto": "Un lingote de hierro y un pedernal. El pedernal sale al romper grava."
+    },
+    "minecraft:cornflower": {
+      "texto": "Flor azul de las llanuras, las praderas y el bosque floral.",
+      "biomas": ["minecraft:plains", "minecraft:meadow", "minecraft:flower_forest"]
+    },
+    "minecraft:blue_orchid": {
+      "texto": "Solo crece en los pantanos.",
+      "biomas": ["minecraft:swamp"]
+    },
+    "minecraft:allium": {
+      "texto": "Flor morada del bosque floral y de las praderas.",
+      "biomas": ["minecraft:flower_forest", "minecraft:meadow"]
+    },
+    "minecraft:kelp": {
+      "texto": "Crece en el fondo de los océanos templados y fríos (no en los cálidos ni en los congelados).",
+      "biomas": ["minecraft:ocean", "minecraft:cold_ocean"]
+    },
+    "minecraft:seagrass": {
+      "texto": "Crece en el fondo de océanos, ríos y pantanos; córtala con tijeras.",
+      "biomas": ["minecraft:ocean", "minecraft:river"]
+    },
+    "minecraft:sea_pickle": {
+      "texto": "Está en los arrecifes de coral de los océanos cálidos.",
+      "biomas": ["minecraft:warm_ocean"]
+    },
+    "minecraft:sweet_berries": {
+      "texto": "Los arbustos de bayas crecen en las taigas: recógelas con clic derecho (el arbusto pica).",
+      "biomas": ["minecraft:taiga", "minecraft:snowy_taiga"]
+    },
+    "minecraft:cooked_rabbit": {
+      "texto": "Cocina conejo crudo en horno, ahumador o fogata. Un conejo que muere quemado lo suelta ya asado.",
+      "mobs": ["minecraft:rabbit"]
+    },
+    "minecraft:rabbit_stew": {
+      "texto": "Conejo asado, zanahoria, papa asada, un hongo y un tazón. Las zanahorias y papas crecen en las granjas de las aldeas."
+    },
+    "#minecraft:signs": {
+      "texto": "Vale cualquier letrero: 6 tablones de la misma madera y un palo."
+    },
+    "minecraft:armor_stand": {
+      "texto": "6 palos y una losa de piedra lisa. La piedra lisa se hace cocinando piedra dos veces."
+    },
+    "#minecraft:hanging_signs": {
+      "texto": "Vale cualquier letrero colgante: 2 cadenas de hierro y 6 troncos sin corteza de la misma madera (pela el tronco con un hacha)."
+    },
+    "minecraft:cooked_cod": {
+      "texto": "Cocina bacalao crudo. El bacalao nada en los océanos y sale pescando.",
+      "mobs": ["minecraft:cod"]
+    },
+    "minecraft:campfire": {
+      "texto": "3 troncos, 3 palos y un carbón (vale carbón vegetal)."
+    },
+    "minecraft:crossbow": {
+      "texto": "Palos, hilo, un lingote de hierro y un gancho de cuerda. Los saqueadores a veces la sueltan."
+    },
+    "minecraft:salmon_bucket": {
+      "texto": "Usa una cubeta de agua sobre un salmón; viven en ríos y océanos fríos.",
+      "mobs": ["minecraft:salmon"]
+    },
+    "minecraft:tropical_fish_bucket": {
+      "texto": "Usa una cubeta de agua sobre un pez tropical; viven en océanos cálidos y tibios.",
+      "mobs": ["minecraft:tropical_fish"]
+    },
+    "minecraft:pufferfish_bucket": {
+      "texto": "Usa una cubeta de agua sobre un pez globo; viven en océanos cálidos y tibios.",
+      "mobs": ["minecraft:pufferfish"]
+    },
+    "minecraft:iron_horse_armor": {
+      "texto": "No se fabrica: búscala en cofres de mazmorras, templos, fortalezas del Nether o en la armería de las aldeas."
+    },
+    "minecraft:golden_horse_armor": {
+      "texto": "No se fabrica: búscala en cofres de mazmorras, templos, portales en ruinas o fortalezas del Nether."
+    },
+    "minecraft:diamond_horse_armor": {
+      "texto": "No se fabrica: búscala en cofres de templos, mazmorras, fortalezas del Nether o ciudades antiguas."
+    },
+    "minecraft:brush": {
+      "texto": "Una pluma, un lingote de cobre y un palo. La pluma la sueltan las gallinas."
+    },
+    "minecraft:copper_lantern": {
+      "texto": "8 pepitas de cobre alrededor de una antorcha de cobre."
+    },
+    "minecraft:copper_axe": {
+      "texto": "3 lingotes de cobre y 2 palos. La mena de cobre es muy común bajo tierra."
+    },
+    "minecraft:bundle": {
+      "texto": "Un hilo sobre un cuero. Los cofres de las casas de aldea a veces traen uno."
+    },
+    "minecraft:saddle": {
+      "texto": "3 cueros y un lingote de hierro. También sale pescando y en cofres de aldeas y fortalezas del Nether."
+    },
+    "#minecraft:harnesses": {
+      "texto": "Vale cualquier arnés: 3 cueros, 2 bloques de vidrio y una lana del color que quieras."
+    },
+    "minecraft:amethyst_shard": {
+      "texto": "Rompe racimos de amatista dentro de las geodas: esferas de calcita y basalto liso escondidas bajo tierra."
+    },
+    "minecraft:spyglass": {
+      "texto": "Un fragmento de amatista sobre 2 lingotes de cobre. La amatista sale de las geodas bajo tierra."
+    },
+    "minecraft:armadillo_scute": {
+      "texto": "Cepilla un armadillo con una brocha o espera a que la suelte solo. Viven en sabanas y badlands."
+    },
+    "minecraft:wolf_armor": {
+      "texto": "6 escamas de armadillo. Cepilla armadillos en la sabana o las badlands para conseguirlas.",
+      "mobs": ["minecraft:armadillo"]
+    },
+    "minecraft:bow": {
+      "texto": "3 palos y 3 hilos. El hilo lo sueltan las arañas; los esqueletos a veces sueltan su arco."
+    },
+    "minecraft:lead": {
+      "texto": "5 hilos. El hilo lo sueltan las arañas y sale de romper telarañas."
+    },
+    "minecraft:carrot_on_a_stick": {
+      "texto": "Una caña de pescar y una zanahoria. Las zanahorias crecen en las granjas de las aldeas."
+    },
+    "minecraft:honeycomb": {
+      "texto": "Usa tijeras en una colmena que gotea miel. Pon una fogata debajo para que las abejas no te ataquen."
+    },
+    "#minecraft:candles": {
+      "texto": "Vale cualquier vela: un hilo sobre un panal de abejas. El panal sale de las colmenas con tijeras."
+    },
+    "minecraft:honey_bottle": {
+      "texto": "Usa una botella en una colmena que gotea miel. Las colmenas cuelgan de árboles en llanuras, praderas, bosques florales y arboledas de cerezos.",
+      "mobs": ["minecraft:bee"]
+    },
+    "minecraft:breeze_rod": {
+      "texto": "La suelta el breeze, que solo aparece en las cámaras de desafío: estructuras de cobre y toba bajo tierra.",
+      "estructuras": ["minecraft:trial_chambers"]
+    },
+    "minecraft:trial_key": {
+      "texto": "En las cámaras de desafío, vence a todas las oleadas de un generador de desafío y suelta la llave.",
+      "estructuras": ["minecraft:trial_chambers"]
+    },
+    "minecraft:mangrove_propagule": {
+      "texto": "Cuelgan de las hojas de los mangles y también caen al romper sus hojas.",
+      "biomas": ["minecraft:mangrove_swamp"]
+    },
+    "minecraft:bamboo": {
+      "texto": "Crece en las junglas, sobre todo en la jungla de bambú. Los pandas también lo sueltan.",
+      "biomas": ["minecraft:bamboo_jungle"]
+    },
+    "minecraft:open_eyeblossom": {
+      "texto": "Crece en el jardín pálido: de noche las miraflores se abren; rómpela mientras está abierta.",
+      "biomas": ["minecraft:pale_garden"]
+    },
+    "minecraft:lapis_lazuli": {
+      "texto": "Mina mena de lapislázuli bajo tierra; cada bloque suelta varias piezas. El sacerdote también la vende."
+    },
+    "minecraft:bell": {
+      "texto": "Casi todas las aldeas tienen una en la plaza: rómpela con pico.",
+      "estructuras": ["minecraft:village_plains"]
+    }
+  }
+}
