@@ -42,6 +42,7 @@ public final class VenatioCliente implements ClientModInitializer {
 		HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR,
 			Identifier.fromNamespaceAndPath(Venatio.MOD_ID, "carton"), HudCarton::dibujar);
 		ClientTickEvents.END_CLIENT_TICK.register(VenatioCliente::alTick);
+		ServidorEnLista.registrar();
 	}
 
 	static KeyMapping teclaCarton() {
