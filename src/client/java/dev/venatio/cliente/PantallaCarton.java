@@ -1,14 +1,21 @@
 package dev.venatio.cliente;
 
+import dev.venatio.cliente.fichas.PantallaFicha;
+import dev.venatio.cliente.fichas.PantallaItemsPosibles;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.red.Paquetes;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** Tecla B: cartón grande con quién tiene cada casilla y a qué minuto, y los equipos. */
 public final class PantallaCarton extends Screen {
@@ -23,6 +30,38 @@ public final class PantallaCarton extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	@Override
+	protected void init() {
+		addRenderableWidget(Button.builder(Component.translatable("venatio.fichas.boton_items_posibles"),
+			b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton()))).bounds(width / 2 - 70, height - 26, 140, 20).build());
+	}
+
+	private static Set<Item> itemsDelCarton() {
+		Set<Item> items = new HashSet<>();
+		if (EstadoCliente.estado != null) for (Paquetes.CasillaRed c : EstadoCliente.estado.casillas()) items.add(c.icono().getItem());
+		return items;
+	}
+
+	/** Casilla bajo el ratón, o -1. Misma geometría que extractRenderState. */
+	private int casillaEn(double mx, double my) {
+		Paquetes.Estado e = EstadoCliente.estado;
+		if (e == null || e.casillas().isEmpty()) return -1;
+		int n = e.tamano(), lado = n * CELDA;
+		int x0 = width / 2 - lado / 2 - 60, y0 = height / 2 - lado / 2;
+		if (mx < x0 || my < y0 || mx >= x0 + lado || my >= y0 + lado) return -1;
+		int i = (int) ((my - y0) / CELDA) * n + (int) ((mx - x0) / CELDA);
+		return i < e.casillas().size() ? i : -1;
+	}
+
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		if (super.mouseClicked(event, doubleClick)) return true;
+		int i = event.button() == 0 ? casillaEn(event.x(), event.y()) : -1;
+		if (i < 0) return false;
+		minecraft.gui.setScreen(new PantallaFicha(this, EstadoCliente.estado.casillas().get(i).icono().getItem()));
+		return true;
 	}
 
 	@Override
@@ -81,6 +120,7 @@ public final class PantallaCarton extends Screen {
 					if (eq != null) lineas.add(Component.translatable("venatio.pantalla.conseguida", eq.nombre(), EstadoCliente.reloj(l.segundo())));
 				}
 			}
+			lineas.add(Component.translatable("venatio.fichas.clic_para_ver").withColor(GRIS));
 			g.setTooltipForNextFrame(font, lineas, java.util.Optional.empty(), mouseX, mouseY);
 		}
 	}
