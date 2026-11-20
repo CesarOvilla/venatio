@@ -69,6 +69,7 @@ public final class Juego {
 		ServerPlayerEvents.AFTER_RESPAWN.register((viejo, nuevo, vivo) -> alReaparecer(nuevo));
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entidad, fuente, cantidad) -> permitirDano(entidad));
 		ServerPlayNetworking.registerGlobalReceiver(Paquetes.Hola.TYPE, (hola, ctx) -> verificarVersion(ctx.player(), hola.version()));
+		MinadoEnVeta.registrar();
 	}
 
 	public MinecraftServer server() {
@@ -268,7 +269,7 @@ public final class Juego {
 	/** El anfitrión corta la partida. Si ya se estaba jugando, se muestra el final; si no, se vuelve directo al lobby. */
 	public Component terminar() {
 		if (partida == null) return Component.translatable("venatio.error.sin_partida");
-		if (partida.fase() == Partida.Fase.JUGANDO) partida.declarar(null, false);
+		if (partida.fase() == Partida.Fase.JUGANDO) partida.terminarPorAnfitrion();
 		else if (partida.fase() != Partida.Fase.FINAL) cerrarPartida();
 		return null;
 	}
@@ -320,6 +321,18 @@ public final class Juego {
 			0, List.of(), lista, mio == null ? -1 : mio.ordinal(), -1);
 	}
 
+	private Component opcionesActivas() {
+		net.minecraft.network.chat.MutableComponent lista = Component.empty();
+		boolean primera = true;
+		for (Opcion o : Opcion.values()) {
+			if (o == Opcion.FIN_AUTOMATICO || !o.valor(config)) continue;
+			if (!primera) lista.append(", ");
+			lista.append(o.nombre());
+			primera = false;
+		}
+		return primera ? Component.translatable("venatio.tablero.sin_opciones") : Component.translatable("venatio.tablero.opciones", lista);
+	}
+
 	/** Refresca los tableros del lobby con la configuración y los equipos actuales. */
 	public void actualizarTableros() {
 		int limite = config.limiteSegundos();
@@ -328,7 +341,8 @@ public final class Juego {
 			limite > 0 ? Component.translatable("venatio.tablero.tiempo", limite / 60) : Component.translatable("venatio.tablero.sin_tiempo"),
 			Component.translatable(config.pvp ? "venatio.tablero.pvp_si" : "venatio.tablero.pvp_no"),
 			config.semilla != null ? Component.translatable("venatio.tablero.semilla", String.valueOf(config.semilla))
-				: Component.translatable("venatio.tablero.semilla_aleatoria"));
+				: Component.translatable("venatio.tablero.semilla_aleatoria"),
+			opcionesActivas());
 		TablerosLobby.actualizar(TablerosLobby.Tablero.PARTIDA, Component.translatable("venatio.tablero.partida"), partidaLineas);
 
 		List<Component> equiposLineas = new ArrayList<>();

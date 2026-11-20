@@ -11,7 +11,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.server.level.TicketType;
@@ -54,6 +60,9 @@ public final class Partida {
 	int progreso;
 	ColorEquipo ganador;
 	boolean empate;
+	/** Con fin automático apagado: el primer equipo que cumplió el objetivo, y quiénes ya fueron anunciados. */
+	private ColorEquipo primerGanador;
+	private final Set<ColorEquipo> anunciados = java.util.EnumSet.noneOf(ColorEquipo.class);
 
 	Partida(Juego juego, Configuracion cfg, long semilla, Carton carton, MundosPartida mundos, Map<UUID, ColorEquipo> participantes) {
 		this.juego = juego;
@@ -170,6 +179,7 @@ public final class Partida {
 		for (ServerPlayer p : jugadoresEnLinea()) {
 			Jugadores.reiniciar(p, GameType.SURVIVAL);
 			llevarAlSpawn(p);
+			aplicarKit(p);
 			Jugadores.congelar(p, true);
 		}
 		// Los jugadores ya mantienen cargada su zona; los tickets de pregeneración sobran.
@@ -255,9 +265,18 @@ public final class Partida {
 				case APAGON, CONTRARRELOJ -> puntos == total;
 				case LOCKOUT -> carton.tieneLinea(c) || puntos > maxOtros(c) + carton.sinReclamar();
 			};
-			if (gana) {
-				declarar(c, false);
+			if (!gana) continue;
+			if (cfg.finAutomatico || puntos == total) {
+				declarar(primerGanador != null ? primerGanador : c, false);
 				return;
+			}
+			if (anunciados.add(c)) {
+				if (primerGanador == null) primerGanador = c;
+				juego.difundir(Component.translatable("venatio.bingo.sigue", c.nombre()));
+				for (ServerPlayer p : jugadoresEnLinea()) {
+					Jugadores.titulo(p, Component.translatable("venatio.bingo.titulo"), Component.translatable("venatio.bingo.sigue", c.nombre()), 5, 50, 15);
+				}
+				juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.VICTORIA, c.ordinal(), -1));
 			}
 		}
 	}
@@ -270,6 +289,10 @@ public final class Partida {
 
 	/** Se acabó el tiempo: gana quien tenga más casillas; empata quien llegó antes a ese número. */
 	private void terminarPorTiempo() {
+		if (primerGanador != null) {
+			declarar(primerGanador, false);
+			return;
+		}
 		ColorEquipo mejor = null;
 		boolean empatado = false;
 		for (ColorEquipo c : equipos) {
@@ -288,6 +311,11 @@ public final class Partida {
 		}
 		if (mejor == null || carton.puntos(mejor) == 0) declarar(null, true);
 		else declarar(empatado ? null : mejor, empatado);
+	}
+
+	/** El anfitrión termina la partida: gana quien ya hizo bingo (fin automático apagado) o nadie. */
+	void terminarPorAnfitrion() {
+		declarar(primerGanador, false);
 	}
 
 	/** Termina el juego. ganador null y empate false = terminada por el anfitrión. */
@@ -336,13 +364,39 @@ public final class Partida {
 		if (!MundosPartida.esDePartida(p.level())) {
 			Jugadores.reiniciar(p, GameType.SURVIVAL);
 			llevarAlSpawn(p);
+			aplicarKit(p);
 		}
 		Jugadores.congelar(p, fase == Fase.CUENTA_ATRAS);
 	}
 
 	/** Murió sin cama en el mundo de la partida: vuelve al punto de aparición de su equipo. */
 	void alReaparecer(ServerPlayer p) {
-		if (fase != Fase.PREPARANDO && !MundosPartida.esDePartida(p.level())) llevarAlSpawn(p);
+		if (fase == Fase.PREPARANDO) return;
+		if (!MundosPartida.esDePartida(p.level())) llevarAlSpawn(p);
+		aplicarEfectos(p);
+	}
+
+	// ---------------------------------------------------------------- opciones de partida
+
+	/** Efectos, equipo y recetas según las opciones. Se aplica al empezar y al volver de fuera de la partida. */
+	private void aplicarKit(ServerPlayer p) {
+		aplicarEfectos(p);
+		if (cfg.elitro) {
+			p.getInventory().add(new ItemStack(Items.ELYTRA));
+			p.getInventory().add(new ItemStack(Items.FIREWORK_ROCKET, 64));
+		}
+		if (cfg.depthStrider) {
+			ItemStack botas = new ItemStack(Items.LEATHER_BOOTS);
+			botas.enchant(p.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.DEPTH_STRIDER), 3);
+			p.setItemSlot(EquipmentSlot.FEET, botas);
+		}
+		if (cfg.recetas) p.awardRecipes(juego.server().getRecipeManager().getRecipes());
+	}
+
+	/** Los efectos se pierden al morir: se reaplican al reaparecer. */
+	private void aplicarEfectos(ServerPlayer p) {
+		if (cfg.vision) p.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, MobEffectInstance.INFINITE_DURATION, 0, false, false, true));
+		if (cfg.velocidad) p.addEffect(new MobEffectInstance(MobEffects.SPEED, MobEffectInstance.INFINITE_DURATION, 1, false, false, true));
 	}
 
 	/** Salida del End para un jugador: su cama si está en el mundo de la partida, si no el punto de su equipo. */

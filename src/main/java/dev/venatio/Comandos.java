@@ -8,6 +8,7 @@ import com.mojang.brigadier.context.CommandContext;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.juego.Juego;
 import dev.venatio.juego.Modo;
+import dev.venatio.juego.Opcion;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -65,6 +66,16 @@ public final class Comandos {
 			int b = IntegerArgumentType.getInteger(ctx, "bloques");
 			return configurar(ctx, () -> j.config.distancia = b, Component.translatable("venatio.config.distancia", b));
 		})));
+
+		LiteralArgumentBuilder<CommandSourceStack> opcion = anfitrion("opcion");
+		for (Opcion o : Opcion.values()) {
+			opcion.then(Commands.literal(o.id)
+				.then(Commands.literal("si").executes(ctx -> configurar(ctx, () -> o.poner(j.config, true),
+					Component.translatable("venatio.config.opcion", o.nombre(), Component.translatable("venatio.config.si")))))
+				.then(Commands.literal("no").executes(ctx -> configurar(ctx, () -> o.poner(j.config, false),
+					Component.translatable("venatio.config.opcion", o.nombre(), Component.translatable("venatio.config.no"))))));
+		}
+		raiz.then(opcion);
 
 		raiz.then(anfitrion("iniciar").executes(ctx -> responder(ctx, j.iniciar(), null)));
 		raiz.then(anfitrion("terminar").executes(ctx -> responder(ctx, j.terminar(), null)));

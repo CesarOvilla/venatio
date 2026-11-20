@@ -65,6 +65,29 @@ public final class PruebaPartida implements FabricClientGameTest {
 			ctx.takeScreenshot("03_dos_casillas");
 			paso("Dos casillas detectadas");
 
+			boolean vision = sp.getServer().computeOnServer(s -> jugador(s).hasEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION));
+			if (!vision) throw new AssertionError("La visión nocturna (activada por defecto) no se aplicó");
+			paso("Visión nocturna activa");
+
+			// Minado en veta: agachado, romper un mineral rompe los conectados.
+			int restantes = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = jugador(s);
+				ServerLevel nivel = p.level();
+				BlockPos base = p.blockPosition().offset(-3, 0, -3);
+				for (int i = 0; i < 4; i++) nivel.setBlockAndUpdate(base.offset(i, 0, 0), Blocks.IRON_ORE.defaultBlockState());
+				nivel.setBlockAndUpdate(base.offset(1, 1, 1), Blocks.IRON_ORE.defaultBlockState());
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
+				p.setShiftKeyDown(true);
+				p.gameMode.destroyBlock(base);
+				p.setShiftKeyDown(false);
+				int quedan = 0;
+				for (int i = 0; i < 4; i++) if (nivel.getBlockState(base.offset(i, 0, 0)).is(Blocks.IRON_ORE)) quedan++;
+				if (nivel.getBlockState(base.offset(1, 1, 1)).is(Blocks.IRON_ORE)) quedan++;
+				return quedan;
+			});
+			if (restantes != 0) throw new AssertionError("El minado en veta dejó " + restantes + " bloques de hierro");
+			paso("Minado en veta rompió los 5 bloques de hierro");
+
 			ctx.setScreen(PantallaCarton::new);
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("04_pantalla_carton");

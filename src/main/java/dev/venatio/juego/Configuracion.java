@@ -13,6 +13,16 @@ public final class Configuracion {
 	public int distancia = 400;
 	public int tamano = 5;
 
+	// Opciones de partida (las de MCBingo más el minado en veta)
+	public boolean vision = true;
+	public boolean velocidad = false;
+	public boolean depthStrider = false;
+	public boolean elitro = false;
+	public boolean recetas = false;
+	public boolean minado = true;
+	/** Terminar en cuanto alguien gana; si no, se anuncia y se sigue jugando hasta que el anfitrión termine o se acabe el tiempo. */
+	public boolean finAutomatico = true;
+
 	public int limiteSegundos() {
 		int min = minutos > 0 ? minutos : (modo == Modo.CONTRARRELOJ ? 25 : 0);
 		return min * 60;
@@ -26,6 +36,13 @@ public final class Configuracion {
 		c.pvp = pvp;
 		c.distancia = distancia;
 		c.tamano = tamano;
+		c.vision = vision;
+		c.velocidad = velocidad;
+		c.depthStrider = depthStrider;
+		c.elitro = elitro;
+		c.recetas = recetas;
+		c.minado = minado;
+		c.finAutomatico = finAutomatico;
 		return c;
 	}
 }
