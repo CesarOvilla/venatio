@@ -14,6 +14,7 @@ public enum Opcion {
 	ELITRO("elitro", c -> c.elitro, (c, v) -> c.elitro = v),
 	RECETAS("recetas", c -> c.recetas, (c, v) -> c.recetas = v),
 	MINADO("minado", c -> c.minado, (c, v) -> c.minado = v),
+	CONSERVAR_INVENTARIO("inventario", c -> c.conservarInventario, (c, v) -> c.conservarInventario = v),
 	FIN_AUTOMATICO("fin_automatico", c -> c.finAutomatico, (c, v) -> c.finAutomatico = v),
 	RASTREO_INDEPENDIENTE("rastreo_independiente", c -> c.rastreoIndependiente, (c, v) -> c.rastreoIndependiente = v);
 

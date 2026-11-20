@@ -22,6 +22,8 @@ public final class Configuracion {
 	public boolean elitro = false;
 	public boolean recetas = false;
 	public boolean minado = true;
+	/** Conservar el inventario al morir (gamerule keepInventory en los mundos de la partida). */
+	public boolean conservarInventario = true;
 	/** Terminar en cuanto alguien gana; si no, se anuncia y se sigue jugando hasta que el anfitrión termine o se acabe el tiempo. */
 	public boolean finAutomatico = true;
 	/** Rastreo: cada equipo avanza por su propia lista en vez de buscar todos el mismo item. */
@@ -46,6 +48,7 @@ public final class Configuracion {
 		c.elitro = elitro;
 		c.recetas = recetas;
 		c.minado = minado;
+		c.conservarInventario = conservarInventario;
 		c.finAutomatico = finAutomatico;
 		c.meta = meta;
 		c.rastreoIndependiente = rastreoIndependiente;

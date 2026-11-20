@@ -35,19 +35,19 @@ public final class MundosPartida {
 		this.end = hEnd.asLevel();
 	}
 
-	public static MundosPartida crear(MinecraftServer server, long semilla, boolean pvp) {
+	public static MundosPartida crear(MinecraftServer server, long semilla, boolean pvp, boolean conservarInventario) {
 		if (activa != null) throw new IllegalStateException("Ya hay mundos de partida abiertos");
 		WorldDimensions dims = WorldPresets.createNormalWorldDimensions(server.registryAccess());
 		String base = "partida_" + Long.toString(System.currentTimeMillis() / 1000L, 36).toLowerCase(Locale.ROOT);
 		Fantasy fantasy = Fantasy.get(server);
-		RuntimeLevelHandle m = fantasy.openTemporaryLevel(id(base + "_mundo"), config(dims, LevelStem.OVERWORLD, semilla, pvp));
-		RuntimeLevelHandle n = fantasy.openTemporaryLevel(id(base + "_nether"), config(dims, LevelStem.NETHER, semilla, pvp));
-		RuntimeLevelHandle e = fantasy.openTemporaryLevel(id(base + "_end"), config(dims, LevelStem.END, semilla, pvp));
+		RuntimeLevelHandle m = fantasy.openTemporaryLevel(id(base + "_mundo"), config(dims, LevelStem.OVERWORLD, semilla, pvp, conservarInventario));
+		RuntimeLevelHandle n = fantasy.openTemporaryLevel(id(base + "_nether"), config(dims, LevelStem.NETHER, semilla, pvp, conservarInventario));
+		RuntimeLevelHandle e = fantasy.openTemporaryLevel(id(base + "_end"), config(dims, LevelStem.END, semilla, pvp, conservarInventario));
 		activa = new MundosPartida(m, n, e);
 		return activa;
 	}
 
-	private static RuntimeLevelConfig config(WorldDimensions dims, ResourceKey<LevelStem> clave, long semilla, boolean pvp) {
+	private static RuntimeLevelConfig config(WorldDimensions dims, ResourceKey<LevelStem> clave, long semilla, boolean pvp, boolean conservarInventario) {
 		LevelStem stem = dims.get(clave).orElseThrow();
 		return new RuntimeLevelConfig()
 			.setSeed(semilla)
@@ -55,7 +55,8 @@ public final class MundosPartida {
 			.setDimensionType(stem.type())
 			.setDifficulty(Difficulty.NORMAL)
 			.setShouldTickTime(true)
-			.setGameRule(GameRules.PVP, pvp);
+			.setGameRule(GameRules.PVP, pvp)
+			.setGameRule(GameRules.KEEP_INVENTORY, conservarInventario);
 	}
 
 	private static Identifier id(String nombre) {

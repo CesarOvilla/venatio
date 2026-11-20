@@ -126,9 +126,11 @@ public final class PruebaMultijugador implements FabricClientGameTest {
 				return MundosPartida.esDePartida(j.level()) ? Math.sqrt(j.blockPosition().distSqr(p.spawnDe(j))) : -1;
 			});
 			comprobar(alSpawn >= 0 && alSpawn < 16, "reapareció en el mundo de la partida junto al spawn de Rojo (" + Math.round(alSpawn) + " bloques)");
+			comprobar(sp.getServer().computeOnServer(s -> jugador(s).getInventory().countItem(casilla(0).icono.getItem()) > 0),
+				"conservó el inventario al morir (keepInventory)");
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("multi_05b_reaparecio");
-			paso("Player0 murió y reapareció a " + Math.round(alSpawn) + " bloques del spawn de Rojo");
+			paso("Player0 murió, conservó su inventario y reapareció a " + Math.round(alSpawn) + " bloques del spawn de Rojo");
 
 			// ---------------- Rojo gana con la segunda fila; Azul queda segundo con 1 casilla
 			int n = sp.getServer().computeOnServer(s -> Juego.INSTANCIA.partida().carton().tamano);

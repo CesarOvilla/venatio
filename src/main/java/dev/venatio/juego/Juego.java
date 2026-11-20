@@ -260,7 +260,7 @@ public final class Juego {
 		boolean esRastreo = config.modo.esRastreo();
 		Carton carton = esRastreo ? Carton.historial() : Carton.generar(pool, semilla, config.tamano);
 		Rastreo rastreo = esRastreo ? Rastreo.crear(pool, semilla, config.rastreoIndependiente) : null;
-		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp);
+		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp, config.conservarInventario);
 		partida = new Partida(this, config.copia(), semilla, carton, rastreo, mundos, participantes);
 		difundir(Component.translatable("venatio.partida.preparando", config.modo.nombre(), String.valueOf(semilla)));
 		enviarEstadoATodos();

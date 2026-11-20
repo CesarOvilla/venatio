@@ -97,5 +97,6 @@
   "venatio.rastreo.error.no_jugando": "Solo se puede saltar mientras juegas una partida.",
   "venatio.rastreo.error.espera": "Todavía no puedes saltar: faltan %s s.",
   "venatio.hud.busca": "Busca:",
-  "venatio.hud.meta": "Meta: %s"
+  "venatio.hud.meta": "Meta: %s",
+  "venatio.opcion.inventario": "Conservar inventario al morir"
 }
