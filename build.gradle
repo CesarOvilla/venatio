@@ -1,0 +1,65 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+base { archivesName = 'venatio' }
+
+repositories {
+	maven { name = 'Nucleoid'; url = 'https://maven.nucleoid.xyz/' }
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"venatio" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+	runs {
+		server { runDir = 'run/server' }
+		client { runDir = 'run/client' }
+	}
+}
+
+// Pruebas automáticas con un cliente real: ./gradlew runClientGameTest (abre una ventana de Minecraft)
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "venatio-pruebas"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Mundos por partida; va dentro del jar (jar-in-jar)
+	implementation include("xyz.nucleoid:fantasy:${project.fantasy_version}")
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+	filesMatching("fabric.mod.json") { expand "version": version }
+
+	// Un solo archivo de textos (es_mx). Se copia como en_us y es_es para que todo salga en español
+	// aunque el jugador tenga el juego en otro idioma.
+	["en_us", "es_es"].each { idioma ->
+		from("src/main/resources/assets/venatio/lang/es_mx.json") {
+			into "assets/venatio/lang"
+			rename { "${idioma}.json" }
+		}
+	}
+}
+
+java {
+	toolchain { languageVersion = JavaLanguageVersion.of(25) }
+}
+
+tasks.withType(JavaCompile).configureEach { it.options.release = 25 }

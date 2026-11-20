@@ -1,0 +1,34 @@
+package dev.venatio.juego;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+
+import java.util.Locale;
+
+public enum Modo {
+	/** Gana el primer equipo con una línea completa (fila, columna o diagonal). */
+	LINEA,
+	/** Gana el primer equipo que llena el cartón entero. */
+	APAGON,
+	/** Cada casilla solo la puede tener un equipo. Gana quien hace línea o tiene una mayoría que ya no se puede alcanzar. */
+	LOCKOUT,
+	/** Gana quien tenga más casillas al acabarse el tiempo. */
+	CONTRARRELOJ;
+
+	public String id() {
+		return name().toLowerCase(Locale.ROOT);
+	}
+
+	public MutableComponent nombre() {
+		return Component.translatable("venatio.modo." + id());
+	}
+
+	public boolean exclusivo() {
+		return this == LOCKOUT;
+	}
+
+	public static Modo porId(String id) {
+		for (Modo m : values()) if (m.id().equals(id)) return m;
+		return LINEA;
+	}
+}

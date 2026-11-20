@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "venatio",
+	"version": "${version}",
+	"name": "Venatio",
+	"description": "Bingo de Minecraft y cacería de items para jugar con amigos.",
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["dev.venatio.Venatio"],
+		"client": ["dev.venatio.cliente.VenatioCliente"]
+	},
+	"mixins": ["venatio.mixins.json", "venatio-lobby.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

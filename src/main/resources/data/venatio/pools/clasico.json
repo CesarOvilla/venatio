@@ -1,0 +1,406 @@
+{
+  "origen": "MCBingo 2.0 de SirChi (MIT) — categorías y dificultades originales",
+  "reglas": "25 categorías distintas por cartón; cada una con dificultad 1 (fácil), 2 (media) o 3 (difícil). Un valor con # es un tag: vale cualquier item del tag",
+  "categorias": [
+    {
+      "id": 1,
+      "items": {
+        "1": "minecraft:glass_bottle",
+        "2": "minecraft:glass_bottle",
+        "3": "minecraft:glass_bottle"
+      }
+    },
+    {
+      "id": 2,
+      "items": {
+        "1": "minecraft:rail",
+        "2": "minecraft:rail",
+        "3": "minecraft:rail"
+      }
+    },
+    {
+      "id": 3,
+      "items": {
+        "1": "minecraft:mushroom_stew",
+        "2": "minecraft:mushroom_stew",
+        "3": "minecraft:mushroom_stew"
+      }
+    },
+    {
+      "id": 4,
+      "items": {
+        "1": "minecraft:cauldron",
+        "2": "minecraft:cauldron",
+        "3": "minecraft:cauldron"
+      }
+    },
+    {
+      "id": 5,
+      "items": {
+        "1": "minecraft:leather_horse_armor",
+        "2": "minecraft:leather_horse_armor",
+        "3": "minecraft:leather_horse_armor"
+      }
+    },
+    {
+      "id": 6,
+      "items": {
+        "1": "minecraft:repeater",
+        "2": "minecraft:repeater",
+        "3": "minecraft:repeater"
+      }
+    },
+    {
+      "id": 7,
+      "items": {
+        "1": "#minecraft:chest_boats",
+        "2": "#minecraft:chest_boats",
+        "3": "#minecraft:chest_boats"
+      }
+    },
+    {
+      "id": 8,
+      "items": {
+        "1": "minecraft:emerald",
+        "2": "minecraft:emerald",
+        "3": "minecraft:emerald"
+      }
+    },
+    {
+      "id": 9,
+      "items": {
+        "1": "minecraft:beetroot_soup",
+        "2": "minecraft:beetroot_soup",
+        "3": "minecraft:beetroot_soup"
+      }
+    },
+    {
+      "id": 10,
+      "items": {
+        "1": "minecraft:name_tag",
+        "2": "minecraft:name_tag",
+        "3": "minecraft:name_tag"
+      }
+    },
+    {
+      "id": 11,
+      "items": {
+        "1": "minecraft:spruce_sapling",
+        "2": "minecraft:acacia_sapling",
+        "3": "minecraft:dark_oak_sapling"
+      }
+    },
+    {
+      "id": 12,
+      "items": {
+        "1": "minecraft:cobweb",
+        "2": "minecraft:music_disc_cat",
+        "3": "minecraft:enchanted_book"
+      }
+    },
+    {
+      "id": 13,
+      "items": {
+        "1": "minecraft:milk_bucket",
+        "2": "#minecraft:eggs",
+        "3": "minecraft:cake"
+      }
+    },
+    {
+      "id": 14,
+      "items": {
+        "1": "minecraft:painting",
+        "2": "minecraft:item_frame",
+        "3": "minecraft:glow_item_frame"
+      }
+    },
+    {
+      "id": 15,
+      "items": {
+        "1": "minecraft:golden_sword",
+        "2": "minecraft:clock",
+        "3": "minecraft:powered_rail"
+      }
+    },
+    {
+      "id": 16,
+      "items": {
+        "1": "minecraft:hopper",
+        "2": "minecraft:hopper",
+        "3": "minecraft:hopper_minecart"
+      }
+    },
+    {
+      "id": 17,
+      "items": {
+        "1": "minecraft:cocoa_beans",
+        "2": "minecraft:cookie",
+        "3": "minecraft:cookie"
+      }
+    },
+    {
+      "id": 18,
+      "items": {
+        "1": "minecraft:pumpkin_seeds",
+        "2": "minecraft:pumpkin_pie",
+        "3": "minecraft:pumpkin_pie"
+      }
+    },
+    {
+      "id": 19,
+      "items": {
+        "1": "minecraft:sugar",
+        "2": "minecraft:spider_eye",
+        "3": "minecraft:fermented_spider_eye"
+      }
+    },
+    {
+      "id": 20,
+      "items": {
+        "1": "minecraft:green_dye",
+        "2": "minecraft:green_dye",
+        "3": "minecraft:lime_dye"
+      }
+    },
+    {
+      "id": 21,
+      "items": {
+        "1": "minecraft:blue_dye",
+        "2": "minecraft:magenta_dye",
+        "3": "minecraft:cyan_dye"
+      }
+    },
+    {
+      "id": 22,
+      "items": {
+        "1": "minecraft:pointed_dripstone",
+        "2": "minecraft:glow_berries",
+        "3": "minecraft:firefly_bush"
+      }
+    },
+    {
+      "id": 23,
+      "items": {
+        "1": "minecraft:furnace_minecart",
+        "2": "minecraft:chest_minecart",
+        "3": "minecraft:tnt_minecart"
+      }
+    },
+    {
+      "id": 24,
+      "items": {
+        "1": "minecraft:gunpowder",
+        "2": "minecraft:firework_rocket",
+        "3": "minecraft:firework_rocket"
+      }
+    },
+    {
+      "id": 25,
+      "items": {
+        "1": "minecraft:compass",
+        "2": "minecraft:compass",
+        "3": "minecraft:map"
+      }
+    },
+    {
+      "id": 26,
+      "items": {
+        "1": "minecraft:diamond",
+        "2": "minecraft:diamond_hoe",
+        "3": "minecraft:diamond_axe"
+      }
+    },
+    {
+      "id": 27,
+      "items": {
+        "1": "minecraft:bone",
+        "2": "minecraft:gray_dye",
+        "3": "minecraft:gray_dye"
+      }
+    },
+    {
+      "id": 28,
+      "items": {
+        "1": "minecraft:ender_pearl",
+        "2": "minecraft:ender_pearl",
+        "3": "minecraft:slime_ball"
+      }
+    },
+    {
+      "id": 29,
+      "items": {
+        "1": "minecraft:fern",
+        "2": "minecraft:vine",
+        "3": "minecraft:dead_bush"
+      }
+    },
+    {
+      "id": 30,
+      "items": {
+        "1": "minecraft:brick",
+        "2": "minecraft:flower_pot",
+        "3": "minecraft:field_masoned_banner_pattern"
+      }
+    },
+    {
+      "id": 31,
+      "items": {
+        "1": "minecraft:melon_slice",
+        "2": "minecraft:melon_slice",
+        "3": "minecraft:glistering_melon_slice"
+      }
+    },
+    {
+      "id": 32,
+      "items": {
+        "1": "minecraft:ink_sac",
+        "2": "minecraft:book",
+        "3": "minecraft:writable_book"
+      }
+    },
+    {
+      "id": 33,
+      "items": {
+        "1": "minecraft:apple",
+        "2": "minecraft:golden_shovel",
+        "3": "minecraft:golden_apple"
+      }
+    },
+    {
+      "id": 34,
+      "items": {
+        "1": "minecraft:flint",
+        "2": "minecraft:flint",
+        "3": "minecraft:flint_and_steel"
+      }
+    },
+    {
+      "id": 35,
+      "items": {
+        "1": "minecraft:cornflower",
+        "2": "minecraft:blue_orchid",
+        "3": "minecraft:allium"
+      }
+    },
+    {
+      "id": 36,
+      "items": {
+        "1": "minecraft:kelp",
+        "2": "minecraft:seagrass",
+        "3": "minecraft:sea_pickle"
+      }
+    },
+    {
+      "id": 37,
+      "items": {
+        "1": "minecraft:sweet_berries",
+        "2": "minecraft:cooked_rabbit",
+        "3": "minecraft:rabbit_stew"
+      }
+    },
+    {
+      "id": 38,
+      "items": {
+        "1": "#minecraft:signs",
+        "2": "minecraft:armor_stand",
+        "3": "#minecraft:hanging_signs"
+      }
+    },
+    {
+      "id": 39,
+      "items": {
+        "1": "minecraft:cooked_cod",
+        "2": "minecraft:campfire",
+        "3": "minecraft:crossbow"
+      }
+    },
+    {
+      "id": 40,
+      "items": {
+        "1": "minecraft:salmon_bucket",
+        "2": "minecraft:tropical_fish_bucket",
+        "3": "minecraft:pufferfish_bucket"
+      }
+    },
+    {
+      "id": 41,
+      "items": {
+        "1": "minecraft:iron_horse_armor",
+        "2": "minecraft:golden_horse_armor",
+        "3": "minecraft:diamond_horse_armor"
+      }
+    },
+    {
+      "id": 42,
+      "items": {
+        "1": "minecraft:brush",
+        "2": "minecraft:copper_lantern",
+        "3": "minecraft:copper_axe"
+      }
+    },
+    {
+      "id": 43,
+      "items": {
+        "1": "minecraft:bundle",
+        "2": "minecraft:saddle",
+        "3": "#minecraft:harnesses"
+      }
+    },
+    {
+      "id": 44,
+      "items": {
+        "1": "minecraft:amethyst_shard",
+        "2": "minecraft:spyglass",
+        "3": "minecraft:spyglass"
+      }
+    },
+    {
+      "id": 45,
+      "items": {
+        "1": "minecraft:armadillo_scute",
+        "2": "minecraft:armadillo_scute",
+        "3": "minecraft:wolf_armor"
+      }
+    },
+    {
+      "id": 46,
+      "items": {
+        "1": "minecraft:bow",
+        "2": "minecraft:lead",
+        "3": "minecraft:carrot_on_a_stick"
+      }
+    },
+    {
+      "id": 47,
+      "items": {
+        "1": "minecraft:honeycomb",
+        "2": "#minecraft:candles",
+        "3": "minecraft:honey_bottle"
+      }
+    },
+    {
+      "id": 48,
+      "items": {
+        "1": "minecraft:breeze_rod",
+        "2": "minecraft:breeze_rod",
+        "3": "minecraft:trial_key"
+      }
+    },
+    {
+      "id": 49,
+      "items": {
+        "1": "minecraft:mangrove_propagule",
+        "2": "minecraft:bamboo",
+        "3": "minecraft:open_eyeblossom"
+      }
+    },
+    {
+      "id": 50,
+      "items": {
+        "1": "minecraft:lapis_lazuli",
+        "2": "minecraft:lapis_lazuli",
+        "3": "minecraft:bell"
+      }
+    }
+  ]
+}
