@@ -38,6 +38,7 @@ public final class VenatioCliente implements ClientModInitializer {
 			ClientPlayNetworking.send(new Paquetes.Hola(Venatio.version()));
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> EstadoCliente.limpiar());
+		StatsCliente.registrar();
 
 		HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR,
 			Identifier.fromNamespaceAndPath(Venatio.MOD_ID, "carton"), HudCarton::dibujar);
@@ -55,7 +56,7 @@ public final class VenatioCliente implements ClientModInitializer {
 	private static void alTick(Minecraft mc) {
 		if (mc.player == null) return;
 		while (carton.consumeClick()) {
-			if (mc.gui.screen() == null) mc.gui.setScreen(new PantallaCarton());
+			if (mc.gui.screen() == null) mc.gui.setScreen(StatsCliente.pantallaTeclaB());
 		}
 		// Ayudas, marcas y minimapa llegan en las fases 3 y 4.
 		for (KeyMapping k : new KeyMapping[]{ayudas, marca, minimapa}) {
