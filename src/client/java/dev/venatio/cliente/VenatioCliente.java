@@ -46,12 +46,17 @@ public final class VenatioCliente implements ClientModInitializer {
 
 		HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR,
 			Identifier.fromNamespaceAndPath(Venatio.MOD_ID, "carton"), HudCarton::dibujar);
+		AyudasCliente.registrar();
 		ClientTickEvents.END_CLIENT_TICK.register(VenatioCliente::alTick);
 		ServidorEnLista.registrar();
 	}
 
 	static KeyMapping teclaCarton() {
 		return carton;
+	}
+
+	static KeyMapping teclaAyudas() {
+		return ayudas;
 	}
 
 	private static KeyMapping tecla(String nombre, int codigo) {
@@ -63,11 +68,10 @@ public final class VenatioCliente implements ClientModInitializer {
 		while (carton.consumeClick()) {
 			if (mc.gui.screen() == null) mc.gui.setScreen(StatsCliente.pantallaTeclaB());
 		}
-		// Ayudas y marcas llegan en las fases 3 y 4. La M (minimapa) la atiende Minimapa.
-		for (KeyMapping k : new KeyMapping[]{ayudas, marca}) {
-			while (k.consumeClick()) {
-				mc.player.sendOverlayMessage(Component.translatable("venatio.aviso.pronto", Component.translatable(k.getName())));
-			}
+		while (ayudas.consumeClick()) {
+			if (mc.gui.screen() == null) AyudasCliente.abrirTienda(mc);
 		}
+		while (marca.consumeClick()) AyudasCliente.ponerMarca();
+		// La M (minimapa) la atiende el módulo Minimapa.
 	}
 }

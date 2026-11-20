@@ -5,7 +5,7 @@
 	"name": "Venatio: pruebas",
 	"environment": "*",
 	"entrypoints": {
-		"fabric-client-gametest": ["dev.venatio.prueba.PruebaPartida", "dev.venatio.prueba.PruebaFichas", "dev.venatio.prueba.PruebaMinimapa", "dev.venatio.prueba.PruebaStats", "dev.venatio.prueba.PruebaRastreo"]
+		"fabric-client-gametest": ["dev.venatio.prueba.PruebaPartida", "dev.venatio.prueba.PruebaFichas", "dev.venatio.prueba.PruebaAyudas", "dev.venatio.prueba.PruebaMinimapa", "dev.venatio.prueba.PruebaStats", "dev.venatio.prueba.PruebaRastreo"]
 	},
 	"depends": { "venatio": "*" }
 }

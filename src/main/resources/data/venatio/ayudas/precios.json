@@ -1,0 +1,10 @@
+{
+  "_nota": "Precios de las ayudas. El servidor usa config/venatio/precios.json si existe (mismo formato); si no, estos. Tiempos en segundos.",
+  "activas": true,
+  "guia_bioma": { "item": "minecraft:iron_ingot", "cantidad": 8, "enfriamiento": 30 },
+  "guia_estructura": { "item": "minecraft:diamond", "cantidad": 3, "enfriamiento": 30 },
+  "guia_mob": { "item": "minecraft:gold_ingot", "cantidad": 4, "enfriamiento": 30 },
+  "minimapa": { "item": "minecraft:diamond", "cantidad": 1, "enfriamiento": 0, "segundos": 180, "radio": 64 },
+  "marca": { "item": "minecraft:air", "cantidad": 0, "enfriamiento": 30, "duracion": 120, "maximo": 3, "alcance": 128 },
+  "guia": { "duracion": 600, "llegada": 48, "desplazamiento": 48, "radio_busqueda": 4096 }
+}
