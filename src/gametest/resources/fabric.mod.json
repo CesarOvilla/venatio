@@ -5,7 +5,7 @@
 	"name": "Venatio: pruebas",
 	"environment": "*",
 	"entrypoints": {
-		"fabric-client-gametest": ["dev.venatio.prueba.PruebaPartida"]
+		"fabric-client-gametest": ["dev.venatio.prueba.PruebaPartida", "dev.venatio.prueba.PruebaStats"]
 	},
 	"depends": { "venatio": "*" }
 }
