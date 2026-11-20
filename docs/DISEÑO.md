@@ -190,7 +190,39 @@ Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runC
 - Producción: server Fabric 26.3 en exaroton con Venatio, Fabric API, Lithium, FerriteCore, Krypton, ScalableLux y C2ME (alpha; probar). Carpet ya no hace falta. VeinMiner tampoco: el minado en veta es parte de Venatio. Los datapacks Craftable y ALL Recycling Recipes que había en el server de MCBingo se pueden copiar a `world/datapacks` si se quieren (las recetas son globales y aplican a los mundos de partida).
 - El server actual de MCBingo (1.21.11) se deja intacto hasta que Venatio esté listo.
 
-## 13. Pendiente de decidir
+## 13. Propuestas para después (2026-11-20)
+
+Ideas comentadas con el usuario, todavía sin elegir. ★ = recomendadas para empezar.
+
+**Modos nuevos**
+
+| Modo | Cómo funciona |
+|---|---|
+| ★ Cartón oculto | Solo ves las casillas vecinas a las que ya conseguiste; el cartón se descubre conforme avanzas. Premia planear la ruta. |
+| ★ Switcheroo / Rey del item | Todos buscan el mismo item a la vez; cada X minutos cambia. Punto para quien lo consiga primero. Es la idea original de ItemFinder, en grupo. |
+| Draft | Antes de empezar, cada equipo veta 1 o 2 casillas del cartón. |
+| Casilla secreta | Cada equipo tiene una casilla que solo él conoce y vale doble; se revela al final. |
+| Relevo | Cada miembro del equipo tiene asignada su propia fila. |
+
+**Mejoras**
+
+| Mejora | Detalle |
+|---|---|
+| ★ Casillas que no son items | "Entra a un pantano", "mata un creeper", "llega a la altura 200", "duerme en una cama", "entra al Nether". Sin nada del End. |
+| ★ Casillas con cantidad | "16 troncos", "5 diamantes", con barra de progreso en la casilla. |
+| ★ Ruta al final | En la pantalla final, un mapa con el recorrido de cada equipo. Sustituye a BingoCam. |
+| Espectador | Quien no juega (o el anfitrión) sigue a cualquier equipo con la cámara. |
+| Dificultad del cartón | Fácil / normal / difícil, y pool editable para quitar items. |
+| Kit inicial | Configurable: herramientas de piedra, comida, cama. |
+| Ayuda al que va perdiendo | Descuento en la tienda para el último lugar. |
+| Eventos sorpresa | Opcionales cada 10 min: noche eterna, velocidad para todos 1 min, lluvia de items… |
+
+**Reglas fijas acordadas**
+- Nada de items ni casillas que obliguen a ir al End (es difícil llegar y estar ahí). El portal del End sigue funcionando.
+- Conservar inventario al morir, activo por defecto.
+- Toda la interfaz se dibuja en coordenadas de GUI: escala con la "Escala de interfaz" del juego. Verificarlo con capturas a varias escalas.
+
+## 14. Pendiente de decidir
 
 - Moneda de las ayudas: items (implementado) o fichas por casilla.
 - Nombre definitivo.
