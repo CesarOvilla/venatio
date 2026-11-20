@@ -2,6 +2,7 @@ package dev.venatio.cliente;
 
 import dev.venatio.Venatio;
 import dev.venatio.cliente.minimapa.Minimapa;
+import dev.venatio.cliente.fichas.FichasCliente;
 import dev.venatio.red.Paquetes;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -41,6 +42,7 @@ public final class VenatioCliente implements ClientModInitializer {
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> EstadoCliente.limpiar());
 		StatsCliente.registrar();
+		FichasCliente.registrar();
 
 		HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR,
 			Identifier.fromNamespaceAndPath(Venatio.MOD_ID, "carton"), HudCarton::dibujar);

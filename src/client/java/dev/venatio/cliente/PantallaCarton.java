@@ -1,5 +1,7 @@
 package dev.venatio.cliente;
 
+import dev.venatio.cliente.fichas.PantallaFicha;
+import dev.venatio.cliente.fichas.PantallaItemsPosibles;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.juego.Modo;
 import dev.venatio.red.Paquetes;
@@ -7,10 +9,14 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Tecla B: cartón grande. Se puede ver el cartón de cualquier equipo (botones a la derecha o flechas ← →):
@@ -37,6 +43,8 @@ public final class PantallaCarton extends Screen {
 
 	@Override
 	protected void init() {
+		addRenderableWidget(Button.builder(Component.translatable("venatio.fichas.boton_items_posibles"),
+			b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton()))).bounds(width / 2 - 70, height - 26, 140, 20).build());
 		Paquetes.Estado e = EstadoCliente.estado;
 		equiposConBoton = e == null ? 0 : e.equipos().size();
 		if (e == null || e.casillas().isEmpty()) return;
@@ -50,6 +58,32 @@ public final class PantallaCarton extends Screen {
 				.bounds(x, y, ANCHO_BOTON, 18).build());
 			y += 21;
 		}
+	}
+
+	private static Set<Item> itemsDelCarton() {
+		Set<Item> items = new HashSet<>();
+		if (EstadoCliente.estado != null) for (Paquetes.CasillaRed c : EstadoCliente.estado.casillas()) items.add(c.icono().getItem());
+		return items;
+	}
+
+	/** Casilla bajo el ratón, o -1. Misma geometría que extractRenderState. */
+	private int casillaEn(double mx, double my) {
+		Paquetes.Estado e = EstadoCliente.estado;
+		if (e == null || e.casillas().isEmpty()) return -1;
+		int n = e.tamano(), lado = n * CELDA, x0 = x0(e), y0 = y0(e);
+		if (mx < x0 || my < y0 || mx >= x0 + lado || my >= y0 + lado) return -1;
+		int i = (int) ((my - y0) / CELDA) * n + (int) ((mx - x0) / CELDA);
+		return i < e.casillas().size() ? i : -1;
+	}
+
+	/** Clic en una casilla: abre su ficha (cómo se consigue). */
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		if (super.mouseClicked(event, doubleClick)) return true;
+		int i = event.button() == 0 ? casillaEn(event.x(), event.y()) : -1;
+		if (i < 0) return false;
+		minecraft.gui.setScreen(new PantallaFicha(this, EstadoCliente.estado.casillas().get(i).icono().getItem()));
+		return true;
 	}
 
 	@Override
@@ -179,6 +213,7 @@ public final class PantallaCarton extends Screen {
 					if (eq != null) lineas.add(Component.translatable("venatio.pantalla.conseguida", eq.nombre(), EstadoCliente.reloj(l.segundo())));
 				}
 			}
+			lineas.add(Component.translatable("venatio.fichas.clic_para_ver").withColor(GRIS));
 			g.setTooltipForNextFrame(font, lineas, java.util.Optional.empty(), mouseX, mouseY);
 		}
 	}

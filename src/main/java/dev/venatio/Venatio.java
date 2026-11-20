@@ -1,5 +1,6 @@
 package dev.venatio;
 
+import dev.venatio.info.Fichas;
 import dev.venatio.juego.Juego;
 import dev.venatio.minimapa.ComandoMinimapaDev;
 import dev.venatio.red.Paquetes;
@@ -21,6 +22,7 @@ public final class Venatio implements ModInitializer {
 		Paquetes.registrar();
 		PaquetesAyudas.registrar();
 		PaquetesStats.registrar();
+		Fichas.registrar();
 		Juego.INSTANCIA.registrar();
 		ModuloStats.registrar();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Comandos.registrar(dispatcher));
