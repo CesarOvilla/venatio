@@ -1,5 +1,6 @@
 package dev.venatio;
 
+import dev.venatio.ayudas.Ayudas;
 import dev.venatio.juego.Juego;
 import dev.venatio.red.Paquetes;
 import dev.venatio.red.PaquetesAyudas;
@@ -18,6 +19,7 @@ public final class Venatio implements ModInitializer {
 		Paquetes.registrar();
 		PaquetesAyudas.registrar();
 		Juego.INSTANCIA.registrar();
+		Ayudas.registrar();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Comandos.registrar(dispatcher));
 	}
 
