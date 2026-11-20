@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Util;
@@ -130,6 +131,23 @@ public final class AyudasCliente {
 	/** Marcas del equipo que muestra el HUD (para pruebas). */
 	public static int marcasVisibles() {
 		return marcas.size();
+	}
+
+	/** Marcas vigentes del equipo (las usa la barra de localización). */
+	public static List<PaquetesTienda.MarcaRed> marcasActuales() {
+		List<PaquetesTienda.MarcaRed> lista = new ArrayList<>(marcas.size());
+		for (MarcaCliente m : marcas) lista.add(m.red());
+		return lista;
+	}
+
+	/** Guía activa, o null (la usa la barra de localización). */
+	public static PaquetesTienda.Guia guiaActual() {
+		return guia;
+	}
+
+	/** Distancia a la guía en rangos (cerca / media / lejos), igual que la flecha: la guía nunca da metros. */
+	public static Component rangoGuia(double distancia) {
+		return HudGuia.rango(distancia);
 	}
 
 	/** Llegó la tienda del servidor (para pruebas). */
