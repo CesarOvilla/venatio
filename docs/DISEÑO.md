@@ -124,14 +124,16 @@ Qué hace, sin tocar sus otros mods ni mundos:
 1. Encuentra la carpeta de Minecraft: Mac `~/Library/Application Support/minecraft`, Windows `%APPDATA%\.minecraft`, Linux `~/.minecraft` (o la de Flatpak).
 2. Instala Fabric 26.3 sin necesitar Java: descarga el perfil de `meta.fabricmc.net` y lo deja en `versions/`.
 3. Crea el perfil **"Venatio"** en el launcher oficial (también en el de Microsoft Store si existe) con su propia carpeta de juego `.minecraft/venatio`, ícono y memoria ajustada.
-4. Pone en `venatio/mods/` Fabric API, Sodium, Mod Menu y **AutoModpack**, descargados de Modrinth.
-5. Deja el juego en español (`lang:es_mx`) y el server de Venatio en la lista de servidores.
+4. Pone en `venatio/mods/` lo que diga `instalador/paquete.txt` (hoy Fabric API, Sodium y Venatio), verificando cada archivo por SHA-512, y quita los jars que ya no están en el paquete.
+5. Deja el juego en español (`lang:es_mx`) y el server de Venatio en la lista de servidores (el mod lo agrega al abrir el juego desde `config/venatio-servidor.txt`).
 
-**Actualizaciones sin reinstalar:** AutoModpack (1.6 millones de descargas, versión para 26.3) descarga del propio server el mod de Venatio y lo que se agregue después, y deja la carpeta igual a la del server. Cuando se publica una versión nueva, al entrar se actualiza solo. Hay que probar que funcione detrás del proxy de exaroton; si no, el plan B es un actualizador propio dentro del mod de Venatio.
+**Actualizaciones (hecho):** volver a ejecutar el mismo comando. Si alguien entra con otra versión del mod, el server lo rechaza con un mensaje en español que dice que vuelva a ejecutar el instalador. `tools/generar_paquete.py` arma `paquete.txt` desde Modrinth y el jar compilado.
+
+**Actualizaciones automáticas (pendiente):** AutoModpack descargaría del propio server lo nuevo al entrar. Hay que probar que funcione detrás del proxy de exaroton.
 
 **Otros launchers:** el mismo paquete se exporta como `.mrpack` (Modrinth App, Prism, ATLauncher) y como zip de CurseForge para quien use esos.
 
-**Dónde se alojan el instalador y los archivos:** pendiente de decidir (por ejemplo un repo público de GitHub; el código del mod no es secreto).
+**Dónde se alojan el instalador y los archivos:** repo público de GitHub (decidido). No se publica hasta que el juego esté completo.
 
 ## 9. Todo en español
 
@@ -169,24 +171,27 @@ Datos (pools, pistas, precios) en `data/venatio/…` con formato de datapack par
 
 | Fase | Contenido | Resultado |
 |---|---|---|
+| Fase | Contenido | Estado |
+|---|---|---|
 | 0 | Esqueleto Fabric 26.3 cliente + servidor, pool extraído | Hecho |
-| 1 | Partida mínima: lobby, equipos, mundo nuevo por partida, cartón, detección, 5 en línea / Apagón / Lockout / Contrarreloj, HUD del cartón, pantalla B, verificación del mod al entrar, fin y vuelta al lobby | Núcleo hecho y probado con `runClientGameTest`; el lobby construido se adelantó desde la fase 5 |
-| 2 | Instalador (Mac/Windows/Linux), AutoModpack, despliegue en exaroton, prueba con un amigo | Jugable con amigos |
-| 3 | Fichas: recetas, índice de "de dónde sale", pistas en español | Nadie se atora por no saber craftear |
-| 4 | Ayudas con costo: guías, minimapa limitado, marcas de equipo | Brújulas y minimapa |
-| 5 | Lobby construido, ranking, estadísticas, pantalla final, arte, sonidos y animaciones | Acabado de "buen mapa" |
-| 6 | Modo Rastreo (ItemFinder) y casillas que no son items | Variedad |
+| 1 | Partida: lobby, equipos, mundo nuevo por partida, cartón, detección, 5 en línea / Apagón / Lockout / Contrarreloj, HUD, pantalla B (con vista por equipo), verificación del mod | Hecho |
+| 1b | Paridad con MCBingo: visión nocturna, velocidad, Depth Strider, élitro, todas las recetas, fin automático opcional; minado en veta (minerales y troncos) | Hecho |
+| 2 | Instalador Mac/Linux/Windows | Hecho en local (Windows sin probar). Falta: publicar en GitHub, server en exaroton, prueba con amigos, AutoModpack |
+| 3 | Fichas: recetas, "de dónde sale", pistas en español, items posibles | Hecho |
+| 4 | Ayudas con costo: tienda, guías, minimapa limitado, marcas de equipo | Hecho |
+| 5 | Lobby construido, ranking, estadísticas, pantalla final, panel del anfitrión | Hecho. Falta: arte, sonidos y animaciones propios |
+| 6 | Modo Rastreo (ItemFinder): normal y carrera, compartido o independiente | Hecho. Falta: casillas que no son items |
 
-La fase 1 empieza probando el punto más delicado: portales del Nether en mundos de Fantasy. La fase 2 va temprano a propósito: si la instalación falla en la computadora de un amigo, conviene saberlo antes de pulir lo demás.
+Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runClientGameTest`).
 
 ## 12. Despliegue del server
 
 - Desarrollo: `./gradlew runServer` + `./gradlew runClient` en local.
-- Producción: server Fabric 26.3 en exaroton con Venatio, Fabric API, AutoModpack, Lithium, FerriteCore, Krypton, ScalableLux y C2ME (alpha; probar). Carpet ya no hace falta.
+- Producción: server Fabric 26.3 en exaroton con Venatio, Fabric API, Lithium, FerriteCore, Krypton, ScalableLux y C2ME (alpha; probar). Carpet ya no hace falta. VeinMiner tampoco: el minado en veta es parte de Venatio. Los datapacks Craftable y ALL Recycling Recipes que había en el server de MCBingo se pueden copiar a `world/datapacks` si se quieren (las recetas son globales y aplican a los mundos de partida).
 - El server actual de MCBingo (1.21.11) se deja intacto hasta que Venatio esté listo.
 
 ## 13. Pendiente de decidir
 
-- Moneda de las ayudas: items (por defecto) o fichas por casilla.
-- Dónde alojar el instalador (propuesta: repo público de GitHub).
+- Moneda de las ayudas: items (implementado) o fichas por casilla.
 - Nombre definitivo.
+- Si se queda el comando de prueba `/venatiodev minimapa`.
