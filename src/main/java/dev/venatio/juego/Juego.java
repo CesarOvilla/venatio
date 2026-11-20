@@ -97,13 +97,21 @@ public final class Juego {
 
 	private void alEntrar(ServerPlayer p) {
 		nombres.put(p.getUUID(), p.getGameProfile().name());
-		if (!ServerPlayNetworking.canSend(p, Paquetes.Estado.TYPE)) {
+		if (!esSimulado(p) && !ServerPlayNetworking.canSend(p, Paquetes.Estado.TYPE)) {
 			p.connection.disconnect(Component.literal(SIN_MOD));
 			return;
 		}
 		ColorEquipo equipo = equipos.get(p.getUUID());
 		if (equipo != null) ponerEnEquipoDelMarcador(p, equipo);
 		entradasPendientes.put(p.getUUID(), ticks);
+	}
+
+	/**
+	 * Jugadores simulados (Carpet /player, FakePlayer de Fabric): son subclases de ServerPlayer y no tienen cliente,
+	 * así que no pueden tener el mod. Se dejan entrar para probar partidas con varios equipos.
+	 */
+	public static boolean esSimulado(ServerPlayer p) {
+		return p.getClass() != ServerPlayer.class;
 	}
 
 	/** Coloca a quien acaba de entrar: en su partida si participa, si no en el lobby. */

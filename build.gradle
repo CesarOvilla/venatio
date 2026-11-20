@@ -6,6 +6,11 @@ base { archivesName = 'venatio' }
 
 repositories {
 	maven { name = 'Nucleoid'; url = 'https://maven.nucleoid.xyz/' }
+	// Solo para pruebas: Carpet crea jugadores simulados (/player Bot spawn), como el BingoCam del server viejo
+	exclusiveContent {
+		forRepository { maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' } }
+		filter { includeGroup 'maven.modrinth' }
+	}
 }
 
 loom {
@@ -41,6 +46,9 @@ dependencies {
 
 	// Mundos por partida; va dentro del jar (jar-in-jar)
 	implementation include("xyz.nucleoid:fantasy:${project.fantasy_version}")
+
+	// Jugadores simulados para las pruebas con varios equipos; no va en el jar del mod
+	gametestRuntimeOnly "maven.modrinth:carpet:${project.carpet_version}"
 }
 
 processResources {
