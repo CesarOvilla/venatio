@@ -278,11 +278,14 @@ public final class Juego {
 	void cerrarPartida() {
 		if (partida == null) return;
 		Partida p = partida;
-		for (ServerPlayer j : server.getPlayerList().getPlayers()) {
-			if (p.participa(j) || MundosPartida.esDePartida(j.level())) Lobby.enviar(j);
+		partida = null; // desde aquí, quien reaparezca va al lobby
+		for (ServerPlayer j : List.copyOf(server.getPlayerList().getPlayers())) {
+			if (!p.participa(j) && !MundosPartida.esDePartida(j.level())) continue;
+			// Quien está en la pantalla de muerte no se puede teletransportar: se le hace reaparecer y alReaparecer lo lleva al lobby.
+			if (j.isDeadOrDying()) server.getPlayerList().respawn(j, false, net.minecraft.world.entity.Entity.RemovalReason.KILLED);
+			else Lobby.enviar(j);
 		}
 		p.mundos.borrar();
-		partida = null;
 		actualizarTableros();
 		enviarEstadoATodos();
 	}

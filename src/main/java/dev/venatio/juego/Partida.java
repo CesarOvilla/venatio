@@ -175,8 +175,7 @@ public final class Partida {
 
 	private void empezarCuenta() {
 		ServerLevel mundo = mundos.mundo();
-		spawns.replaceAll((equipo, pos) ->
-			new BlockPos(pos.getX(), mundo.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()), pos.getZ()));
+		spawns.replaceAll((equipo, pos) -> sueloSeco(mundo, pos));
 		for (ServerPlayer p : jugadoresEnLinea()) {
 			Jugadores.reiniciar(p, GameType.SURVIVAL);
 			llevarAlSpawn(p);
@@ -189,6 +188,24 @@ public final class Partida {
 		fase = Fase.CUENTA_ATRAS;
 		ticks = 0;
 		juego.enviarEstadoATodos();
+	}
+
+	/**
+	 * Primera columna con suelo firme (no agua ni lava) en anillos alrededor del punto elegido, dentro de la zona
+	 * ya generada. El bioma descarta océanos y ríos, pero no lagos ni pantanos.
+	 */
+	private static BlockPos sueloSeco(ServerLevel mundo, BlockPos base) {
+		for (int r = 0; r <= 32; r += 2) {
+			for (int dx = -r; dx <= r; dx += 2) {
+				for (int dz = -r; dz <= r; dz += 2) {
+					if (Math.abs(dx) != r && Math.abs(dz) != r) continue;
+					int x = base.getX() + dx, z = base.getZ() + dz;
+					int y = mundo.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+					if (mundo.getBlockState(new BlockPos(x, y - 1, z)).getFluidState().isEmpty()) return new BlockPos(x, y, z);
+				}
+			}
+		}
+		return new BlockPos(base.getX(), mundo.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, base.getX(), base.getZ()), base.getZ());
 	}
 
 	private void tickCuentaAtras() {

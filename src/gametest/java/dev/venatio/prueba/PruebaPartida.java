@@ -128,6 +128,10 @@ public final class PruebaPartida implements FabricClientGameTest {
 			ctx.takeScreenshot("06_victoria");
 			paso("Victoria detectada");
 
+			// Morir durante el final no debe dejar al jugador atrapado en la pantalla de muerte.
+			sp.getServer().runCommand("kill @a");
+			paso("Jugador muerto durante el final");
+
 			sp.getServer().waitFor(s -> Juego.INSTANCIA.partida() == null, 20 * 30);
 			ctx.waitFor(mc -> mc.level != null && mc.level.dimension().toString().contains("venatio:lobby"), 200);
 			ctx.waitTicks(40);
