@@ -105,6 +105,11 @@ public final class Partida {
 		return participantes.get(p.getUUID());
 	}
 
+	/** Valor de una opción en la configuración de esta partida (la que se copió al iniciar). */
+	public boolean opcion(Opcion o) {
+		return o.valor(cfg);
+	}
+
 	public int segundos() {
 		return ticksJuego / 20;
 	}

@@ -26,6 +26,10 @@ public final class Configuracion {
 	public boolean finAutomatico = true;
 	/** Rastreo: cada equipo avanza por su propia lista en vez de buscar todos el mismo item. */
 	public boolean rastreoIndependiente = false;
+	/** Barra de localización propia (en lugar de la de experiencia, como la vanilla). */
+	public boolean localizador = true;
+	/** En la barra también se ven los rivales que no se esconden; si no, solo los compañeros. */
+	public boolean localizadorRivales = true;
 
 	public int limiteSegundos() {
 		int min = minutos > 0 ? minutos : modo == Modo.CONTRARRELOJ ? 25 : modo == Modo.RASTREO ? 15 : 0;
@@ -49,6 +53,8 @@ public final class Configuracion {
 		c.finAutomatico = finAutomatico;
 		c.meta = meta;
 		c.rastreoIndependiente = rastreoIndependiente;
+		c.localizador = localizador;
+		c.localizadorRivales = localizadorRivales;
 		return c;
 	}
 }

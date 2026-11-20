@@ -55,7 +55,8 @@ public final class MundosPartida {
 			.setDimensionType(stem.type())
 			.setDifficulty(Difficulty.NORMAL)
 			.setShouldTickTime(true)
-			.setGameRule(GameRules.PVP, pvp);
+			.setGameRule(GameRules.PVP, pvp)
+			.setGameRule(GameRules.LOCATOR_BAR, false); // la dibuja Venatio (dev.venatio.localizador); así no se enciman
 	}
 
 	private static Identifier id(String nombre) {
