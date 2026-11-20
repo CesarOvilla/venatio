@@ -4,6 +4,7 @@ import dev.venatio.Venatio;
 import dev.venatio.carton.Carton;
 import dev.venatio.mundo.MundosPartida;
 import dev.venatio.red.Paquetes;
+import dev.venatio.stats.ModuloStats;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -246,7 +247,9 @@ public final class Partida {
 	}
 
 	private void marcar(int indice, ColorEquipo equipo, ServerPlayer p, ItemStack item) {
-		carton.casillas.get(indice).logros.put(equipo, segundos());
+		Carton.Casilla cas = carton.casillas.get(indice);
+		cas.logros.put(equipo, segundos());
+		cas.jugadores.put(equipo, p.getUUID());
 		juego.difundir(Component.translatable("venatio.casilla.conseguida",
 			p.getDisplayName(), item.getHoverName(), equipo.nombre()));
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.CASILLA, equipo.ordinal(), indice));
@@ -340,6 +343,7 @@ public final class Partida {
 		}
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.VICTORIA, ganador == null ? -1 : ganador.ordinal(), -1));
 		juego.enviarEstadoATodos();
+		ModuloStats.partidaTerminada(this);
 	}
 
 	// ---------------------------------------------------------------- jugadores

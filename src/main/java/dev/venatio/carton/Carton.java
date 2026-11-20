@@ -9,6 +9,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 /** Cartón de N×N casillas. Las casillas van por filas: índice = fila * N + columna. */
 public final class Carton {
@@ -25,6 +26,8 @@ public final class Carton {
 		public final ItemStack icono;
 		/** Equipo → segundo de partida en que la consiguió. */
 		public final Map<ColorEquipo, Integer> logros = new EnumMap<>(ColorEquipo.class);
+		/** Equipo → jugador que la consiguió para ese equipo. */
+		public final Map<ColorEquipo, UUID> jugadores = new EnumMap<>(ColorEquipo.class);
 
 		Casilla(Objetivo objetivo) {
 			this.objetivo = objetivo;
