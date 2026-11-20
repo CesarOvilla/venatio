@@ -88,6 +88,14 @@ public final class PruebaPartida implements FabricClientGameTest {
 			if (restantes != 0) throw new AssertionError("El minado en veta dejó " + restantes + " bloques de hierro");
 			paso("Minado en veta rompió los 5 bloques de hierro");
 
+			// Simula que otro equipo (Azul) ya tiene dos casillas: deben verse sus puntitos.
+			sp.getServer().runOnServer(s -> {
+				Carton c = Juego.INSTANCIA.partida().carton();
+				c.casillas.get(1).logros.put(dev.venatio.juego.ColorEquipo.AZUL, 3);
+				c.casillas.get(7).logros.put(dev.venatio.juego.ColorEquipo.AZUL, 4);
+				Juego.INSTANCIA.enviarEstadoATodos();
+			});
+			ctx.waitTicks(5);
 			ctx.setScreen(PantallaCarton::new);
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("04_pantalla_carton");

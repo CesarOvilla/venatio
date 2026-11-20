@@ -82,5 +82,8 @@
   "venatio.tablero.opciones": "Opciones: %s",
   "venatio.tablero.sin_opciones": "Sin opciones extra",
   "venatio.bingo.titulo": "¡Bingo!",
-  "venatio.bingo.sigue": "¡El equipo %s hizo bingo! La partida sigue."
+  "venatio.bingo.sigue": "¡El equipo %s hizo bingo! La partida sigue.",
+  "venatio.pantalla.tu_carton": "Tu cartón (%s)",
+  "venatio.pantalla.carton_de": "Cartón del equipo %s",
+  "venatio.pantalla.cambiar_vista": "← → o clic: ver otro equipo"
 }
