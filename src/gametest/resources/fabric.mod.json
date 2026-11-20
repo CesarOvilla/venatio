@@ -1,0 +1,11 @@
+{
+	"schemaVersion": 1,
+	"id": "venatio-pruebas",
+	"version": "1.0.0",
+	"name": "Venatio: pruebas",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": ["dev.venatio.prueba.PruebaPartida"]
+	},
+	"depends": { "venatio": "*" }
+}
