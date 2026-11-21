@@ -192,7 +192,11 @@ Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runC
 
 ## 13. Propuestas para después (2026-11-20)
 
-Ideas comentadas con el usuario, todavía sin elegir. ★ = recomendadas para empezar.
+**Elegidas por el usuario (2026-11-20):** modos 1–5 (cartón oculto, Switcheroo, draft, casilla secreta, relevo) y las mejoras de casillas de logros, casillas con cantidad, ruta al final, espectador, dificultad y pool editable, descuento al último lugar (20 %) y eventos sorpresa. El kit inicial queda descartado. Todo lo que cambia las reglas va como **variante activable** (pestaña "Variantes" del panel), para poder jugar con o sin ella.
+
+En curso: tres agentes en paralelo (cartón ampliado: logros, cantidades, dificultad, pool · ruta y espectador · Switcheroo, eventos y descuento). Después, otro con cartón oculto, draft, casilla secreta y relevo, que tocan el mismo código del cartón.
+
+★ = recomendadas.
 
 **Modos nuevos**
 
