@@ -6,7 +6,9 @@
 		"BaseFireBlockMixin",
 		"ConsumeItemTriggerMixin",
 		"EndPortalBlockMixin",
+		"LivingEntityMixin",
 		"NetherPortalBlockMixin",
+		"SlotMixin",
 		"TameAnimalTriggerMixin"
 	],
 	"injectors": {

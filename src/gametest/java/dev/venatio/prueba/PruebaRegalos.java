@@ -16,6 +16,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.gamerules.GameRules;
@@ -62,6 +63,64 @@ public final class PruebaRegalos implements FabricClientGameTest {
 				return hallado != null && !Regalos.esRegalo(hallado) && hallado.getCount() == 3;
 			}), "un cohete sin marca (como uno crafteado) sí cuenta y no se apila con los regalados");
 			paso("Los regalados no cuentan para el cartón; un cohete crafteado sí, y no se mezcla con ellos");
+
+			// ---------------- La casilla 9 es de los cohetes: lo que se mueva vuelve y no se pueden tomar desde el inventario
+			sp.getServer().runOnServer(s -> {
+				var inv = jugador(s).getInventory();
+				ItemStack cohetes = inv.getItem(Regalos.RANURA_COHETES).copy();
+				inv.setItem(Regalos.RANURA_COHETES, new ItemStack(Items.DIRT, 5));
+				inv.setItem(20, cohetes);
+			});
+			sp.getServer().waitFor(s -> {
+				var inv = jugador(s).getInventory();
+				ItemStack c = inv.getItem(Regalos.RANURA_COHETES);
+				return Regalos.esCohete(c) && c.getCount() == Regalos.COHETES && inv.getItem(20).isEmpty() && inv.countItem(Items.DIRT) == 5;
+			}, 10);
+			comprobar(sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = jugador(s);
+				Slot casilla = p.inventoryMenu.slots.stream()
+					.filter(sl -> sl.container == p.getInventory() && sl.getContainerSlot() == Regalos.RANURA_COHETES).findFirst().orElseThrow();
+				return !casilla.mayPickup(p) && !casilla.mayPlace(new ItemStack(Items.DIRT));
+			}), "en el inventario la casilla 9 no se puede tomar ni se le puede poner algo encima");
+			paso("Cohetes movidos a otra casilla y tierra en la 9: en un tick vuelven a la 9 y la tierra se acomoda en otra; desde el inventario no se pueden tomar");
+
+			// ---------------- Al reaparecer, 64 cohetes aunque se conserve el inventario
+			sp.getServer().runOnServer(s -> jugador(s).getInventory().getItem(Regalos.RANURA_COHETES).setCount(10));
+			ctx.waitTicks(3);
+			comprobar(sp.getServer().computeOnServer(s -> jugador(s).getInventory().getItem(Regalos.RANURA_COHETES).getCount() == 10),
+				"con 10 cohetes no se rellenan solos");
+			ServerPlayer antesConservar = sp.getServer().computeOnServer(PruebaRegalos::jugador);
+			sp.getServer().runCommand("kill Player0");
+			ctx.waitForScreen(DeathScreen.class);
+			ctx.waitTicks(25);
+			ctx.clickScreenButton("deathScreen.respawn");
+			sp.getServer().waitFor(s -> jugador(s) != antesConservar && jugador(s).isAlive(), 200);
+			ctx.waitFor(mc -> mc.gui.screen() == null, 100);
+			sp.getServer().waitFor(s -> jugador(s).getInventory().getItem(Regalos.RANURA_COHETES).getCount() == Regalos.COHETES, 20);
+			comprobar(sp.getServer().computeOnServer(s -> jugador(s).getInventory().countItem(Items.DIRT) == 5),
+				"conservó el resto del inventario");
+			paso("Murió con 10 cohetes conservando el inventario y reapareció con 64 en la casilla 9");
+
+			// ---------------- Con pechera: el élitro guardado en el inventario también sirve para planear
+			sp.getServer().runCommand("item replace entity Player0 armor.chest with minecraft:iron_chestplate");
+			sp.getServer().waitFor(s -> Regalos.tieneElitro(jugador(s)) && jugador(s).getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE), 60);
+			BlockPos suelo = sp.getServer().computeOnServer(s -> jugador(s).blockPosition());
+			sp.getServer().runCommand("effect give Player0 minecraft:slow_falling 20 0 true");
+			sp.getServer().runCommand("execute as Player0 at @s run tp @s ~ ~40 ~");
+			ctx.waitTicks(10);
+			ctx.getInput().holdKeyFor(o -> o.keyJump, 3);
+			sp.getServer().waitFor(s -> jugador(s).isFallFlying(), 40);
+			ctx.waitTicks(45); // pasa por el desgaste de cada segundo, que con el élitro guardado no tiene planeador puesto
+			comprobar(sp.getServer().computeOnServer(s -> jugador(s).isAlive() && jugador(s).getItemBySlot(EquipmentSlot.CHEST).getDamageValue() == 0),
+				"siguió planeando sin gastar la pechera");
+			ctx.takeScreenshot("regalos_02b_planea_con_pechera");
+			// "at @s": el tp desde la consola llevaría al overworld vanilla, no al mundo de la partida
+			sp.getServer().runCommand("execute as Player0 at @s run tp @s " + suelo.getX() + " " + suelo.getY() + " " + suelo.getZ());
+			sp.getServer().runCommand("effect clear Player0");
+			sp.getServer().runCommand("item replace entity Player0 armor.chest with minecraft:air");
+			sp.getServer().runCommand("clear Player0 minecraft:elytra");
+			sp.getServer().waitFor(s -> jugador(s).getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA), 60);
+			paso("Con pechera de hierro y el élitro en el inventario, saltar en el aire empieza a planear y no gasta la pechera");
 
 			// ---------------- Se reponen al acabarse
 			sp.getServer().runCommand("clear Player0 minecraft:firework_rocket");

@@ -281,6 +281,7 @@ public final class Partida {
 		if (ticksJuego % 10 == 0) detectar();
 		if (ticksJuego % 20 == 10) variantes.tickSegundo();
 		if (ticksJuego % 20 == 0) reponerRegalos();
+		else if (cfg.elitro) sujetarCohetes();
 		if (ticksJuego % 20 == 0) {
 			Switcheroo.tick(this);
 			eventos.alSegundo();
@@ -558,14 +559,21 @@ public final class Partida {
 		if (fase == Fase.PREPARANDO) return;
 		if (!MundosPartida.esDePartida(p.level())) llevarAlSpawn(p);
 		aplicarEfectos(p);
-		Regalos.reponer(p, cfg);
+		Regalos.reponer(p, cfg, true);
 	}
 
 	/** Élitro, cohetes y botas que se acabaron o se perdieron: se reponen cada segundo, como en MCBingo. */
 	private void reponerRegalos() {
 		if (!cfg.elitro && !cfg.depthStrider) return;
 		for (ServerPlayer p : jugadoresEnLinea()) {
-			if (p.isAlive() && !p.isSpectator() && MundosPartida.esDePartida(p.level())) Regalos.reponer(p, cfg);
+			if (p.isAlive() && !p.isSpectator() && MundosPartida.esDePartida(p.level())) Regalos.reponer(p, cfg, false);
+		}
+	}
+
+	/** Los cohetes de regalo no salen de la casilla 9: lo que se movió con las teclas numéricas o a la mano izquierda vuelve. */
+	private void sujetarCohetes() {
+		for (ServerPlayer p : jugadoresEnLinea()) {
+			if (p.isAlive() && !p.isSpectator() && MundosPartida.esDePartida(p.level())) Regalos.sujetarCohetes(p, false);
 		}
 	}
 
@@ -574,7 +582,7 @@ public final class Partida {
 	/** Efectos, equipo y recetas según las opciones. Se aplica al empezar y al volver de fuera de la partida. */
 	private void aplicarKit(ServerPlayer p) {
 		aplicarEfectos(p);
-		Regalos.reponer(p, cfg);
+		Regalos.reponer(p, cfg, true);
 		if (cfg.recetas) p.awardRecipes(juego.server().getRecipeManager().getRecipes());
 	}
 
