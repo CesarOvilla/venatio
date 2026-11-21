@@ -113,7 +113,7 @@ final class Guias {
 			default -> planMob(p, nivel, id);
 		};
 		if (plan == null) return;
-		Precios.Precio precio = Ayudas.precios().de(tipo);
+		Precios.Precio precio = Ayudas.precioPara(p, tipo);
 		if (!Cobro.cobrar(p, precio, tipo)) return;
 		Busqueda busqueda = plan.busqueda().get();
 		pendientes.put(p.getUUID(), new Pendiente(p.getUUID(), tipo, id, nivel, plan, busqueda, precio, Ayudas.ticks()));

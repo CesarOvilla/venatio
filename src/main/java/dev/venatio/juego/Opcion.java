@@ -20,7 +20,9 @@ public enum Opcion {
 	LOCALIZADOR("localizador", c -> c.localizador, (c, v) -> c.localizador = v),
 	LOCALIZADOR_RIVALES("localizador_rivales", c -> c.localizadorRivales, (c, v) -> c.localizadorRivales = v),
 	LOGROS("logros", c -> c.logros, (c, v) -> c.logros = v),
-	CANTIDADES("cantidades", c -> c.cantidades, (c, v) -> c.cantidades = v);
+	CANTIDADES("cantidades", c -> c.cantidades, (c, v) -> c.cantidades = v),
+	EVENTOS("eventos", c -> c.eventos, (c, v) -> c.eventos = v),
+	DESCUENTO("descuento", c -> c.descuento, (c, v) -> c.descuento = v);
 
 	public final String id;
 	private final Predicate<Configuracion> lector;

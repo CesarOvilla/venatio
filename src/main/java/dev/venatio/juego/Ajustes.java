@@ -16,6 +16,10 @@ import java.util.List;
 public final class Ajustes {
 	public static final int MAX_MINUTOS = 300;
 	public static final int MAX_DISTANCIA = 10000;
+	/** Minutos que se pueden elegir para cada item de Switcheroo. */
+	public static final int[] MINUTOS_SWITCHEROO = {1, 2, 3, 5};
+	/** Minutos aproximados entre eventos sorpresa que se pueden elegir. */
+	public static final int[] MINUTOS_EVENTOS = {5, 8, 10};
 
 	private static final List<Runnable> oyentes = new ArrayList<>();
 
@@ -99,6 +103,18 @@ public final class Ajustes {
 		return entrada.startsWith("#") ? Component.translatable("venatio.pool.grupo", nombre) : nombre;
 	}
 
+	/** Switcheroo: minutos que dura cada item antes de cambiar solo. */
+	public static Component switcheroo(int minutos) {
+		if (!permitido(MINUTOS_SWITCHEROO, minutos)) return noPermitido(MINUTOS_SWITCHEROO);
+		return cambiar(c -> c.switcheroo = minutos, Component.translatable("venatio.config.switcheroo", minutos));
+	}
+
+	/** Eventos sorpresa: minutos aproximados entre uno y otro. */
+	public static Component eventosMinutos(int minutos) {
+		if (!permitido(MINUTOS_EVENTOS, minutos)) return noPermitido(MINUTOS_EVENTOS);
+		return cambiar(c -> c.eventosMinutos = minutos, Component.translatable("venatio.config.eventos_minutos", minutos));
+	}
+
 	public static Component opcion(Opcion o, boolean valor) {
 		return cambiar(c -> o.poner(c, valor), Component.translatable("venatio.config.opcion", o.nombre(),
 			Component.translatable(valor ? "venatio.config.si" : "venatio.config.no")));
@@ -117,6 +133,16 @@ public final class Ajustes {
 		j.difundir(confirmacion);
 		for (Runnable o : oyentes) o.run();
 		return null;
+	}
+
+	private static boolean permitido(int[] valores, int v) {
+		for (int x : valores) if (x == v) return true;
+		return false;
+	}
+
+	private static Component noPermitido(int[] valores) {
+		return Component.translatable("venatio.config.error.valores", java.util.Arrays.stream(valores)
+			.mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(", ")));
 	}
 
 	private static Component fueraDeRango(int min, int max) {

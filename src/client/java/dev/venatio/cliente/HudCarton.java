@@ -20,14 +20,22 @@ public final class HudCarton {
 	private static final int DENTRO = Arte.BORDE_CARTON + 1;
 	private static final int ANCHO_RASTREO = 156;
 	private static final int ALTO_RASTREO = 54;
+	/** Borde derecho de lo que dibujó en el último cuadro: el indicador y el banner de los eventos van a su derecha. */
+	private static int derecha = 0;
 
 	private HudCarton() {}
+
+	/** Borde derecho del cartón (o del recuadro del Rastreo) y de su recuadro de información. */
+	static int derecha() {
+		return derecha;
+	}
 
 	static void dibujar(GuiGraphicsExtractor g, DeltaTracker delta) {
 		Minecraft mc = Minecraft.getInstance();
 		Paquetes.Estado e = EstadoCliente.estado;
 		if (e == null || mc.player == null) return;
 		Font font = mc.font;
+		derecha = 0;
 
 		if (e.fase() == Paquetes.Estado.LOBBY || e.casillas().isEmpty()) {
 			dibujarLobby(g, font, e);
@@ -40,6 +48,7 @@ public final class HudCarton {
 		int ancho = rastreo ? anchoRastreo(font, e) : lado(e);
 		int dx = entrada >= 300 ? 0 : -Math.round((ancho + MARGEN + 2) * (1 - Animaciones.suaveFuera(entrada / 300f)));
 
+		derecha = MARGEN + dx + ancho;
 		int alto;
 		if (rastreo) {
 			dibujarRastreo(g, font, e, MARGEN + dx, MARGEN, ancho);
@@ -111,11 +120,20 @@ public final class HudCarton {
 		g.text(font, nombreRastreo(c, mio), tx, y0 + 25, Arte.CREMA, true);
 
 		// Barra: en carrera, lo que lleva mi equipo hacia la meta; con límite de tiempo, el tiempo que queda.
+		// En Switcheroo, lo que le queda al item antes de cambiar solo (los últimos 10 s en rojo).
 		boolean carrera = Modo.porId(e.modo()) == Modo.RASTREO_CARRERA;
 		float real = -1;
 		int colorBarra = Arte.ORO & 0xFFFFFF;
+		int colorCuenta = Arte.ORO;
 		Component cuenta = null;
-		if (carrera && e.meta() > 0) {
+		int queda = HudSorpresas.switcherooRestante();
+		if (queda >= 0) {
+			boolean urge = queda <= HudSorpresas.URGENTE;
+			real = HudSorpresas.switcherooDuracion() > 0 ? (float) queda / HudSorpresas.switcherooDuracion() : 0;
+			colorBarra = (urge ? Arte.ROJO : Arte.COBRE) & 0xFFFFFF;
+			colorCuenta = urge ? Arte.ROJO : Arte.ORO;
+			cuenta = Component.literal(EstadoCliente.reloj(queda));
+		} else if (carrera && e.meta() > 0) {
 			int puntos = puntosDe(e, mio);
 			real = (float) puntos / e.meta();
 			if (mio >= 0) colorBarra = Arte.color(mio);
@@ -123,7 +141,7 @@ public final class HudCarton {
 		} else if (e.limite() > 0) {
 			real = e.fase() == Paquetes.Estado.JUGANDO ? 1f - (float) EstadoCliente.segundos() / e.limite() : 1f;
 		}
-		if (cuenta != null) g.text(font, cuenta, x0 + ancho - 9 - font.width(cuenta), y0 + 10, Arte.ORO, true);
+		if (cuenta != null) g.text(font, cuenta, x0 + ancho - 9 - font.width(cuenta), y0 + 10, colorCuenta, true);
 		if (real >= 0) {
 			float destello = Animaciones.progreso(Animaciones.barraDestello, Animaciones.BARRA_DESTELLO_MS);
 			Arte.barra(g, tx, y0 + 38, ancho - 50 - 8, 8, Animaciones.barra(real), colorBarra, destello);
@@ -136,6 +154,8 @@ public final class HudCarton {
 			float f = (1 - destello) * (1 - destello);
 			g.fill(x0 + 2, y0 + 2, x0 + ancho - 2, y0 + ALTO_RASTREO - 2, ARGB.color(f * 0.45f, Arte.color(mio)));
 		}
+		g.nextStratum();
+		HudSorpresas.urgencia(g, x0, y0, ancho, ALTO_RASTREO);
 	}
 
 	private static int puntosDe(Paquetes.Estado e, int equipo) {
@@ -146,7 +166,8 @@ public final class HudCarton {
 	/** Debajo del cartón: reloj y modo, marcador con los emblemas y la línea de la fase. */
 	private static void dibujarInfo(GuiGraphicsExtractor g, Font font, Paquetes.Estado e, int x0, int y0, int anchoMinimo, boolean rastreo) {
 		Component reloj = lineaReloj(e);
-		Component meta = rastreo && Modo.porId(e.modo()) == Modo.RASTREO_CARRERA ? Component.translatable("venatio.hud.meta", e.meta()) : null;
+		Modo modo = Modo.porId(e.modo());
+		Component meta = rastreo && (modo == Modo.RASTREO_CARRERA || modo == Modo.SWITCHEROO) ? Component.translatable("venatio.hud.meta", e.meta()) : null;
 		// Jugando, la pista de la tecla B solo sale el primer medio minuto: después sobra y tapa.
 		Component fase = e.fase() == Paquetes.Estado.JUGANDO && EstadoCliente.segundos() >= 30 ? null : lineaFase(e);
 		int ancho = Math.max(anchoMinimo, 24 + font.width(reloj) + 6);
@@ -165,6 +186,7 @@ public final class HudCarton {
 			y += 10;
 		}
 		if (fase != null) g.text(font, fase, x0 + 5, y + 1, Arte.CREMA, true);
+		derecha = Math.max(derecha, x0 + ancho);
 	}
 
 	/** Emblema y casillas de cada equipo, en las filas que hagan falta. Devuelve la y siguiente. Con g null solo mide. */

@@ -76,5 +76,13 @@
   "venatio.stats.panel.pestana.variantes": "Variantes",
   "venatio.stats.panel.pagina": "Página %s de %s",
   "venatio.stats.panel.sin_opciones": "Todavía no hay variantes en esta versión",
-  "venatio.ajuste.dificultad": "Dificultad"
+  "venatio.ajuste.dificultad": "Dificultad",
+  "venatio.ajuste.switcheroo": "Switcheroo: cambio cada",
+  "venatio.ajuste.eventos_minutos": "Eventos cada",
+  "venatio.ajuste.minutos.1": "1 min",
+  "venatio.ajuste.minutos.2": "2 min",
+  "venatio.ajuste.minutos.3": "3 min",
+  "venatio.ajuste.minutos.5": "5 min",
+  "venatio.ajuste.minutos.8": "8 min",
+  "venatio.ajuste.minutos.10": "10 min"
 }

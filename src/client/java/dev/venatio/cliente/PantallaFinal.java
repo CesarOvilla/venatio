@@ -131,7 +131,8 @@ public final class PantallaFinal extends Screen {
 
 		MutableComponent sub = Component.translatable("venatio.stats.final.subtitulo", Modo.porId(f.modo()).nombre(), EstadoCliente.reloj(f.duracion()));
 		if (!f.destacado().isEmpty()) {
-			sub.append(" · ").append(Component.translatable("venatio.stats.final.destacado", f.destacado(), f.destacadoCasillas()));
+			sub.append(" · ").append(Component.translatable(Modo.porId(f.modo()) == Modo.SWITCHEROO ? "venatio.switcheroo.destacado"
+				: "venatio.stats.final.destacado", f.destacado(), f.destacadoCasillas()));
 		}
 		g.centeredText(font, sub, width / 2, ARRIBA + 8, GRIS);
 	}
@@ -184,11 +185,12 @@ public final class PantallaFinal extends Screen {
 				g.pose().popMatrix();
 			}
 
-			int anchoJugador = Math.min(font.width(h.jugador()), anchoFila / 3);
+			String quien = quien(h);
+			int anchoJugador = Math.min(font.width(quien), anchoFila / 3);
 			int xTexto = x + 58;
 			int libre = listaX + anchoFila - 4 - anchoJugador - 6 - (listaX + 58);
 			g.text(font, recortar(h.icono().getHoverName().getString(), libre), xTexto, y + 5, ARGB.color(entra, BLANCO & 0xFFFFFF), false);
-			g.text(font, recortar(h.jugador(), anchoJugador), x + anchoFila - 4 - anchoJugador, y + 5, ARGB.color(entra, rgb), true);
+			g.text(font, recortar(quien, anchoJugador), x + anchoFila - 4 - anchoJugador, y + 5, ARGB.color(entra, rgb), true);
 		}
 		g.disableScissor();
 
@@ -220,7 +222,9 @@ public final class PantallaFinal extends Screen {
 				int xe = x + 2 + dx;
 				Arte.sprite(g, Arte.emblemaDe(e.color()), xe, y + 2, 16, 16, ARGB.color(entra, 0xFFFFFF));
 				g.text(font, Component.literal(e.puesto() + ".º ").append(c.nombre()), xe + 20, y + 1, ARGB.color(entra, BLANCO & 0xFFFFFF), true);
-				Component casillas = Component.translatable("venatio.stats.final.casillas", e.casillas(), f.total());
+				Component casillas = Modo.porId(f.modo()) == Modo.SWITCHEROO
+					? Component.translatable(e.casillas() == 1 ? "venatio.switcheroo.punto_uno" : "venatio.switcheroo.puntos", e.casillas())
+					: Component.translatable("venatio.stats.final.casillas", e.casillas(), f.total());
 				g.text(font, casillas, x + dx + marcadorAncho - 2 - font.width(casillas), y + 1, ARGB.color(entra, BLANCO & 0xFFFFFF), true);
 				Component puntos = f.cuenta() ? Component.translatable("venatio.stats.final.puntos", e.puntos())
 					: Component.translatable("venatio.stats.final.no_cuenta");
@@ -238,10 +242,15 @@ public final class PantallaFinal extends Screen {
 		List<Component> lineas = new ArrayList<>();
 		lineas.add(h.icono().getHoverName());
 		ColorEquipo c = ColorEquipo.porOrdinal(h.equipo());
-		lineas.add(Component.translatable("venatio.stats.final.de_equipo", h.jugador(), c == null ? Component.literal("?") : c.nombre())
+		lineas.add((c == null ? Component.literal(quien(h)) : Component.translatable("venatio.stats.final.de_equipo", h.jugador(), c.nombre()))
 			.withColor(GRIS));
 		lineas.add(Component.translatable("venatio.stats.final.minuto", EstadoCliente.reloj(h.segundo())).withColor(GRIS));
 		g.setTooltipForNextFrame(font, lineas, Optional.empty(), mouseX, mouseY);
+	}
+
+	/** Columna del jugador. Lo que no es casilla (eventos sorpresa, items de Switcheroo sin dueño) no tiene equipo y trae una clave de idioma. */
+	private static String quien(PaquetesStats.Hito h) {
+		return h.equipo() < 0 ? Component.translatable(h.jugador()).getString() : h.jugador();
 	}
 
 	private String recortar(String texto, int ancho) {

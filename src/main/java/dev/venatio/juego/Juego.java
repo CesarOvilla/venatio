@@ -296,7 +296,9 @@ public final class Juego {
 		try {
 			if (delaPartida.categorias().isEmpty()) throw new IllegalStateException("pool vacío");
 			carton = esRastreo ? Carton.historial() : Carton.generar(delaPartida, semilla, config.tamano, reglas);
-			rastreo = esRastreo ? Rastreo.crear(reglas.paraRastreo(delaPartida, semilla), semilla, config.rastreoIndependiente) : null;
+			rastreo = esRastreo ? Rastreo.crear(reglas.paraRastreo(delaPartida, semilla), semilla,
+				// Switcheroo siempre es compartido: todos buscan el mismo item.
+				config.rastreoIndependiente && config.modo != Modo.SWITCHEROO) : null;
 		} catch (IllegalStateException e) {
 			return Component.translatable("venatio.pool.error.no_alcanza", delaPartida.categorias().size(), config.tamano * config.tamano);
 		}

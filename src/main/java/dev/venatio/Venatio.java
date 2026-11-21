@@ -2,11 +2,13 @@ package dev.venatio;
 
 import dev.venatio.info.Fichas;
 import dev.venatio.ayudas.Ayudas;
+import dev.venatio.juego.Eventos;
 import dev.venatio.juego.Juego;
 import dev.venatio.localizador.Localizador;
 import dev.venatio.minimapa.ComandoMinimapaDev;
 import dev.venatio.red.Paquetes;
 import dev.venatio.red.PaquetesAyudas;
+import dev.venatio.red.PaquetesEventos;
 import dev.venatio.red.PaquetesStats;
 import dev.venatio.stats.ModuloStats;
 import net.fabricmc.api.ModInitializer;
@@ -24,8 +26,10 @@ public final class Venatio implements ModInitializer {
 		Paquetes.registrar();
 		PaquetesAyudas.registrar();
 		PaquetesStats.registrar();
+		PaquetesEventos.registrar();
 		Fichas.registrar();
 		Juego.INSTANCIA.registrar();
+		Eventos.registrar();
 		ModuloStats.registrar();
 		Ayudas.registrar();
 		Localizador.registrar();

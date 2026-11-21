@@ -56,6 +56,10 @@ public final class PruebaMultijugador implements FabricClientGameTest {
 
 			sp.getServer().runCommand("venatio iniciar");
 			sp.getServer().waitFor(s -> fase(s) == Partida.Fase.JUGANDO, 20 * 180);
+			// Más abajo los bots se teletransportan junto a Player0 a su misma altura: en una ladera quedan dentro del
+			// terreno y se asfixian (un bot que muere se desconecta). Resistencia V los protege; /kill la atraviesa igual.
+			sp.getServer().runCommand("effect give Bot1 minecraft:resistance 9999 4 true");
+			sp.getServer().runCommand("effect give Bot2 minecraft:resistance 9999 4 true");
 			ctx.waitTicks(40);
 			comprobar(sp.getServer().computeOnServer(s -> {
 				Partida p = Juego.INSTANCIA.partida();
@@ -109,6 +113,8 @@ public final class PruebaMultijugador implements FabricClientGameTest {
 			}, 200);
 			comprobar(sp.getServer().computeOnServer(s -> Juego.INSTANCIA.partida().equipoDe(bot(s, "Bot1")) == ColorEquipo.ROJO),
 				"Bot1 sigue en Rojo");
+			// Al morir perdió la Resistencia; si el punto de Rojo quedó junto al agua, se ahogaría antes del final.
+			sp.getServer().runCommand("effect give Bot1 minecraft:resistance 9999 4 true");
 			paso("Bot1 murió, salió del server y al volver a entrar regresó a su partida en Rojo");
 
 			// ---------------- El jugador real muere y reaparece en el spawn de su equipo

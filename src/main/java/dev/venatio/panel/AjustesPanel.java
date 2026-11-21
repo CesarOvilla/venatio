@@ -31,6 +31,14 @@ public final class AjustesPanel {
 			Arrays.stream(Dificultad.values()).map(Dificultad::id).toList(),
 			c -> c.dificultad.id(),
 			v -> Ajustes.dificultad(Dificultad.porId(v))));
+		agregar(new Ajuste("switcheroo", VARIANTES, "venatio.ajuste.switcheroo", "venatio.ajuste.minutos.",
+			Arrays.stream(Ajustes.MINUTOS_SWITCHEROO).mapToObj(String::valueOf).toList(),
+			c -> String.valueOf(c.switcheroo),
+			v -> Ajustes.switcheroo(Integer.parseInt(v))));
+		agregar(new Ajuste("eventos_minutos", VARIANTES, "venatio.ajuste.eventos_minutos", "venatio.ajuste.minutos.",
+			Arrays.stream(Ajustes.MINUTOS_EVENTOS).mapToObj(String::valueOf).toList(),
+			c -> String.valueOf(c.eventosMinutos),
+			v -> Ajustes.eventosMinutos(Integer.parseInt(v))));
 	}
 
 	private AjustesPanel() {}

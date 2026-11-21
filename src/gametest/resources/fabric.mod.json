@@ -18,7 +18,8 @@
 			"dev.venatio.prueba.PruebaRegalos",
 			"dev.venatio.prueba.PruebaArte",
 			"dev.venatio.prueba.PruebaCartonAmpliado",
-			"dev.venatio.prueba.PruebaSpawns"
+			"dev.venatio.prueba.PruebaSpawns",
+			"dev.venatio.prueba.PruebaEventos"
 		]
 	},
 	"depends": {
