@@ -385,6 +385,12 @@ fija con la RAM del plan.
 
 Lo que faltó probar o confirmar, y cómo medirlo.
 
+- **Batería completa con todo integrado y los mods reales (prioridad).** Después de integrar esta rama no se corrió la
+  batería con los mods del servidor recomendados y los del cliente juntos; la última corrida completa con los mods del
+  cliente pasó (17 pruebas) antes de integrar rendimiento, y la del agente pasó con Moonrise antes de integrar la ruta y
+  el espectador. Cómo: `ORG_GRADLE_PROJECT_cliente=1 ORG_GRADLE_PROJECT_mods=b
+  ORG_GRADLE_PROJECT_jvmExtra=-DMoonrise.WorkerThreadCount=2 tools/prueba.sh` (unos 40 min). Cuidado especial:
+  Precalentado junto con el draft (la preparación ahora dura 0.1 s) y la grabación de la ruta con Moonrise.
 - **exaroton real con spark.** No hubo acceso; macOS no deja limitar un proceso a 3 núcleos y `ActiveProcessorCount=3`
   solo reproduce cómo se dimensionan los hilos, no la potencia. Cómo: subir spark 1.10.187-fabric al server, jugar una
   partida normal con 4–6 personas (con al menos un rato de élitro) y correr `/spark profiler start --timeout 300`,
