@@ -21,7 +21,7 @@ public final class LugarSeguro {
 
 	/**
 	 * Un destino del tipo pedido a entre min y max bloques. AGUA: la superficie de un océano, río o lago. LAVA: un
-	 * charco de lava en la superficie (son raros: si no hay, null). ALTURA: 16–20 bloques sobre suelo firme. null si
+	 * charco de lava en la superficie (son raros: si no hay, null). ALTURA: 16–20 bloques sobre lo más alto (suelo firme o copas). null si
 	 * no encontró.
 	 */
 	static BlockPos arriesgado(ServerLevel nivel, BlockPos centro, int min, int max, RandomSource rnd, Destino tipo) {
@@ -29,11 +29,10 @@ public final class LugarSeguro {
 		if (tipo == Destino.ALTURA) {
 			BlockPos suelo = lejos(nivel, centro, min, max, rnd);
 			if (suelo == null) return null;
-			int alto = 16 + rnd.nextInt(5);
-			for (int dy = 1; dy <= alto + 1; dy++) {
-				if (!nivel.getBlockState(suelo.above(dy)).isAir()) return suelo; // algo encima: mejor en el suelo
-			}
-			return suelo.above(alto);
+			// Desde lo más alto de la columna (copas de árboles incluidas): por encima del mapa de alturas todo es aire.
+			int tope = nivel.getHeight(Heightmap.Types.MOTION_BLOCKING, suelo.getX(), suelo.getZ());
+			int y = Math.min(tope + 16 + rnd.nextInt(5), nivel.getMaxY() - 2);
+			return new BlockPos(suelo.getX(), y, suelo.getZ());
 		}
 		boolean lava = tipo == Destino.LAVA;
 		for (int intento = 0, generados = 0; intento < 40 && generados < (lava ? 16 : 10); intento++) {
