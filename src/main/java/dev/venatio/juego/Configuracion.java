@@ -44,6 +44,18 @@ public final class Configuracion {
 	/** ~30 % de las casillas de item piden varias unidades, que se juntan entre todo el equipo. */
 	public boolean cantidades = false;
 
+	// Variantes del cartón (no aplican en Rastreo ni en Switcheroo)
+	/** Cartón oculto: cada equipo empieza viendo la casilla central y cada casilla que consigue destapa sus vecinas. */
+	public boolean oculto = false;
+	/** Draft: antes de la cuenta atrás, cada equipo veta casillas y se cambian por otras del pool. */
+	public boolean draft = false;
+	/** Draft: casillas que veta cada equipo (1 o 2). */
+	public int vetos = 1;
+	/** Cada equipo tiene una casilla secreta que vale doble; se revela al final. */
+	public boolean secreta = false;
+	/** Relevo: las filas se reparten entre los miembros del equipo y cada casilla solo cuenta si la consigue el dueño de su fila. */
+	public boolean relevo = false;
+
 	public Reglas reglas() {
 		return new Reglas(dificultad, logros, cantidades);
 	}
@@ -76,6 +88,11 @@ public final class Configuracion {
 		c.dificultad = dificultad;
 		c.logros = logros;
 		c.cantidades = cantidades;
+		c.oculto = oculto;
+		c.draft = draft;
+		c.vetos = vetos;
+		c.secreta = secreta;
+		c.relevo = relevo;
 		return c;
 	}
 }

@@ -20,7 +20,11 @@ public enum Opcion {
 	LOCALIZADOR("localizador", c -> c.localizador, (c, v) -> c.localizador = v),
 	LOCALIZADOR_RIVALES("localizador_rivales", c -> c.localizadorRivales, (c, v) -> c.localizadorRivales = v),
 	LOGROS("logros", c -> c.logros, (c, v) -> c.logros = v),
-	CANTIDADES("cantidades", c -> c.cantidades, (c, v) -> c.cantidades = v);
+	CANTIDADES("cantidades", c -> c.cantidades, (c, v) -> c.cantidades = v),
+	OCULTO("oculto", c -> c.oculto, (c, v) -> c.oculto = v),
+	DRAFT("draft", c -> c.draft, (c, v) -> c.draft = v),
+	SECRETA("secreta", c -> c.secreta, (c, v) -> c.secreta = v),
+	RELEVO("relevo", c -> c.relevo, (c, v) -> c.relevo = v);
 
 	public final String id;
 	private final Predicate<Configuracion> lector;

@@ -83,6 +83,9 @@ public final class Comandos {
 		}
 		raiz.then(dificultad);
 
+		raiz.then(anfitrion("vetos").then(Commands.argument("casillas", IntegerArgumentType.integer(1, 2))
+			.executes(ctx -> responder(ctx, Ajustes.vetos(IntegerArgumentType.getInteger(ctx, "casillas")), null))));
+
 		// Pool: quitar o volver a poner items (se guarda en config/venatio/pool.json)
 		raiz.then(Commands.literal("pool")
 			.then(Commands.literal("lista").executes(Comandos::listaPool))

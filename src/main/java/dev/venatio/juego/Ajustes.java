@@ -57,6 +57,12 @@ public final class Ajustes {
 		return cambiar(c -> c.distancia = bloques, Component.translatable("venatio.config.distancia", bloques));
 	}
 
+	/** Draft: casillas que veta cada equipo (1 o 2). */
+	public static Component vetos(int n) {
+		if (n < 1 || n > 2) return fueraDeRango(1, 2);
+		return cambiar(c -> c.vetos = n, Component.translatable("venatio.config.vetos", n));
+	}
+
 	public static Component dificultad(Dificultad d) {
 		return cambiar(c -> c.dificultad = d, Component.translatable("venatio.config.dificultad", d.nombre()));
 	}
