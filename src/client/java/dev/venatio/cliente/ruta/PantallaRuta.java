@@ -1,5 +1,6 @@
 package dev.venatio.cliente.ruta;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.cliente.Arte;
 import dev.venatio.cliente.EnPartida;
 import dev.venatio.juego.ColorEquipo;
@@ -235,7 +236,7 @@ public final class PantallaRuta extends Screen {
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		if (super.mouseClicked(event, doubleClick)) return true;
-		if (event.button() != 0) return false;
+		if (event.button() != InputConstants.MOUSE_BUTTON_LEFT) return false;
 		if (enMapa(event.x(), event.y())) {
 			arrastrando = true;
 			return true;
@@ -262,7 +263,7 @@ public final class PantallaRuta extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent event) {
-		if (arrastrando && event.button() == 0) {
+		if (arrastrando && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			arrastrando = false;
 			return true;
 		}

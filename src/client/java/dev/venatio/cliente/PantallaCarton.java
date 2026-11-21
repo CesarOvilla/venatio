@@ -1,5 +1,6 @@
 package dev.venatio.cliente;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.cliente.fichas.PantallaFicha;
 import dev.venatio.cliente.fichas.PantallaItemsPosibles;
 import dev.venatio.juego.ColorEquipo;
@@ -31,6 +32,8 @@ public final class PantallaCarton extends Screen {
 	private static final int ANCHO_COLUMNA = 18 + ANCHO_BOTON;
 	private static final int ALTO_CABECERA = 24;
 	private static final int ALTO_PIE = 26;
+	/** Ancho mínimo de la zona del cartón: con cartones chicos (Rastreo es de 1×1) caben el título y el botón de abajo. */
+	private static final int ANCHO_MIN = 150;
 
 	/** Equipo cuyo cartón se está viendo; -1 = el mío. */
 	private int vista = EspectadorCliente.equipoVisto(-1);
@@ -60,11 +63,10 @@ public final class PantallaCarton extends Screen {
 				b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton()))).bounds(width / 2 - 70, height / 2 + 14, 140, 20).build());
 			return;
 		}
-		int lado = e.tamano() * CELDA;
 		addRenderableWidget(Button.builder(Component.translatable("venatio.fichas.boton_items_posibles"),
 			b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton())))
-			.bounds(x0(e) + lado / 2 - 70, y0(e) + lado + DENTRO + 3, 140, 20).build());
-		int x = xPanel(e) + 18, y = y0(e) + 12;
+			.bounds(xZona(e) + anchoZona(e) / 2 - 70, yZona(e) + altoZona(e) + DENTRO + 3, 140, 20).build());
+		int x = xPanel(e) + 18, y = yZona(e) + 12;
 		for (Paquetes.EquipoRed q : e.equipos()) {
 			ColorEquipo c = ColorEquipo.porOrdinal(q.color());
 			if (c == null) continue;
@@ -111,7 +113,7 @@ public final class PantallaCarton extends Screen {
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		if (super.mouseClicked(event, doubleClick)) return true;
-		int i = event.button() == 0 ? casillaEn(event.x(), event.y()) : -1;
+		int i = event.button() == InputConstants.MOUSE_BUTTON_LEFT ? casillaEn(event.x(), event.y()) : -1;
 		if (i < 0 || VariantesCliente.tapada(EstadoCliente.estado, i, equipoVisto(EstadoCliente.estado))) return false;
 		Paquetes.CasillaRed c = EstadoCliente.estado.casillas().get(i);
 		minecraft.gui.setScreen(c.esReto() ? PantallaFicha.deReto(this, c.reto()) : new PantallaFicha(this, c.icono().getItem()));
@@ -155,9 +157,37 @@ public final class PantallaCarton extends Screen {
 		return e.equipos().isEmpty() ? -1 : e.equipos().get(0).color();
 	}
 
-	/** Esquina de la primera casilla. El conjunto (cabecera, cartón, columna de equipos y pie) va centrado. */
+	/**
+	 * Zona del cartón: al menos ANCHO_MIN de ancho y tan alta como la columna de equipos. El conjunto (cabecera, zona,
+	 * columna de equipos y pie) va centrado; las casillas van centradas a lo ancho de la zona y arriba.
+	 */
+	private int anchoZona(Paquetes.Estado e) {
+		return Math.max(e.tamano() * CELDA, ANCHO_MIN);
+	}
+
+	private int altoZona(Paquetes.Estado e) {
+		return Math.max(e.tamano() * CELDA, altoColumna(e));
+	}
+
+	/** Alto de la columna derecha: equipos, los integrantes del equipo más grande y la ayuda de abajo. */
+	private int altoColumna(Paquetes.Estado e) {
+		int miembros = 0;
+		for (Paquetes.EquipoRed q : e.equipos()) miembros = Math.max(miembros, q.miembros().size());
+		int ayuda = font.split(Component.translatable("venatio.pantalla.cambiar_vista"), ANCHO_COLUMNA).size() * font.lineHeight;
+		return 12 + e.equipos().size() * 21 + 4 + miembros * (font.lineHeight + 1) + 5 + ayuda;
+	}
+
+	private int xZona(Paquetes.Estado e) {
+		return (width - (anchoZona(e) + 16 + extra(e) + ANCHO_COLUMNA)) / 2;
+	}
+
+	private int yZona(Paquetes.Estado e) {
+		return (height - (altoZona(e) + ALTO_CABECERA + ALTO_PIE)) / 2 + ALTO_CABECERA;
+	}
+
+	/** Esquina de la primera casilla. */
 	private int x0(Paquetes.Estado e) {
-		return (width - (e.tamano() * CELDA + 16 + extra(e) + ANCHO_COLUMNA)) / 2;
+		return xZona(e) + (anchoZona(e) - e.tamano() * CELDA) / 2;
 	}
 
 	/** Con relevo, entre el cartón y los equipos va la columna con la cara del dueño de cada fila. */
@@ -166,11 +196,11 @@ public final class PantallaCarton extends Screen {
 	}
 
 	private int y0(Paquetes.Estado e) {
-		return (height - (e.tamano() * CELDA + ALTO_CABECERA + ALTO_PIE)) / 2 + ALTO_CABECERA;
+		return yZona(e);
 	}
 
 	private int xPanel(Paquetes.Estado e) {
-		return x0(e) + e.tamano() * CELDA + 16 + extra(e);
+		return xZona(e) + anchoZona(e) + 16 + extra(e);
 	}
 
 	@Override
@@ -195,10 +225,11 @@ public final class PantallaCarton extends Screen {
 		int xp = xPanel(e);
 
 		// Marco de la pantalla, placa con el título y, a su derecha, reloj y modo.
-		Arte.panel(g, x0 - DENTRO - 10, y0 - ALTO_CABECERA - 10, lado + 16 + extra(e) + ANCHO_COLUMNA + DENTRO + 20, lado + ALTO_CABECERA + ALTO_PIE + 20);
+		int xz = xZona(e), anchoZ = anchoZona(e), altoZ = altoZona(e);
+		Arte.panel(g, xz - DENTRO - 10, y0 - ALTO_CABECERA - 10, anchoZ + 16 + extra(e) + ANCHO_COLUMNA + DENTRO + 20, altoZ + ALTO_CABECERA + ALTO_PIE + 20);
 		Component titulo = colorVisto == null ? title
 			: Component.translatable(visto == e.miEquipo() ? "venatio.pantalla.tu_carton" : "venatio.pantalla.carton_de", colorVisto.nombre());
-		Arte.placa(g, font, titulo, x0 + lado / 2, y0 - ALTO_CABECERA - 4, Arte.ICONO_BINGO);
+		Arte.placa(g, font, titulo, xz + anchoZ / 2, y0 - ALTO_CABECERA - 4, Arte.ICONO_BINGO);
 		Arte.icono(g, Arte.ICONO_RELOJ, xp, y0 - ALTO_CABECERA - 2);
 		g.text(font, HudCarton.lineaReloj(e), xp + 19, y0 - ALTO_CABECERA + 2, Arte.CREMA, true);
 
@@ -246,7 +277,7 @@ public final class PantallaCarton extends Screen {
 		g.textWithWordWrap(font, Component.translatable("venatio.pantalla.cambiar_vista"), xp, yMiembros + 5, ANCHO_COLUMNA, Arte.GRIS);
 
 		Component fase = e.fase() == Paquetes.Estado.JUGANDO ? null : HudCarton.lineaFase(e);
-		if (fase != null) g.textWithWordWrap(font, fase, xp, y0 + lado + DENTRO + 4, ANCHO_COLUMNA, Arte.AMARILLO);
+		if (fase != null) g.textWithWordWrap(font, fase, xp, y0 + altoZ + DENTRO + 4, ANCHO_COLUMNA, Arte.AMARILLO);
 
 		if (filaHover >= 0) g.setTooltipForNextFrame(font, VariantesCliente.textoFila(e, visto, filaHover), mouseX, mouseY);
 		if (hover >= 0 && VariantesCliente.tapada(e, hover, visto)) {

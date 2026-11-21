@@ -1,5 +1,6 @@
 package dev.venatio.cliente;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.juego.Modo;
 import dev.venatio.red.Paquetes;
@@ -133,7 +134,7 @@ public final class PantallaDraft extends Screen {
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		if (super.mouseClicked(event, doubleClick)) return true;
 		Paquetes.Estado e = EstadoCliente.estado;
-		int i = event.button() == 0 ? casillaEn(event.x(), event.y()) : -1;
+		int i = event.button() == InputConstants.MOUSE_BUTTON_LEFT ? casillaEn(event.x(), event.y()) : -1;
 		if (i < 0 || e == null || quedan(e) <= 0 || !elegible(e, i)) return false;
 		if (i == elegida) confirmar();
 		else {

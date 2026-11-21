@@ -1,5 +1,6 @@
 package dev.venatio.cliente.fichas;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.cliente.Arte;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -149,11 +150,11 @@ public final class PantallaItemsPosibles extends Screen {
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		if (super.mouseClicked(event, doubleClick)) return true;
-		if (entradas == null || event.button() > 1) return false;
+		if (entradas == null || event.button() != InputConstants.MOUSE_BUTTON_LEFT && event.button() != InputConstants.MOUSE_BUTTON_RIGHT) return false;
 		int col = (int) Math.floor((event.x() - x0) / CELDA), fila = (int) Math.floor((event.y() - y0) / CELDA);
 		int i = fila * columnas + col;
 		if (col < 0 || col >= columnas || fila < 0 || i >= entradas.size()) return false;
-		if (event.button() == 1) {
+		if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
 			if (!FichasCliente.editable()) return false;
 			FichasCliente.alternarExclusion(entradas.get(i).texto);
 			return true;

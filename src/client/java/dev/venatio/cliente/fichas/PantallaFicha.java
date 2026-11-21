@@ -447,7 +447,7 @@ public final class PantallaFicha extends Screen {
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		if (super.mouseClicked(event, doubleClick)) return true;
-		if (event.button() != 0 || ficha == null) return false;
+		if (event.button() != InputConstants.MOUSE_BUTTON_LEFT || ficha == null) return false;
 		double mx = event.x(), my = event.y();
 
 		for (int i = 0; i < grupo.size(); i++) {
