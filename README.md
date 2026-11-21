@@ -27,6 +27,8 @@ src/client/java/dev/venatio/cliente/    HUD, pantallas, teclas (B cartón, H ayu
 src/main/resources/assets/venatio/lang/ textos (es_mx; el mismo español en en_us y es_es)
 src/main/resources/data/venatio/pools/  pools de items (clasico.json = MCBingo)
 tools/extraer_pool_mcbingo.py           regenera clasico.json desde el datapack de MCBingo
+tools/arte/texturas.py                  dibuja los sprites de la interfaz y el icono del mod (necesita Pillow)
+tools/arte/sonidos.py                   sintetiza los sonidos y escribe sounds.json (necesita ffmpeg)
 ```
 
 ## Créditos
