@@ -328,7 +328,7 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 			StringBuilder sb = new StringBuilder();
 			if (nuevo) {
 				sb.append("fecha,conjunto,procesadores,dedicado,vista,simulacion,velocidad,velocidad_lograda,bots,equipos,pregen,segundos,preparacion_s,"
-					+ "faltantes_inicio,mspt_media,mspt_p95,mspt_max,peor_p95_10s,tps,venatio_ms,faltantes_media,faltantes_max,"
+					+ "faltantes_inicio,mspt_media,mspt_p95,mspt_max,peor_p95_10s,tps,venatio_ms,faltantes_media,faltantes_max,hueco_pct,"
 					+ "faltantes_final,generados,generados_por_s,chunks_final,memoria_max_mb,memoria_con_mundos_mb,memoria_tras_gc_mb,autoguardado_ms,cpu_hilo_pct,cpu_proceso_nucleos,jvm,mods\n");
 			}
 			double peorP95 = m.ventanas.stream().mapToDouble(MedidorRendimiento.Ventana::p95).max().orElse(0);
@@ -339,7 +339,7 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 				String.valueOf(e.simulacion()), f(e.velocidad()), f(lograda), String.valueOf(bots), String.valueOf(equipos),
 				e.pregen() == null ? "" : String.valueOf(e.pregen()), String.valueOf(segundos), f(preparacion),
 				String.valueOf(faltantesInicio), f(m.mediaTotal()), f(m.p95Total()), f(m.maxTotal()), f(peorP95), f(m.tps()),
-				String.format(Locale.ROOT, "%.3f", m.venatioMedia()), f(m.faltantesMedia()), String.valueOf(m.faltantesMax()),
+				String.format(Locale.ROOT, "%.3f", m.venatioMedia()), f(m.faltantesMedia()), String.valueOf(m.faltantesMax()), f(m.huecoPct()),
 				String.valueOf(m.faltantesAlFinal()), String.valueOf(m.generados()), f(seg == 0 ? 0 : m.generados() / seg),
 				String.valueOf(chunks), String.valueOf(m.memoriaMax()), String.valueOf(memoriaConMundos), String.valueOf(memoriaTrasGc), f(autoguardado),
 				f(m.cpuServidor()), f(m.cpuProcesoMedio()), "\"" + banderasJvm() + "\"", "\"" + modsCargados() + "\"")).append('\n');

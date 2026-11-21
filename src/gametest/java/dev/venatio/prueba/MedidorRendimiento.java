@@ -70,6 +70,9 @@ final class MedidorRendimiento {
 	private final LongArrayList tiemposTotal = new LongArrayList();
 	private final LongArrayList venatioTotal = new LongArrayList();
 	private final List<Integer> faltantesVentana = new ArrayList<>();
+	/** Por muestra, qué parte de la vista de los jugadores falta (0 a 1). */
+	private final List<Double> huecoVentana = new ArrayList<>();
+	private final List<Double> huecoTotal = new ArrayList<>();
 	private int generadosVentana, generadosTotal, ticksDesdeMuestra;
 	private long memoriaMaxVentana, memoriaMax;
 	final List<Ventana> ventanas = new ArrayList<>();
@@ -128,8 +131,10 @@ final class MedidorRendimiento {
 		// Lo de abajo ya no cuenta en el tick medido
 		if (++ticksDesdeMuestra >= 20) {
 			ticksDesdeMuestra = 0;
-			ultimoFaltantes = faltantes(server);
+			int[] fv = faltantesYVista(server);
+			ultimoFaltantes = fv[0];
 			faltantesVentana.add(ultimoFaltantes);
+			if (fv[1] > 0) huecoVentana.add((double) fv[0] / fv[1]);
 			Runtime rt = Runtime.getRuntime();
 			long usada = (rt.totalMemory() - rt.freeMemory()) >> 20;
 			memoriaMaxVentana = Math.max(memoriaMaxVentana, usada);
@@ -157,6 +162,8 @@ final class MedidorRendimiento {
 		tiemposVentana.clear();
 		venatioVentana.clear();
 		faltantesVentana.clear();
+		huecoTotal.addAll(huecoVentana);
+		huecoVentana.clear();
 		generadosVentana = 0;
 		memoriaMaxVentana = 0;
 		inicioVentana = ahora;
@@ -176,8 +183,8 @@ final class MedidorRendimiento {
 		long lentos = Arrays.stream(t).filter(x -> x > 50_000_000L).count();
 		return String.format(Locale.ROOT,
 			"MSPT media %.1f p95 %.1f máx %.1f (peor p95 de 10 s %.1f) · ticks >50 ms %d de %d · TPS %.1f · Venatio media %.3f máx %.1f ms"
-				+ " · faltantes media %.0f máx %d · generados %d (%.0f/s) · memoria máx %d MB · CPU hilo %.0f%% · proceso %.1f núcleos",
-			media(t), percentil(t, 0.95), max(t), p95Peor, lentos, t.length, tps, media(v), max(v), faltMedia, faltMax,
+				+ " · faltantes media %.0f máx %d (falta el %.0f %% de la vista) · generados %d (%.0f/s) · memoria máx %d MB · CPU hilo %.0f%% · proceso %.1f núcleos",
+			media(t), percentil(t, 0.95), max(t), p95Peor, lentos, t.length, tps, media(v), max(v), faltMedia, faltMax, huecoPct(),
 			generadosTotal, segundos == 0 ? 0 : generadosTotal / segundos, memoriaMax, cpuServidor(), cpuProcesoMedio());
 	}
 
@@ -218,6 +225,11 @@ final class MedidorRendimiento {
 		return ventanas.stream().mapToInt(Ventana::faltantesMedia).average().orElse(0);
 	}
 
+	/** Porcentaje medio de la vista de los jugadores que faltaba (chunks sin cargar). */
+	double huecoPct() {
+		return huecoTotal.stream().mapToDouble(Double::doubleValue).average().orElse(0) * 100;
+	}
+
 	int faltantesAlFinal() {
 		return ultimoFaltantes;
 	}
@@ -239,10 +251,15 @@ final class MedidorRendimiento {
 
 	/** Chunks dentro de la distancia de visión de los participantes (en mundos de la partida) que aún no están cargados. */
 	static int faltantes(MinecraftServer server) {
+		return faltantesYVista(server)[0];
+	}
+
+	/** {faltantes, chunks de la vista en total}: la vista es la unión de los cuadrados de todos los participantes. */
+	static int[] faltantesYVista(MinecraftServer server) {
 		Partida p = Juego.INSTANCIA.partida();
-		if (p == null) return 0;
+		if (p == null) return new int[]{0, 0};
 		int radio = server.getPlayerList().getViewDistance();
-		int total = 0;
+		int total = 0, vista = 0;
 		for (ServerLevel nivel : List.of(p.mundos().mundo(), p.mundos().nether(), p.mundos().end())) {
 			LongOpenHashSet vistos = new LongOpenHashSet();
 			for (ServerPlayer j : nivel.players()) {
@@ -251,12 +268,14 @@ final class MedidorRendimiento {
 				for (int dx = -radio; dx <= radio; dx++) {
 					for (int dz = -radio; dz <= radio; dz++) {
 						int x = c.x() + dx, z = c.z() + dz;
-						if (vistos.add(ChunkPos.pack(x, z)) && nivel.getChunkSource().getChunkNow(x, z) == null) total++;
+						if (!vistos.add(ChunkPos.pack(x, z))) continue;
+						vista++;
+						if (nivel.getChunkSource().getChunkNow(x, z) == null) total++;
 					}
 				}
 			}
 		}
-		return total;
+		return new int[]{total, vista};
 	}
 
 	/** Chunks que tienen en memoria los mundos de la partida (cualquier estado, también a medio generar). */
