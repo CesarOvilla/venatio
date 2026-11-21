@@ -291,7 +291,8 @@ public final class PruebaArte implements FabricClientGameTest {
 		// Línea completa con el fin automático apagado: banner de bingo y la partida sigue.
 		int n = sp.getServer().computeOnServer(s -> Juego.INSTANCIA.partida().carton().tamano);
 		for (int i = 2; i < n - 1; i++) sp.getServer().runCommand("give Player0 " + item(sp, i));
-		sp.getServer().waitFor(s -> Juego.INSTANCIA.partida().carton().puntos(ColorEquipo.ROJO) == n - 1, 200);
+		// Al menos n - 1: si el cartón trae diamante, el que se dio para la tienda también marcó su casilla.
+		sp.getServer().waitFor(s -> Juego.INSTANCIA.partida().carton().puntos(ColorEquipo.ROJO) >= n - 1, 200);
 		ctx.waitTicks(30);
 		t = congelar(ctx);
 		sp.getServer().runCommand("give Player0 " + item(sp, n - 1));
