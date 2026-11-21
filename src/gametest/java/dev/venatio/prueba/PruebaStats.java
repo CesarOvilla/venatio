@@ -91,6 +91,13 @@ public final class PruebaStats implements FabricClientGameTest {
 			ctx.clickScreenButton("venatio.stats.panel.pestana.partida");
 			ctx.waitTicks(3);
 			paso("Pestañas del panel: Opciones y Variantes");
+			ctx.clickScreenButton("venatio.ajuste.dificultad");
+			sp.getServer().waitFor(s -> Juego.INSTANCIA.config.dificultad == dev.venatio.carton.Dificultad.DIFICIL, 40);
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("stats_02d_panel_dificultad");
+			sp.getServer().runCommand("venatio dificultad normal");
+			ctx.waitTicks(3);
+			paso("El panel cambia la dificultad del cartón (normal → difícil)");
 
 			ctx.clickScreenButton("venatio.stats.panel.modo");
 			sp.getServer().waitFor(s -> Juego.INSTANCIA.config.modo == Modo.APAGON, 100);

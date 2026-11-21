@@ -75,5 +75,6 @@
   "venatio.stats.panel.pestana.opciones": "Opciones",
   "venatio.stats.panel.pestana.variantes": "Variantes",
   "venatio.stats.panel.pagina": "Página %s de %s",
-  "venatio.stats.panel.sin_opciones": "Todavía no hay variantes en esta versión"
+  "venatio.stats.panel.sin_opciones": "Todavía no hay variantes en esta versión",
+  "venatio.ajuste.dificultad": "Dificultad"
 }

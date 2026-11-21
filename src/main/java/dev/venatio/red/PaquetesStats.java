@@ -109,13 +109,17 @@ public final class PaquetesStats {
 
 	public record OpcionRed(String id, boolean valor) {}
 
+	/** Ajuste que no es sí/no: el panel lo muestra como botón que rota entre valores (ver AjustesPanel). */
+	public record AjusteRed(String id, String grupo, String valor, List<String> valores, String claveNombre, String prefijoValor) {}
+
 	/**
 	 * Servidor → cliente: configuración actual para el panel del anfitrión.
 	 * abrir: true = abrir la pantalla (clic en el atril); false = solo refrescarla si está abierta.
 	 * editable: quien la recibe es operador. semilla: solo vale si semillaFija.
 	 */
 	public record ConfigPanel(boolean abrir, boolean editable, boolean enPartida, String modo, int minutos, boolean pvp,
-							  int distancia, boolean semillaFija, long semilla, List<OpcionRed> opciones, int maxMinutos, int maxDistancia)
+							  int distancia, boolean semillaFija, long semilla, List<OpcionRed> opciones, int maxMinutos, int maxDistancia,
+							  List<AjusteRed> ajustes)
 		implements CustomPacketPayload {
 
 		public static final Type<ConfigPanel> TYPE = new Type<>(id("config_panel"));
@@ -143,6 +147,16 @@ public final class PaquetesStats {
 			}
 			buf.writeVarInt(c.maxMinutos);
 			buf.writeVarInt(c.maxDistancia);
+			buf.writeVarInt(c.ajustes.size());
+			for (AjusteRed a : c.ajustes) {
+				buf.writeUtf(a.id);
+				buf.writeUtf(a.grupo);
+				buf.writeUtf(a.valor);
+				buf.writeVarInt(a.valores.size());
+				for (String v : a.valores) buf.writeUtf(v);
+				buf.writeUtf(a.claveNombre);
+				buf.writeUtf(a.prefijoValor);
+			}
 		}
 
 		private static ConfigPanel leer(FriendlyByteBuf buf) {
@@ -158,8 +172,18 @@ public final class PaquetesStats {
 			int n = buf.readVarInt();
 			List<OpcionRed> opciones = new ArrayList<>(n);
 			for (int i = 0; i < n; i++) opciones.add(new OpcionRed(buf.readUtf(), buf.readBoolean()));
+			int maxMinutos = buf.readVarInt(), maxDistancia = buf.readVarInt();
+			int na = buf.readVarInt();
+			List<AjusteRed> ajustes = new ArrayList<>(na);
+			for (int i = 0; i < na; i++) {
+				String id = buf.readUtf(), grupo = buf.readUtf(), valor = buf.readUtf();
+				int nv = buf.readVarInt();
+				List<String> valores = new ArrayList<>(nv);
+				for (int k = 0; k < nv; k++) valores.add(buf.readUtf());
+				ajustes.add(new AjusteRed(id, grupo, valor, valores, buf.readUtf(), buf.readUtf()));
+			}
 			return new ConfigPanel(abrir, editable, enPartida, modo, minutos, pvp, distancia, semillaFija, semilla, opciones,
-				buf.readVarInt(), buf.readVarInt());
+				maxMinutos, maxDistancia, ajustes);
 		}
 	}
 
@@ -169,7 +193,7 @@ public final class PaquetesStats {
 	 * OPCION (id, 0/1), SEMILLA (numero; texto "aleatoria" para quitarla), ALEATORIOS (equipos), INICIAR.
 	 */
 	public record AccionPanel(int tipo, String texto, long numero) implements CustomPacketPayload {
-		public static final int MODO = 0, TIEMPO = 1, PVP = 2, DISTANCIA = 3, OPCION = 4, SEMILLA = 5, ALEATORIOS = 6, INICIAR = 7;
+		public static final int MODO = 0, TIEMPO = 1, PVP = 2, DISTANCIA = 3, OPCION = 4, SEMILLA = 5, ALEATORIOS = 6, INICIAR = 7, AJUSTE = 8;
 
 		public static final Type<AccionPanel> TYPE = new Type<>(id("accion_panel"));
 		public static final StreamCodec<FriendlyByteBuf, AccionPanel> CODEC = StreamCodec.of(

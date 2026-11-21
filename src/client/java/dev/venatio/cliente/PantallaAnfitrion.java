@@ -146,10 +146,21 @@ public final class PantallaAnfitrion extends Screen {
 				.create(x0, y, col, 20, Component.translatable("venatio.stats.panel.equipos"), (b, n) -> equiposAzar = n)));
 			controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.repartir"),
 				b -> enviar(AccionPanel.ALEATORIOS, "", equiposAzar)).bounds(x1, y, col, 20).build()));
+			y += paso;
+
+			// Ajustes de la pestaña Partida (p. ej. dificultad del cartón), de dos en dos.
+			int k = 0;
+			for (PaquetesStats.AjusteRed a : c.ajustes()) {
+				if (!"partida".equals(a.grupo())) continue;
+				controles.add(addRenderableWidget(botonAjuste(a, k % 2 == 0 ? x0 : x1, y, col)));
+				if (k % 2 == 1) y += paso;
+				k++;
+			}
 		} else {
-			// Opciones sí/no de la pestaña, en dos columnas y por páginas si no caben.
+			// Ajustes y opciones sí/no de la pestaña, en dos columnas y por páginas si no caben.
 			boolean variantes = pestana == 2;
-			List<PaquetesStats.OpcionRed> lista = new ArrayList<>();
+			List<Object> lista = new ArrayList<>();
+			for (PaquetesStats.AjusteRed a : c.ajustes()) if (variantes && "variantes".equals(a.grupo())) lista.add(a);
 			for (PaquetesStats.OpcionRed o : c.opciones()) if (VARIANTES.contains(o.id()) == variantes) lista.add(o);
 			int filasOpc = Math.max(1, filasCaben - 1);
 			int porPagina = filasOpc * 2;
@@ -157,11 +168,14 @@ public final class PantallaAnfitrion extends Screen {
 			pagina = Mth.clamp(pagina, 0, paginas - 1);
 			int desde = pagina * porPagina, hasta = Math.min(lista.size(), desde + porPagina);
 			for (int i = desde; i < hasta; i++) {
-				PaquetesStats.OpcionRed o = lista.get(i);
 				int k = i - desde;
-				int x = k % 2 == 0 ? x0 : x1;
-				controles.add(addRenderableWidget(siNo(o.valor()).create(x, y + (k / 2) * paso, col, 20,
-					Component.translatable("venatio.opcion." + o.id()), (b, v) -> enviar(AccionPanel.OPCION, o.id(), v ? 1 : 0))));
+				int x = k % 2 == 0 ? x0 : x1, yb = y + (k / 2) * paso;
+				if (lista.get(i) instanceof PaquetesStats.AjusteRed a) {
+					controles.add(addRenderableWidget(botonAjuste(a, x, yb, col)));
+				} else if (lista.get(i) instanceof PaquetesStats.OpcionRed o) {
+					controles.add(addRenderableWidget(siNo(o.valor()).create(x, yb, col, 20,
+						Component.translatable("venatio.opcion." + o.id()), (b, v) -> enviar(AccionPanel.OPCION, o.id(), v ? 1 : 0))));
+				}
 			}
 			if (lista.isEmpty()) vacia = true;
 			if (paginas > 1) {
@@ -201,6 +215,15 @@ public final class PantallaAnfitrion extends Screen {
 		textoPagina = null;
 		vacia = false;
 		super.rebuildWidgets();
+	}
+
+	/** Botón que rota entre los valores de un ajuste; cada cambio se manda como "id=valor". */
+	private AbstractWidget botonAjuste(PaquetesStats.AjusteRed a, int x, int y, int ancho) {
+		String actual = a.valores().contains(a.valor()) ? a.valor() : a.valores().get(0);
+		return CycleButton.<String>builder(v -> Component.translatable(a.prefijoValor() + v), actual)
+			.withValues(a.valores())
+			.create(x, y, ancho, 20, Component.translatable(a.claveNombre()),
+				(b, v) -> enviar(AccionPanel.AJUSTE, a.id() + "=" + v, 0));
 	}
 
 	private static CycleButton.Builder<Boolean> siNo(boolean valor) {

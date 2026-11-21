@@ -65,7 +65,8 @@ public final class PanelAnfitrion {
 		List<PaquetesStats.OpcionRed> opciones = new ArrayList<>();
 		for (Opcion o : Opcion.values()) opciones.add(new PaquetesStats.OpcionRed(o.id, o.valor(c)));
 		ServerPlayNetworking.send(p, new PaquetesStats.ConfigPanel(abrir, esOperador(p), j.partida() != null, c.modo.id(), c.minutos, c.pvp,
-			c.distancia, c.semilla != null, c.semilla == null ? 0 : c.semilla, opciones, Ajustes.MAX_MINUTOS, Ajustes.MAX_DISTANCIA));
+			c.distancia, c.semilla != null, c.semilla == null ? 0 : c.semilla, opciones, Ajustes.MAX_MINUTOS, Ajustes.MAX_DISTANCIA,
+			AjustesPanel.paraRed(c)));
 	}
 
 	/** Manda la configuración a todos para que el panel abierto de cualquiera se actualice. */
@@ -98,6 +99,7 @@ public final class PanelAnfitrion {
 			case AccionPanel.SEMILLA -> Ajustes.semilla("aleatoria".equals(a.texto()) ? null : a.numero());
 			case AccionPanel.ALEATORIOS -> j.aleatorios(Math.max(1, Math.min(8, numero)));
 			case AccionPanel.INICIAR -> j.iniciar();
+			case AccionPanel.AJUSTE -> AjustesPanel.aplicar(a.texto());
 			default -> invalido();
 		};
 		if (error != null) {
