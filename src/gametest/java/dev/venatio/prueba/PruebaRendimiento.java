@@ -60,7 +60,8 @@ import java.util.stream.Collectors;
  * segundos, bots, equipos, pregen (lista de radios; vacío = el de Venatio), semilla, vistaCliente, lobby (segundos en el
  * lobby antes de cada partida), precalentar (true/false: -Dvenatio.precalentar), calentar (segundos de una partida
  * previa sin medir, para el JIT), dedicado (true: servidor dedicado con server.properties; false: un jugador),
- * chunksPorTick (lo que "acusa" cada bot por tick, como un cliente real), guardar (medir un autoguardado a mitad).
+ * chunksPorTick (lo que "acusa" cada bot por tick, como un cliente real), guardar (medir un autoguardado a mitad),
+ * sync, compresion y region (sync-chunk-writes, network-compression-threshold y region-file-compression del servidor).
  */
 public final class PruebaRendimiento implements FabricClientGameTest {
 	private static final Path RESULTADOS = Path.of("rendimiento", "resultados.csv");
@@ -125,6 +126,7 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 			props.setProperty("allow-flight", "true");
 			props.setProperty("sync-chunk-writes", System.getProperty("venatio.rend.sync", "false"));
 			props.setProperty("network-compression-threshold", System.getProperty("venatio.rend.compresion", "256"));
+			props.setProperty("region-file-compression", System.getProperty("venatio.rend.region", "deflate"));
 			try (TestDedicatedServerContext server = ctx.worldBuilder().createServer(props);
 				 TestDedicatedServerConnection ignored = server.connect()) {
 				correr(ctx, server, escenarios);
@@ -138,7 +140,12 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 
 	private void correr(ClientGameTestContext ctx, TestServerContext server, List<Escenario> escenarios) {
 		ctx.waitFor(mc -> mc.level != null && mc.level.dimension().toString().contains("venatio:lobby"), 1200);
-		ctx.runOnClient(mc -> mc.options.framerateLimit().set(30)); // el cliente comparte la JVM: que no robe CPU
+		ctx.runOnClient(mc -> {
+			mc.options.framerateLimit().set(30); // el cliente comparte la JVM: que no robe CPU
+			// Sin esto, tras 10 min sin teclado ni ratón el cliente baja a 10 FPS y, como avanza a la par del servidor en
+			// las pruebas, deja al servidor en 10 TPS (FramerateLimitTracker, LONG_AFK).
+			mc.options.inactivityFpsLimit().set(net.minecraft.client.InactivityFpsLimit.MINIMIZED);
+		});
 		prepararLobby(ctx, server);
 		if (calentar > 0) {
 			Escenario c = escenarios.get(0);
@@ -229,22 +236,19 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 		server.runOnServer(s -> MedidorRendimiento.alTick = null);
 		server.runOnServer(s -> medidor.terminar());
 		int chunks = server.computeOnServer(MedidorRendimiento::chunksCargados);
+		long memoriaConMundos = memoriaTrasGc(server); // lo que de verdad ocupan los chunks cargados
 
 		server.runCommand("venatio terminar");
 		server.waitFor(s -> Juego.INSTANCIA.partida() == null, 20 * 60);
 		ctx.waitTicks(40);
-		long memoriaTrasGc = server.computeOnServer(s -> {
-			System.gc();
-			Runtime rt = Runtime.getRuntime();
-			return (rt.totalMemory() - rt.freeMemory()) >> 20;
-		});
+		long memoriaTrasGc = memoriaTrasGc(server);
 		if (!registrar) return;
 
 		String resumen = medidor.resumen();
-		MedidorRendimiento.LOG.info("RESUMEN [{}] preparación {} s · faltantes al empezar {} · {} · chunks al final {} · memoria tras borrar los mundos {} MB · autoguardado {} ms",
-			etiqueta, String.format(Locale.ROOT, "%.1f", preparacion), faltantesInicio, resumen, chunks, memoriaTrasGc,
+		MedidorRendimiento.LOG.info("RESUMEN [{}] preparación {} s · faltantes al empezar {} · {} · chunks al final {} · memoria tras GC con los mundos {} MB y tras borrarlos {} MB · autoguardado {} ms",
+			etiqueta, String.format(Locale.ROOT, "%.1f", preparacion), faltantesInicio, resumen, chunks, memoriaConMundos, memoriaTrasGc,
 			String.format(Locale.ROOT, "%.1f", autoguardado));
-		anotar(e, preparacion, faltantesInicio, medidor, chunks, memoriaTrasGc, autoguardado);
+		anotar(e, preparacion, faltantesInicio, medidor, chunks, memoriaConMundos, memoriaTrasGc, autoguardado);
 		paso("Escenario medido: " + etiqueta);
 	}
 
@@ -298,7 +302,16 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 
 	// ---------------------------------------------------------------- resultados
 
-	private void anotar(Escenario e, double preparacion, int faltantesInicio, MedidorRendimiento m, int chunks, long memoriaTrasGc, double autoguardado) {
+	private static long memoriaTrasGc(TestServerContext server) {
+		return server.computeOnServer(s -> {
+			System.gc();
+			Runtime rt = Runtime.getRuntime();
+			return (rt.totalMemory() - rt.freeMemory()) >> 20;
+		});
+	}
+
+	private void anotar(Escenario e, double preparacion, int faltantesInicio, MedidorRendimiento m, int chunks, long memoriaConMundos,
+						long memoriaTrasGc, double autoguardado) {
 		try {
 			Files.createDirectories(RESULTADOS.getParent());
 			boolean nuevo = !Files.exists(RESULTADOS);
@@ -306,7 +319,7 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 			if (nuevo) {
 				sb.append("fecha,conjunto,procesadores,dedicado,vista,simulacion,velocidad,bots,equipos,pregen,segundos,preparacion_s,"
 					+ "faltantes_inicio,mspt_media,mspt_p95,mspt_max,peor_p95_10s,tps,venatio_ms,faltantes_media,faltantes_max,"
-					+ "faltantes_final,generados,generados_por_s,chunks_final,memoria_max_mb,memoria_tras_gc_mb,autoguardado_ms,cpu_hilo_pct,cpu_proceso_nucleos,jvm,mods\n");
+					+ "faltantes_final,generados,generados_por_s,chunks_final,memoria_max_mb,memoria_con_mundos_mb,memoria_tras_gc_mb,autoguardado_ms,cpu_hilo_pct,cpu_proceso_nucleos,jvm,mods\n");
 			}
 			double peorP95 = m.ventanas.stream().mapToDouble(MedidorRendimiento.Ventana::p95).max().orElse(0);
 			double seg = m.ventanas.isEmpty() ? 0 : m.ventanas.get(m.ventanas.size() - 1).segundo();
@@ -318,7 +331,7 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 				String.valueOf(faltantesInicio), f(m.mediaTotal()), f(m.p95Total()), f(m.maxTotal()), f(peorP95), f(m.tps()),
 				String.format(Locale.ROOT, "%.3f", m.venatioMedia()), f(m.faltantesMedia()), String.valueOf(m.faltantesMax()),
 				String.valueOf(m.faltantesAlFinal()), String.valueOf(m.generados()), f(seg == 0 ? 0 : m.generados() / seg),
-				String.valueOf(chunks), String.valueOf(m.memoriaMax()), String.valueOf(memoriaTrasGc), f(autoguardado),
+				String.valueOf(chunks), String.valueOf(m.memoriaMax()), String.valueOf(memoriaConMundos), String.valueOf(memoriaTrasGc), f(autoguardado),
 				f(m.cpuServidor()), f(m.cpuProcesoMedio()), "\"" + banderasJvm() + "\"", "\"" + modsCargados() + "\"")).append('\n');
 			Files.writeString(RESULTADOS, sb, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 		} catch (IOException ex) {
