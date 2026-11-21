@@ -22,6 +22,9 @@ public final class PaquetesFicha {
 		PayloadTypeRegistry.serverboundPlay().register(PedirItemsPosibles.TYPE, PedirItemsPosibles.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Ficha.TYPE, Ficha.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ItemsPosibles.TYPE, ItemsPosibles.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(AlternarExclusion.TYPE, AlternarExclusion.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(PedirFichaReto.TYPE, PedirFichaReto.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(FichaReto.TYPE, FichaReto.CODEC);
 	}
 
 	private static Identifier id(String nombre) {
@@ -55,14 +58,65 @@ public final class PaquetesFicha {
 		}
 	}
 
-	/** Servidor → cliente: entradas del pool tal cual ("minecraft:cake", o "#minecraft:signs" para un grupo). */
-	public record ItemsPosibles(List<String> entradas) implements CustomPacketPayload {
+	/**
+	 * Servidor → cliente: entradas del pool tal cual ("minecraft:cake", o "#minecraft:signs" para un grupo), las que el
+	 * anfitrión quitó y si este jugador puede quitar o poner (operador).
+	 */
+	public record ItemsPosibles(List<String> entradas, List<String> excluidas, boolean editable) implements CustomPacketPayload {
 		public static final Type<ItemsPosibles> TYPE = new Type<>(id("items_posibles"));
 		public static final StreamCodec<FriendlyByteBuf, ItemsPosibles> CODEC = StreamCodec.of(
-			(buf, p) -> TEXTOS.encode(buf, p.entradas), buf -> new ItemsPosibles(TEXTOS.decode(buf)));
+			(buf, p) -> {
+				TEXTOS.encode(buf, p.entradas);
+				TEXTOS.encode(buf, p.excluidas);
+				buf.writeBoolean(p.editable);
+			},
+			buf -> new ItemsPosibles(TEXTOS.decode(buf), TEXTOS.decode(buf), buf.readBoolean()));
 
 		@Override
 		public Type<ItemsPosibles> type() {
+			return TYPE;
+		}
+	}
+
+	/** Cliente → servidor: el operador quita del pool (o vuelve a poner) esta entrada, desde "Items posibles". */
+	public record AlternarExclusion(String entrada) implements CustomPacketPayload {
+		public static final Type<AlternarExclusion> TYPE = new Type<>(id("alternar_exclusion"));
+		public static final StreamCodec<FriendlyByteBuf, AlternarExclusion> CODEC = StreamCodec.of(
+			(buf, p) -> buf.writeUtf(p.entrada), buf -> new AlternarExclusion(buf.readUtf()));
+
+		@Override
+		public Type<AlternarExclusion> type() {
+			return TYPE;
+		}
+	}
+
+	/** Cliente → servidor: quiero la ficha de una casilla de logro (id del logro). */
+	public record PedirFichaReto(String reto) implements CustomPacketPayload {
+		public static final Type<PedirFichaReto> TYPE = new Type<>(id("pedir_ficha_reto"));
+		public static final StreamCodec<FriendlyByteBuf, PedirFichaReto> CODEC = StreamCodec.of(
+			(buf, p) -> buf.writeUtf(p.reto), buf -> new PedirFichaReto(buf.readUtf()));
+
+		@Override
+		public Type<PedirFichaReto> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Servidor → cliente: ficha de un logro. Recetas y procedencia son las del item relacionado (la cama para dormir, la
+	 * comida para comer); las fuentes empiezan con las del logro (biomas, el mob con dónde aparece). pista: la del item.
+	 */
+	public record FichaReto(String reto, Ficha ficha) implements CustomPacketPayload {
+		public static final Type<FichaReto> TYPE = new Type<>(id("ficha_reto"));
+		public static final StreamCodec<RegistryFriendlyByteBuf, FichaReto> CODEC = StreamCodec.of(
+			(buf, p) -> {
+				buf.writeUtf(p.reto);
+				Ficha.CODEC.encode(buf, p.ficha);
+			},
+			buf -> new FichaReto(buf.readUtf(), Ficha.CODEC.decode(buf)));
+
+		@Override
+		public Type<FichaReto> type() {
 			return TYPE;
 		}
 	}
@@ -94,12 +148,14 @@ public final class PaquetesFicha {
 
 		// Modos de MOB
 		public static final int MATAR = 0, CARGADO = 1, TRASQUILAR = 2, CEPILLAR = 3, REGALO_GATO = 4, REGALO_HEROE = 5,
-			SOLTAR = 6, ESTORNUDO = 7, DESENTIERRA = 8, CRECER = 9, PONE = 10, CURADO = 11;
+			SOLTAR = 6, ESTORNUDO = 7, DESENTIERRA = 8, CRECER = 9, PONE = 10, CURADO = 11, BUSCAR = 12;
 		// Modos de ESTRUCTURA
 		public static final int COFRE = 0, BARRIL = 1, ARQUEOLOGIA = 2, DISPENSADOR = 3, VASIJA = 4, GENERADOR = 5,
 			ARCON = 6, NATURAL = 7;
 		// Modos de BLOQUE
 		public static final int ROMPER = 0, COSECHAR = 1, TALLAR = 2, LABRAR = 3;
+		// Modos de BIOMA: 0 = ahí se encuentra el item; BIOMA_LOGRO = la casilla pide entrar
+		public static final int BIOMA_LOGRO = 1;
 		// Modos de PESCA
 		public static final int PESCA_GENERAL = 0, PESCA_PEZ = 1, PESCA_BASURA = 2, PESCA_TESORO = 3;
 

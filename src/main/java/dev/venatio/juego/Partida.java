@@ -69,6 +69,10 @@ public final class Partida {
 
 	/** Solo en modo Rastreo: la lista de items y por cuál va cada equipo. En Rastreo, carton es el historial de encontrados. */
 	final Rastreo rastreo;
+	/** Casillas de logro: qué llevaba cada jugador en sus estadísticas cuando se empezó a mirar cada logro. */
+	private final SeguimientoRetos retos = new SeguimientoRetos(this);
+	/** Rastreo con cantidades: unidades que junta cada equipo del item que busca ahora. */
+	private final Map<ColorEquipo, Integer> progresoRastreo = new EnumMap<>(ColorEquipo.class);
 
 	Partida(Juego juego, Configuracion cfg, long semilla, Carton carton, Rastreo rastreo, MundosPartida mundos, Map<UUID, ColorEquipo> participantes) {
 		this.juego = juego;
@@ -245,26 +249,65 @@ public final class Partida {
 
 	// ---------------------------------------------------------------- detección
 
+	/** Quién consiguió una casilla para su equipo y con qué nombre se anuncia ("Diamante", "16 × Tronco de roble", "Mata un creeper"). */
+	private record Logrado(ServerPlayer jugador, Component nombre) {}
+
 	private void detectar() {
 		if (rastreo != null) {
 			detectarRastreo();
 			return;
 		}
-		for (ServerPlayer p : jugadoresEnLinea()) {
-			ColorEquipo equipo = equipoDe(p);
-			if (equipo == null || p.isSpectator() || !MundosPartida.esDePartida(p.level())) continue;
-			for (int i = 0; i < carton.casillas.size() && fase == Fase.JUGANDO; i++) {
-				Carton.Casilla cas = carton.casillas.get(i);
+		Map<ColorEquipo, List<ServerPlayer>> activos = activosPorEquipo();
+		for (int i = 0; i < carton.casillas.size() && fase == Fase.JUGANDO; i++) {
+			Carton.Casilla cas = carton.casillas.get(i);
+			for (ColorEquipo equipo : equipos) {
+				if (fase != Fase.JUGANDO || cfg.modo.exclusivo() && !cas.logros.isEmpty()) break;
 				if (cas.logros.containsKey(equipo)) continue;
-				if (cfg.modo.exclusivo() && !cas.logros.isEmpty()) continue;
-				ItemStack encontrado = buscar(p, cas);
-				if (encontrado != null) marcar(i, equipo, p, encontrado);
+				Logrado l = comprobar(cas.objetivo, equipo, activos.getOrDefault(equipo, List.of()), cas.progreso);
+				if (l != null) marcar(i, equipo, l.jugador(), l.nombre());
 			}
 		}
 	}
 
-	private static ItemStack buscar(ServerPlayer p, Carton.Casilla cas) {
-		return buscar(p, cas.objetivo);
+	/** Participantes que pueden conseguir casillas ahora: conectados, vivos o no, fuera del modo espectador y en la partida. */
+	private Map<ColorEquipo, List<ServerPlayer>> activosPorEquipo() {
+		Map<ColorEquipo, List<ServerPlayer>> mapa = new EnumMap<>(ColorEquipo.class);
+		for (ServerPlayer p : jugadoresEnLinea()) {
+			ColorEquipo equipo = equipoDe(p);
+			if (equipo == null || p.isSpectator() || !MundosPartida.esDePartida(p.level())) continue;
+			mapa.computeIfAbsent(equipo, k -> new ArrayList<>()).add(p);
+		}
+		return mapa;
+	}
+
+	/**
+	 * Si el equipo cumple ahora el objetivo: un logro lo cumple cualquiera de sus miembros; una casilla con cantidad, la suma
+	 * de lo que tienen todos en el inventario (y anota cuánto llevan en progreso); un item, cualquiera que lo tenga.
+	 */
+	private Logrado comprobar(Objetivo objetivo, ColorEquipo equipo, List<ServerPlayer> miembros, Map<ColorEquipo, Integer> progreso) {
+		if (objetivo.esReto()) {
+			for (ServerPlayer p : miembros) if (retos.cumple(p, objetivo.reto())) return new Logrado(p, objetivo.icono().getHoverName());
+			return null;
+		}
+		if (objetivo.cantidad() > 1) {
+			int total = 0, mayor = 0;
+			ServerPlayer quien = null;
+			for (ServerPlayer p : miembros) {
+				int n = contar(p, objetivo);
+				total += n;
+				if (n > mayor) {
+					mayor = n;
+					quien = p;
+				}
+			}
+			progreso.put(equipo, Math.min(total, objetivo.cantidad()));
+			return total >= objetivo.cantidad() ? new Logrado(quien, objetivo.icono().getHoverName()) : null;
+		}
+		for (ServerPlayer p : miembros) {
+			ItemStack encontrado = buscar(p, objetivo);
+			if (encontrado != null) return new Logrado(p, encontrado.getHoverName());
+		}
+		return null;
 	}
 
 	private static ItemStack buscar(ServerPlayer p, Objetivo objetivo) {
@@ -278,16 +321,34 @@ public final class Partida {
 		return !Regalos.esRegalo(enCursor) && objetivo.cumple(enCursor) ? enCursor : null;
 	}
 
+	/** Unidades del objetivo que tiene el jugador (inventario y cursor), sin contar los regalos de la partida. */
+	private static int contar(ServerPlayer p, Objetivo objetivo) {
+		Inventory inv = p.getInventory();
+		int n = 0;
+		for (int s = 0; s < inv.getContainerSize(); s++) {
+			ItemStack st = inv.getItem(s);
+			if (!Regalos.esRegalo(st) && objetivo.cumple(st)) n += st.getCount();
+		}
+		ItemStack enCursor = p.containerMenu.getCarried();
+		if (!Regalos.esRegalo(enCursor) && objetivo.cumple(enCursor)) n += enCursor.getCount();
+		return n;
+	}
+
 	private void detectarRastreo() {
-		for (ServerPlayer p : jugadoresEnLinea()) {
-			ColorEquipo equipo = equipoDe(p);
-			if (equipo == null || p.isSpectator() || !MundosPartida.esDePartida(p.level()) || fase != Fase.JUGANDO) continue;
+		Map<ColorEquipo, List<ServerPlayer>> activos = activosPorEquipo();
+		for (ColorEquipo equipo : equipos) {
+			if (fase != Fase.JUGANDO) return;
+			List<ServerPlayer> miembros = activos.getOrDefault(equipo, List.of());
 			Objetivo objetivo = rastreo.actual(equipo);
-			ItemStack encontrado = buscar(p, objetivo);
-			if (encontrado == null) continue;
-			carton.anotar(objetivo, equipo, segundos(), p.getUUID());
+			Logrado l = comprobar(objetivo, equipo, miembros, progresoRastreo);
+			if (l == null) continue;
+			carton.anotar(objetivo, equipo, segundos(), l.jugador().getUUID());
 			rastreo.avanzar(equipo);
-			juego.difundir(Component.translatable("venatio.rastreo.encontrado", p.getDisplayName(), encontrado.getHoverName(), equipo.nombre()));
+			if (objetivo.esReto()) retos.olvidar(objetivo.reto(), miembros);
+			if (rastreo.independiente()) progresoRastreo.remove(equipo);
+			else progresoRastreo.clear();
+			juego.difundir(Component.translatable(objetivo.esReto() ? "venatio.casilla.logro" : "venatio.rastreo.encontrado",
+				l.jugador().getDisplayName(), l.nombre(), equipo.nombre()));
 			juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.CASILLA, equipo.ordinal(), 0));
 			juego.enviarEstadoATodos();
 			comprobarVictoria();
@@ -304,18 +365,20 @@ public final class Partida {
 		Objetivo saltado = rastreo.actual(equipo);
 		rastreo.registrarSalto(equipo, segundos());
 		rastreo.avanzar(equipo);
+		if (rastreo.independiente()) progresoRastreo.remove(equipo);
+		else progresoRastreo.clear();
 		juego.difundir(Component.translatable(rastreo.independiente() ? "venatio.rastreo.salto_equipo" : "venatio.rastreo.salto",
 			p.getDisplayName(), saltado.icono().getHoverName(), equipo.nombre()));
 		juego.enviarEstadoATodos();
 		return null;
 	}
 
-	private void marcar(int indice, ColorEquipo equipo, ServerPlayer p, ItemStack item) {
+	private void marcar(int indice, ColorEquipo equipo, ServerPlayer p, Component conseguido) {
 		Carton.Casilla cas = carton.casillas.get(indice);
 		cas.logros.put(equipo, segundos());
 		cas.jugadores.put(equipo, p.getUUID());
-		juego.difundir(Component.translatable("venatio.casilla.conseguida",
-			p.getDisplayName(), item.getHoverName(), equipo.nombre()));
+		juego.difundir(Component.translatable(cas.objetivo.esReto() ? "venatio.casilla.logro" : "venatio.casilla.conseguida",
+			p.getDisplayName(), conseguido, equipo.nombre()));
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.CASILLA, equipo.ordinal(), indice));
 		juego.enviarEstadoATodos();
 		comprobarVictoria();
@@ -474,6 +537,12 @@ public final class Partida {
 
 	// ---------------------------------------------------------------- red
 
+	private static Paquetes.CasillaRed casillaRed(Objetivo o, ItemStack icono, List<Paquetes.Logro> logros, Map<ColorEquipo, Integer> progreso) {
+		List<Paquetes.Progreso> lista = new ArrayList<>();
+		if (o.cantidad() > 1) progreso.forEach((c, n) -> lista.add(new Paquetes.Progreso(c.ordinal(), n)));
+		return new Paquetes.CasillaRed(icono, logros, o.esReto() ? o.reto().id() : "", o.cantidad(), lista);
+	}
+
 	Paquetes.Estado estado(ColorEquipo miEquipo) {
 		int faseRed = switch (fase) {
 			case PREPARANDO -> Paquetes.Estado.PREPARANDO;
@@ -486,11 +555,12 @@ public final class Partida {
 		if (rastreo != null) {
 			// En Rastreo el cliente ve una sola casilla: el item que su equipo busca ahora.
 			ColorEquipo quien = miEquipo != null ? miEquipo : equipos.isEmpty() ? null : equipos.get(0);
-			casillas.add(new Paquetes.CasillaRed(rastreo.actual(quien).icono(), List.of()));
+			Objetivo actual = rastreo.actual(quien);
+			casillas.add(casillaRed(actual, actual.icono(), List.of(), progresoRastreo));
 		} else for (Carton.Casilla cas : carton.casillas) {
 			List<Paquetes.Logro> logros = new ArrayList<>();
 			cas.logros.forEach((c, s) -> logros.add(new Paquetes.Logro(c.ordinal(), s)));
-			casillas.add(new Paquetes.CasillaRed(cas.icono, logros));
+			casillas.add(casillaRed(cas.objetivo, cas.icono, logros, cas.progreso));
 		}
 		List<Paquetes.EquipoRed> equiposRed = new ArrayList<>();
 		for (ColorEquipo c : equipos) {

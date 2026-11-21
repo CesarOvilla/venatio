@@ -1,5 +1,8 @@
 package dev.venatio.juego;
 
+import dev.venatio.carton.Dificultad;
+import dev.venatio.carton.Reglas;
+
 /** Lo que el anfitrión ajusta en el lobby antes de iniciar. */
 public final class Configuracion {
 	public Modo modo = Modo.LINEA;
@@ -33,6 +36,18 @@ public final class Configuracion {
 	/** En la barra también se ven los rivales que no se esconden; si no, solo los compañeros. */
 	public boolean localizadorRivales = true;
 
+	// Cartón ampliado
+	/** Peso de cada nivel (fácil, media, difícil) al armar el cartón. */
+	public Dificultad dificultad = Dificultad.NORMAL;
+	/** ~25–30 % de las casillas son logros (entrar a un bioma, matar un mob, dormir…) en vez de items. */
+	public boolean logros = false;
+	/** ~30 % de las casillas de item piden varias unidades, que se juntan entre todo el equipo. */
+	public boolean cantidades = false;
+
+	public Reglas reglas() {
+		return new Reglas(dificultad, logros, cantidades);
+	}
+
 	public int limiteSegundos() {
 		int min = minutos > 0 ? minutos : modo == Modo.CONTRARRELOJ ? 25 : modo == Modo.RASTREO ? 15 : 0;
 		return min * 60;
@@ -58,6 +73,9 @@ public final class Configuracion {
 		c.rastreoIndependiente = rastreoIndependiente;
 		c.localizador = localizador;
 		c.localizadorRivales = localizadorRivales;
+		c.dificultad = dificultad;
+		c.logros = logros;
+		c.cantidades = cantidades;
 		return c;
 	}
 }

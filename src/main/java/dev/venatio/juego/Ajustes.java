@@ -1,5 +1,9 @@
 package dev.venatio.juego;
 
+import dev.venatio.carton.Dificultad;
+import dev.venatio.carton.Exclusiones;
+import dev.venatio.carton.Objetivo;
+import dev.venatio.info.Fichas;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -51,6 +55,48 @@ public final class Ajustes {
 	public static Component distancia(int bloques) {
 		if (bloques < 0 || bloques > MAX_DISTANCIA) return fueraDeRango(0, MAX_DISTANCIA);
 		return cambiar(c -> c.distancia = bloques, Component.translatable("venatio.config.distancia", bloques));
+	}
+
+	public static Component dificultad(Dificultad d) {
+		return cambiar(c -> c.dificultad = d, Component.translatable("venatio.config.dificultad", d.nombre()));
+	}
+
+	/**
+	 * Quita (excluir true) o vuelve a poner una entrada del pool ("minecraft:diamond" o "#minecraft:signs").
+	 * Se puede aunque haya partida: cuenta desde la siguiente. Se guarda en config/venatio/pool.json.
+	 */
+	public static Component excluir(String entrada, boolean excluir) {
+		Juego j = Juego.INSTANCIA;
+		if (entrada == null || !j.pool().entradas().contains(entrada)) {
+			return Component.translatable("venatio.pool.error.no_esta", entrada == null ? "?" : entrada);
+		}
+		Component nombre = nombreEntrada(entrada);
+		if (!Exclusiones.cambiar(entrada, excluir)) {
+			return Component.translatable(excluir ? "venatio.pool.error.ya_quitado" : "venatio.pool.error.no_quitado", nombre);
+		}
+		j.difundir(Component.translatable(excluir ? "venatio.pool.quitado" : "venatio.pool.puesto", nombre));
+		Fichas.enviarItemsPosiblesATodos();
+		for (Runnable o : oyentes) o.run();
+		return null;
+	}
+
+	/** La entrada del pool que corresponde a un id escrito por el anfitrión: el item, o el grupo "#id". null si no está. */
+	public static String entradaDelPool(String id) {
+		var entradas = Juego.INSTANCIA.pool().entradas();
+		if (entradas.contains(id)) return id;
+		if (entradas.contains("#" + id)) return "#" + id;
+		return null;
+	}
+
+	/** "Diamante", o "Cualquier letrero" para un grupo. */
+	public static Component nombreEntrada(String entrada) {
+		Component nombre;
+		try {
+			nombre = Objetivo.de(entrada).icono().getHoverName();
+		} catch (IllegalArgumentException e) {
+			return Component.literal(entrada); // pool.json editado a mano con un item que ya no existe
+		}
+		return entrada.startsWith("#") ? Component.translatable("venatio.pool.grupo", nombre) : nombre;
 	}
 
 	public static Component opcion(Opcion o, boolean valor) {

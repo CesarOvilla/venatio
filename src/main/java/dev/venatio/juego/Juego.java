@@ -2,7 +2,9 @@ package dev.venatio.juego;
 
 import dev.venatio.Venatio;
 import dev.venatio.carton.Carton;
+import dev.venatio.carton.Exclusiones;
 import dev.venatio.carton.Pool;
+import dev.venatio.carton.Reglas;
 import dev.venatio.lobby.ConstructorLobby;
 import dev.venatio.lobby.TablerosLobby;
 import dev.venatio.mundo.Lobby;
@@ -82,6 +84,16 @@ public final class Juego {
 		return partida;
 	}
 
+	/** El pool completo, sin quitar lo excluido. */
+	public Pool pool() {
+		return pool;
+	}
+
+	/** El pool con que se arma la próxima partida: sin lo que el anfitrión quitó. */
+	public Pool poolDePartida() {
+		return pool.sin(Exclusiones.lista());
+	}
+
 	String nombre(UUID uuid) {
 		return nombres.getOrDefault(uuid, "?");
 	}
@@ -91,6 +103,7 @@ public final class Juego {
 	private void alArrancar(MinecraftServer server) {
 		this.server = server;
 		this.pool = Pool.cargar("/data/venatio/pools/clasico.json");
+		Exclusiones.cargar();
 		Lobby.abrir(server);
 		crearEquiposDelMarcador();
 		actualizarTableros();
@@ -276,8 +289,17 @@ public final class Juego {
 
 		long semilla = config.semilla != null ? config.semilla : new Random().nextLong();
 		boolean esRastreo = config.modo.esRastreo();
-		Carton carton = esRastreo ? Carton.historial() : Carton.generar(pool, semilla, config.tamano);
-		Rastreo rastreo = esRastreo ? Rastreo.crear(pool, semilla, config.rastreoIndependiente) : null;
+		Pool delaPartida = poolDePartida();
+		Reglas reglas = config.reglas();
+		Carton carton;
+		Rastreo rastreo;
+		try {
+			if (delaPartida.categorias().isEmpty()) throw new IllegalStateException("pool vacío");
+			carton = esRastreo ? Carton.historial() : Carton.generar(delaPartida, semilla, config.tamano, reglas);
+			rastreo = esRastreo ? Rastreo.crear(reglas.paraRastreo(delaPartida, semilla), semilla, config.rastreoIndependiente) : null;
+		} catch (IllegalStateException e) {
+			return Component.translatable("venatio.pool.error.no_alcanza", delaPartida.categorias().size(), config.tamano * config.tamano);
+		}
 		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp, config.conservarInventario);
 		partida = new Partida(this, config.copia(), semilla, carton, rastreo, mundos, participantes);
 		difundir(Component.translatable("venatio.partida.preparando", config.modo.nombre(), String.valueOf(semilla)));
