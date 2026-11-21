@@ -46,7 +46,7 @@ final class VistaFuente {
 		Map.entry("weaponsmith", Items.GRINDSTONE));
 
 	private static final String[] MODOS_MOB = {"matar", "cargado", "trasquilar", "cepillar", "regalo_gato", "regalo_heroe",
-		"soltar", "estornudo", "desentierra", "crecer", "pone", "curado"};
+		"soltar", "estornudo", "desentierra", "crecer", "pone", "curado", "buscar"};
 	private static final String[] MODOS_ESTRUCTURA = {"cofre", "barril", "arqueologia", "dispensador", "vasija", "generador",
 		"arcon", "natural"};
 	private static final String[] MODOS_BLOQUE = {"romper", "cosechar", "tallar", "labrar"};
@@ -129,7 +129,7 @@ final class VistaFuente {
 			case Fuente.ALDEANO -> f.modo() > 0
 				? Component.translatable("venatio.fichas.modo.aldeano.nivel", Component.translatable("merchant.level." + f.modo()))
 				: Component.translatable("venatio.fichas.modo.aldeano");
-			case Fuente.BIOMA -> Component.translatable("venatio.fichas.modo.bioma");
+			case Fuente.BIOMA -> Component.translatable(f.modo() == Fuente.BIOMA_LOGRO ? "venatio.fichas.modo.bioma_logro" : "venatio.fichas.modo.bioma");
 			case Fuente.PESCA -> clave("pesca", MODOS_PESCA, f.modo());
 			case Fuente.TRUEQUE -> Component.translatable("venatio.fichas.modo.trueque");
 			default -> Component.empty();

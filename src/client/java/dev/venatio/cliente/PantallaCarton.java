@@ -80,7 +80,9 @@ public final class PantallaCarton extends Screen {
 
 	private static Set<Item> itemsDelCarton() {
 		Set<Item> items = new HashSet<>();
-		if (EstadoCliente.estado != null) for (Paquetes.CasillaRed c : EstadoCliente.estado.casillas()) items.add(c.icono().getItem());
+		if (EstadoCliente.estado != null) {
+			for (Paquetes.CasillaRed c : EstadoCliente.estado.casillas()) if (!c.esReto()) items.add(c.icono().getItem());
+		}
 		return items;
 	}
 
@@ -107,7 +109,8 @@ public final class PantallaCarton extends Screen {
 		if (super.mouseClicked(event, doubleClick)) return true;
 		int i = event.button() == 0 ? casillaEn(event.x(), event.y()) : -1;
 		if (i < 0) return false;
-		minecraft.gui.setScreen(new PantallaFicha(this, EstadoCliente.estado.casillas().get(i).icono().getItem()));
+		Paquetes.CasillaRed c = EstadoCliente.estado.casillas().get(i);
+		minecraft.gui.setScreen(c.esReto() ? PantallaFicha.deReto(this, c.reto()) : new PantallaFicha(this, c.icono().getItem()));
 		return true;
 	}
 
@@ -236,6 +239,12 @@ public final class PantallaCarton extends Screen {
 			Paquetes.CasillaRed c = e.casillas().get(hover);
 			List<Component> lineas = new ArrayList<>();
 			lineas.add(c.icono().getHoverName());
+			if (c.esReto()) lineas.add(Component.translatable("venatio.reto.etiqueta").withColor(Arte.COBRE));
+			if (c.cantidad() > 1 && colorVisto != null && c.logros().stream().noneMatch(l -> l.equipo() == visto)) {
+				Component quien = visto == e.miEquipo() ? Component.translatable("venatio.carton.progreso.tuyo", c.progresoDe(visto), c.cantidad())
+					: Component.translatable("venatio.carton.progreso.de", colorVisto.nombre(), c.progresoDe(visto), c.cantidad());
+				lineas.add(quien.copy().withColor(Arte.ORO));
+			}
 			if (c.logros().isEmpty()) {
 				lineas.add(Component.translatable("venatio.pantalla.pendiente").withColor(Arte.GRIS));
 			} else {
@@ -244,7 +253,7 @@ public final class PantallaCarton extends Screen {
 					if (eq != null) lineas.add(Component.translatable("venatio.pantalla.conseguida", eq.nombre(), EstadoCliente.reloj(l.segundo())));
 				}
 			}
-			lineas.add(Component.translatable("venatio.fichas.clic_para_ver").withColor(Arte.GRIS));
+			lineas.add(Component.translatable(c.esReto() ? "venatio.reto.clic_para_ver" : "venatio.fichas.clic_para_ver").withColor(Arte.GRIS));
 			g.setTooltipForNextFrame(font, lineas, java.util.Optional.empty(), mouseX, mouseY);
 		}
 	}
