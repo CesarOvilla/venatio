@@ -230,6 +230,7 @@ public final class PruebaArte implements FabricClientGameTest {
 		paso("Cuenta atrás dibujada por el cliente y entrada del cartón");
 
 		sp.getServer().waitFor(s -> fase(s) == Partida.Fase.JUGANDO, 20 * 30);
+		protegerBot(sp);
 		ctx.waitFor(mc -> Animaciones.inicioYa() != Long.MIN_VALUE, 100);
 		long ya = ctx.computeOnClient(mc -> Animaciones.inicioYa());
 		reloj(ctx, ya + 110);
@@ -393,6 +394,7 @@ public final class PruebaArte implements FabricClientGameTest {
 		sp.getServer().runCommand("venatio meta 3");
 		sp.getServer().runCommand("venatio iniciar");
 		sp.getServer().waitFor(s -> fase(s) == Partida.Fase.JUGANDO, 20 * 180);
+		protegerBot(sp);
 		ctx.waitTicks(50);
 		ctx.takeScreenshot("arte_40_rastreo");
 
@@ -433,6 +435,7 @@ public final class PruebaArte implements FabricClientGameTest {
 		sp.getServer().runCommand("venatio modo lockout");
 		sp.getServer().runCommand("venatio iniciar");
 		sp.getServer().waitFor(s -> fase(s) == Partida.Fase.JUGANDO, 20 * 180);
+		protegerBot(sp);
 		ctx.waitTicks(30);
 		sp.getServer().runCommand("give Bot1 " + item(sp, 0));
 		sp.getServer().runCommand("give Bot1 " + item(sp, 6));
@@ -507,6 +510,15 @@ public final class PruebaArte implements FabricClientGameTest {
 	private static KeyMapping tecla(ClientGameTestContext ctx, String nombre) {
 		return ctx.computeOnClient(mc -> Arrays.stream(mc.options.keyMappings)
 			.filter(k -> k.getName().equals(nombre)).findFirst().orElseThrow());
+	}
+
+	/**
+	 * Bot1 no tiene IA: si el punto de aparición de Azul queda junto al agua se ahoga y sale del server, y el resto de la
+	 * prueba ya no lo encuentra (pasó con una semilla al azar). Los efectos se pierden al empezar cada partida.
+	 */
+	private static void protegerBot(TestSingleplayerContext sp) {
+		sp.getServer().runCommand("effect give Bot1 minecraft:water_breathing infinite 0 true");
+		sp.getServer().runCommand("effect give Bot1 minecraft:resistance infinite 4 true");
 	}
 
 	private static ServerPlayer bot(MinecraftServer s) {
