@@ -1,12 +1,20 @@
 package dev.venatio.info;
 
 import dev.venatio.Venatio;
+import dev.venatio.carton.Exclusiones;
 import dev.venatio.carton.Pool;
+import dev.venatio.carton.Reto;
+import dev.venatio.carton.Retos;
+import dev.venatio.juego.Ajustes;
+import dev.venatio.juego.Juego;
 import dev.venatio.red.PaquetesFicha;
 import dev.venatio.red.PaquetesFicha.Ficha;
 import dev.venatio.red.PaquetesFicha.Fuente;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -53,7 +61,36 @@ public final class Fichas {
 		});
 		ServerPlayNetworking.registerGlobalReceiver(PaquetesFicha.PedirFicha.TYPE, (p, ctx) -> responderFicha(ctx.player(), p.item()));
 		ServerPlayNetworking.registerGlobalReceiver(PaquetesFicha.PedirItemsPosibles.TYPE,
-			(p, ctx) -> ServerPlayNetworking.send(ctx.player(), new PaquetesFicha.ItemsPosibles(entradasPool)));
+			(p, ctx) -> ServerPlayNetworking.send(ctx.player(), itemsPosibles(ctx.player())));
+		ServerPlayNetworking.registerGlobalReceiver(PaquetesFicha.AlternarExclusion.TYPE, (p, ctx) -> alternarExclusion(ctx.player(), p.entrada()));
+		ServerPlayNetworking.registerGlobalReceiver(PaquetesFicha.PedirFichaReto.TYPE, (p, ctx) -> responderFichaReto(ctx.player(), p.reto()));
+	}
+
+	private static PaquetesFicha.ItemsPosibles itemsPosibles(ServerPlayer p) {
+		return new PaquetesFicha.ItemsPosibles(entradasPool, List.copyOf(Exclusiones.lista()), esAnfitrion(p));
+	}
+
+	private static boolean esAnfitrion(ServerPlayer p) {
+		return Commands.LEVEL_GAMEMASTERS.check(p.permissions());
+	}
+
+	/** Las entradas quitadas cambiaron: todos reciben la lista nueva (la pantalla de items posibles se actualiza sola). */
+	public static void enviarItemsPosiblesATodos() {
+		MinecraftServer server = Juego.INSTANCIA.server();
+		if (server == null) return;
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+			if (ServerPlayNetworking.canSend(p, PaquetesFicha.ItemsPosibles.TYPE)) ServerPlayNetworking.send(p, itemsPosibles(p));
+		}
+	}
+
+	/** Clic derecho de un operador en "Items posibles": quita la entrada del pool o la vuelve a poner. */
+	private static void alternarExclusion(ServerPlayer p, String entrada) {
+		if (!esAnfitrion(p)) {
+			p.sendSystemMessage(Component.translatable("venatio.pool.error.permiso").withStyle(ChatFormatting.RED));
+			return;
+		}
+		Component error = Ajustes.excluir(entrada, !Exclusiones.excluida(entrada));
+		if (error != null) p.sendSystemMessage(error.copy().withStyle(ChatFormatting.RED));
 	}
 
 	private static void construir(MinecraftServer server) {
@@ -98,6 +135,63 @@ public final class Fichas {
 		return new Ficha(id, recetas.de(item), recetas.destilacionesDe(item), fuentesCon(item, pista), pista.texto(),
 			Optional.ofNullable(grupo));
 	}
+
+	private static void responderFichaReto(ServerPlayer jugador, String id) {
+		Reto r = Retos.porId(id);
+		if (r == null || recetas == null || fuentes == null) return;
+		ServerPlayNetworking.send(jugador, new PaquetesFicha.FichaReto(id, fichaReto(r)));
+	}
+
+	/**
+	 * Ficha de una casilla de logro: primero dónde lograrlo (los biomas, el mob con dónde aparece, estructuras útiles) y
+	 * después recetas, procedencia y pista del item relacionado (la cama para dormir, la comida para comer…).
+	 */
+	public static Ficha fichaReto(Reto r) {
+		List<Fuente> lista = new ArrayList<>();
+		switch (r.tipo()) {
+			case BIOMA -> r.objetivos().forEach(b -> lista.add(new Fuente(Fuente.BIOMA, b, Fuente.BIOMA_LOGRO, Optional.of(b), List.of(), List.of())));
+			case MATAR -> r.objetivos().forEach(m -> BuiltInRegistries.ENTITY_TYPE.getOptional(m).ifPresent(t -> lista.add(fuentes.mob(t, Fuente.BUSCAR))));
+			default -> {}
+		}
+		for (String extra : EXTRAS_RETO.getOrDefault(r.id(), List.of())) {
+			Identifier id = Identifier.parse(extra.substring(extra.indexOf(':') + 1));
+			switch (extra.substring(0, extra.indexOf(':'))) {
+				case "mob" -> BuiltInRegistries.ENTITY_TYPE.getOptional(id).ifPresent(t -> lista.add(fuentes.mob(t, Fuente.BUSCAR)));
+				case "estructura" -> lista.add(fuentes.estructura(id, Fuente.NATURAL));
+				default -> lista.add(bioma(id));
+			}
+		}
+		Item rel = r.itemRelacionado();
+		if (rel == null) {
+			return new Ficha(BuiltInRegistries.ITEM.getKey(r.itemIcono()), List.of(), List.of(), lista, "", Optional.empty());
+		}
+		Ficha delItem = ficha(rel);
+		Set<String> vistas = new HashSet<>();
+		for (Fuente f : lista) vistas.add(f.tipo() + "|" + f.id());
+		for (Fuente f : delItem.fuentes()) if (vistas.add(f.tipo() + "|" + f.id())) lista.add(f);
+		return new Ficha(delItem.item(), delItem.recetas(), delItem.destilaciones(), lista, delItem.pista(), delItem.grupo());
+	}
+
+	private static Fuente bioma(Identifier id) {
+		return new Fuente(Fuente.BIOMA, id, 0, Optional.of(id), List.of(), List.of());
+	}
+
+	/** Lo que ayuda a lograr algunos logros además de su item: "mob:…", "estructura:…" o "bioma:…" (ids de minecraft). */
+	private static final Map<String, List<String>> EXTRAS_RETO = Map.ofEntries(
+		Map.entry("domesticar", List.of("mob:wolf", "mob:cat", "mob:parrot", "mob:horse")),
+		Map.entry("criar", List.of("mob:cow", "mob:sheep", "mob:pig", "mob:chicken")),
+		Map.entry("montar_caballo", List.of("mob:horse")),
+		Map.entry("montar_cerdo", List.of("mob:pig")),
+		Map.entry("montar_strider", List.of("mob:strider")),
+		Map.entry("comerciar", List.of("estructura:village_plains")),
+		Map.entry("campana", List.of("estructura:village_plains")),
+		Map.entry("nether", List.of("estructura:ruined_portal")),
+		Map.entry("minar_obsidiana", List.of("estructura:ruined_portal")),
+		Map.entry("minar_esmeralda", List.of("bioma:windswept_hills", "bioma:meadow", "bioma:stony_peaks", "bioma:cherry_grove")),
+		Map.entry("minar_cuarzo", List.of("bioma:nether_wastes")),
+		Map.entry("pescar", List.of("bioma:river")),
+		Map.entry("altura_200", List.of("bioma:jagged_peaks", "bioma:stony_peaks")),
+		Map.entry("altura_menos_50", List.of("bioma:deep_dark", "bioma:dripstone_caves")));
 
 	/** Las pistas escritas a mano van primero; lo calculado no repite un mob o estructura que la pista ya nombra. */
 	private static List<Fuente> fuentesCon(Item item, Pistas.Pista pista) {

@@ -1,6 +1,8 @@
 package dev.venatio.cliente.fichas;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.venatio.carton.Reto;
+import dev.venatio.carton.Retos;
 import dev.venatio.red.PaquetesFicha.Destilacion;
 import dev.venatio.red.PaquetesFicha.Ficha;
 import dev.venatio.red.PaquetesFicha.Fuente;
@@ -21,6 +23,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplayContext;
 import org.jspecify.annotations.Nullable;
@@ -34,6 +37,9 @@ import java.util.Optional;
 /**
  * Ficha de un item: recetas dibujadas como la estación real (con páginas), de dónde sale (con "Guíame" para mobs,
  * estructuras y biomas) y la pista. Clic en un ingrediente abre su ficha; "Volver" regresa por el mismo camino.
+ *
+ * También la de una casilla de logro: cómo lograrlo, dónde (biomas, el mob, estructuras, con "Guíame") y la receta del
+ * item que hace falta (la cama para dormir, la comida para comer…).
  */
 public final class PantallaFicha extends Screen {
 	private static final Identifier RANURA = Identifier.withDefaultNamespace("container/slot");
@@ -45,9 +51,13 @@ public final class PantallaFicha extends Screen {
 	/** Margen inferior: el marco de la pantalla y un respiro. */
 	private static final int ABAJO = 10;
 
+	/** Lo que se está viendo: un item, o un logro (con su item relacionado, que puede faltar). */
+	private record Vista(@Nullable Item item, @Nullable Reto reto) {}
+
 	private final @Nullable Screen padre;
-	private final Deque<Item> historial = new ArrayDeque<>();
-	private Item item;
+	private final Deque<Vista> historial = new ArrayDeque<>();
+	private @Nullable Item item;
+	private @Nullable Reto reto;
 	private @Nullable Ficha ficha;
 	private List<RecetaVista> recetas = List.of();
 	private List<ItemStack> grupo = List.of();
@@ -67,9 +77,32 @@ public final class PantallaFicha extends Screen {
 		this.item = item;
 	}
 
-	/** Item cuya ficha se está mostrando. */
+	/** Ficha de una casilla de logro (id del logro). */
+	public static PantallaFicha deReto(@Nullable Screen padre, String id) {
+		Reto r = Retos.porId(id);
+		PantallaFicha p = new PantallaFicha(padre, r == null ? Items.BARRIER : r.itemRelacionado());
+		p.reto = r;
+		return p;
+	}
+
+	/** Item cuya ficha se está mostrando (en un logro, su item relacionado; puede ser null). */
 	public Item item() {
 		return item;
+	}
+
+	/** Logro cuya ficha se está mostrando, o null. */
+	public @Nullable Reto reto() {
+		return reto;
+	}
+
+	/** Logro sin item relacionado: no hay columna de recetas y la lista ocupa todo el ancho. */
+	private boolean sinRecetas() {
+		return reto != null && item == null;
+	}
+
+	/** Item para los iconos de las fuentes de bloque. */
+	private Item itemFuentes() {
+		return item != null ? item : reto != null ? reto.itemIcono() : Items.BARRIER;
 	}
 
 	/** true cuando la ficha ya llegó del servidor. */
@@ -98,7 +131,7 @@ public final class PantallaFicha extends Screen {
 	}
 
 	private void cargar() {
-		ficha = FichasCliente.ficha(item);
+		ficha = reto != null ? FichasCliente.fichaReto(reto.id()) : FichasCliente.ficha(item);
 		recetas = List.of();
 		grupo = List.of();
 		pista = List.of();
@@ -109,7 +142,13 @@ public final class PantallaFicha extends Screen {
 			for (Destilacion d : ficha.destilaciones()) lista.add(RecetaVista.de(d, ctx));
 			recetas = lista;
 			grupo = ficha.grupo().map(FichasCliente::itemsDelGrupo).orElse(List.of());
-			if (!ficha.pista().isEmpty()) pista = font.split(Component.literal(ficha.pista()), ancho);
+			if (reto != null) {
+				List<FormattedCharSequence> lineas = new ArrayList<>(font.split(reto.como(), ancho));
+				if (!ficha.pista().isEmpty()) lineas.addAll(font.split(Component.literal(ficha.pista()), ancho));
+				pista = lineas;
+			} else if (!ficha.pista().isEmpty()) {
+				pista = font.split(Component.literal(ficha.pista()), ancho);
+			}
 		}
 		pagina = Mth.clamp(pagina, 0, Math.max(0, recetas.size() - 1));
 		reubicar();
@@ -124,15 +163,15 @@ public final class PantallaFicha extends Screen {
 		yColumnas = y;
 		xCaja = x0;
 		yCaja = yColumnas + 12;
-		xLista = x0 + RecetaVista.ANCHO + 14;
-		anchoLista = ancho - RecetaVista.ANCHO - 14;
+		xLista = sinRecetas() ? x0 : x0 + RecetaVista.ANCHO + 14;
+		anchoLista = sinRecetas() ? ancho : ancho - RecetaVista.ANCHO - 14;
 		yLista = yColumnas + 12;
 		int yPaginas = yCaja + RecetaVista.ALTO + 4;
 		anterior.setX(xCaja);
 		anterior.setY(yPaginas);
 		siguiente.setX(xCaja + RecetaVista.ANCHO - 16);
 		siguiente.setY(yPaginas);
-		anterior.visible = siguiente.visible = recetas.size() > 1;
+		anterior.visible = siguiente.visible = recetas.size() > 1 && !sinRecetas();
 		scroll = Mth.clamp(scroll, 0, maxScroll());
 	}
 
@@ -147,9 +186,10 @@ public final class PantallaFicha extends Screen {
 	// ------------------------------------------------------------------------------------------------ navegación
 
 	private void navegar(Item nuevo) {
-		if (nuevo == item) return;
-		historial.push(item);
+		if (nuevo == item && reto == null) return;
+		historial.push(new Vista(item, reto));
 		item = nuevo;
+		reto = null;
 		pagina = 0;
 		scroll = 0;
 		cargar();
@@ -160,7 +200,9 @@ public final class PantallaFicha extends Screen {
 			onClose();
 			return;
 		}
-		item = historial.pop();
+		Vista previa = historial.pop();
+		item = previa.item();
+		reto = previa.reto();
 		pagina = 0;
 		scroll = 0;
 		cargar();
@@ -191,9 +233,13 @@ public final class PantallaFicha extends Screen {
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float a) {
 		Arte.panel(g, x0 - 8, 0, ancho + 16, height);
 		super.extractRenderState(g, mx, my, a);
-		ItemStack stack = new ItemStack(item);
+		ItemStack stack = reto != null ? reto.pila() : new ItemStack(item);
 		g.item(stack, x0 + 60, 8);
 		g.text(font, stack.getHoverName(), x0 + 80, 12, Arte.ORO, true);
+		if (reto != null) {
+			Component etiqueta = Component.translatable("venatio.reto.etiqueta");
+			g.text(font, etiqueta, x0 + ancho - font.width(etiqueta), 12, Arte.COBRE, true);
+		}
 		if (ficha == null) {
 			g.centeredText(font, Component.translatable("venatio.fichas.cargando"), width / 2, height / 2, GRIS);
 			return;
@@ -205,7 +251,7 @@ public final class PantallaFicha extends Screen {
 			y += font.lineHeight + 1;
 		}
 		ItemStack sobre = dibujarGrupo(g, mx, my);
-		ItemStack enReceta = dibujarRecetas(g, mx, my);
+		ItemStack enReceta = sinRecetas() ? ItemStack.EMPTY : dibujarRecetas(g, mx, my);
 		if (sobre.isEmpty()) sobre = enReceta;
 		dibujarFuentes(g, mx, my);
 
@@ -233,7 +279,9 @@ public final class PantallaFicha extends Screen {
 	}
 
 	private ItemStack dibujarRecetas(GuiGraphicsExtractor g, int mx, int my) {
-		g.text(font, Component.translatable("venatio.fichas.como_se_fabrica"), xCaja, yColumnas, Arte.ORO, true);
+		Component tituloRecetas = reto != null ? Component.translatable("venatio.reto.ficha.receta", new ItemStack(item).getHoverName())
+			: Component.translatable("venatio.fichas.como_se_fabrica");
+		g.text(font, tituloRecetas, xCaja, yColumnas, Arte.ORO, true);
 		if (recetas.isEmpty()) {
 			g.textWithWordWrap(font, Component.translatable("venatio.fichas.no_se_fabrica"), xCaja, yCaja + 2, RecetaVista.ANCHO, GRIS, true);
 			return ItemStack.EMPTY;
@@ -282,10 +330,11 @@ public final class PantallaFicha extends Screen {
 	}
 
 	private void dibujarFuentes(GuiGraphicsExtractor g, int mx, int my) {
-		g.text(font, Component.translatable("venatio.fichas.de_donde_sale"), xLista, yColumnas, Arte.ORO, true);
+		g.text(font, Component.translatable(reto != null ? "venatio.reto.ficha.donde" : "venatio.fichas.de_donde_sale"), xLista, yColumnas, Arte.ORO, true);
 		List<Fuente> fuentes = ficha.fuentes();
 		if (fuentes.isEmpty()) {
-			Component texto = Component.translatable(recetas.isEmpty() ? "venatio.fichas.sin_fuentes" : "venatio.fichas.solo_fabricando");
+			Component texto = Component.translatable(reto != null ? "venatio.reto.ficha.sin_lugares"
+				: recetas.isEmpty() ? "venatio.fichas.sin_fuentes" : "venatio.fichas.solo_fabricando");
 			g.textWithWordWrap(font, texto, xLista, yLista + 2, anchoLista, GRIS, true);
 			return;
 		}
@@ -298,7 +347,7 @@ public final class PantallaFicha extends Screen {
 			Fuente f = fuentes.get(i);
 			boolean sobreFila = dentro(mx, my, xLista, Math.max(y, yLista), anchoLista, Math.min(y + FILA, abajo) - Math.max(y, yLista));
 			if (sobreFila) g.fill(xLista, y, xLista + anchoLista, y + FILA - 1, 0x30FFFFFF);
-			g.item(VistaFuente.icono(f, item), xLista + 2, y + 3);
+			g.item(VistaFuente.icono(f, itemFuentes()), xLista + 2, y + 3);
 
 			int anchoTexto = anchoLista - 24;
 			int botonX = -1;
@@ -408,7 +457,7 @@ public final class PantallaFicha extends Screen {
 				return true;
 			}
 		}
-		if (!recetas.isEmpty()) {
+		if (!recetas.isEmpty() && !sinRecetas()) {
 			RecetaVista r = recetas.get(pagina);
 			if (!r.estacion.isEmpty() && dentro(mx, my, xCaja + RecetaVista.ANCHO - 21, yCaja + 3, 16, 16)) {
 				navegar(r.estacion.getItem());
@@ -454,7 +503,7 @@ public final class PantallaFicha extends Screen {
 			scroll = Mth.clamp(scroll - scrollY * FILA, 0, maxScroll());
 			return true;
 		}
-		if (recetas.size() > 1 && dentro(x, y, xCaja, yCaja, RecetaVista.ANCHO, RecetaVista.ALTO)) {
+		if (recetas.size() > 1 && !sinRecetas() && dentro(x, y, xCaja, yCaja, RecetaVista.ANCHO, RecetaVista.ALTO)) {
 			cambiarPagina(scrollY > 0 ? -1 : 1);
 			return true;
 		}

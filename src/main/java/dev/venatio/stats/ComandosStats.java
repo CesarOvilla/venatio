@@ -159,6 +159,8 @@ final class ComandosStats {
 	}
 
 	private static Component nombreItem(String id) {
+		Component logro = dev.venatio.carton.Objetivo.nombreDeClave(id);
+		if (logro != null) return logro;
 		Identifier ident = Identifier.tryParse(id);
 		Item item = ident == null ? null : BuiltInRegistries.ITEM.getValue(ident);
 		if (item == null || item == Items.AIR) return Component.literal(id);

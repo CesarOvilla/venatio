@@ -3,6 +3,7 @@ package dev.venatio.cliente;
 import dev.venatio.Venatio;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.red.Paquetes;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -225,6 +226,8 @@ public final class Arte {
 			}
 		}
 		if (delVisto && grande) sprite(g, PALOMITA, x + 2, y + tam - 10, 9, 8);
+		if (c.esReto()) esquinaReto(g, x, y, grande);
+		if (c.cantidad() > 1) cantidadCasilla(g, c, x, y, tam, visto, delVisto || exclusivo && !c.logros().isEmpty());
 
 		Animaciones.Casilla a = Animaciones.casilla(indice);
 		if (a == null) return;
@@ -243,6 +246,39 @@ public final class Arte {
 			g.outline(x, y, tam, tam, ARGB.color(f * 0.95f, rgb));
 			g.outline(x + 1, y + 1, tam - 2, tam - 2, ARGB.color(f * 0.45f, rgb));
 		}
+	}
+
+	/** Casilla de logro: esquina de cobre y oro arriba a la izquierda, para no confundirla con un item. */
+	private static void esquinaReto(GuiGraphicsExtractor g, int x, int y, boolean grande) {
+		int k = grande ? 9 : 7;
+		for (int r = 0; r < k; r++) g.fill(x, y + r, x + k - r, y + r + 1, 0xFF140D08);
+		for (int r = 0; r < k - 3; r++) g.fill(x + 1, y + 1 + r, x + k - 2 - r, y + 2 + r, r == 0 ? ORO_CLARO : ORO);
+	}
+
+	/**
+	 * Casilla con cantidad: las unidades que pide, abajo a la derecha, y lo que junta el equipo que se está viendo
+	 * (medidor vertical en el HUD, barra abajo en la pantalla grande). Sin medidor si ya es suya o está tomada.
+	 */
+	private static void cantidadCasilla(GuiGraphicsExtractor g, Paquetes.CasillaRed c, int x, int y, int tam, int visto, boolean cerrada) {
+		Font font = Minecraft.getInstance().font;
+		boolean grande = tam >= 24;
+		if (!cerrada) {
+			float fraccion = Math.min(1f, (float) c.progresoDe(visto) / c.cantidad());
+			int rgb = 0xFF000000 | (visto >= 0 ? color(visto) : ORO);
+			if (grande) {
+				int bx = x + 3, by = y + tam - 4, ancho = tam - 6;
+				g.fill(bx - 1, by - 1, bx + ancho + 1, by + 3, 0xFF140D08);
+				int lleno = Math.round(ancho * fraccion);
+				if (lleno > 0) g.fill(bx, by, bx + lleno, by + 2, rgb);
+			} else {
+				int alto = tam - 2;
+				g.fill(x + 1, y + 1, x + 3, y + 1 + alto, 0xFF140D08);
+				int lleno = Math.round(alto * fraccion);
+				if (lleno > 0) g.fill(x + 1, y + 1 + alto - lleno, x + 3, y + 1 + alto, rgb);
+			}
+		}
+		String n = String.valueOf(c.cantidad());
+		g.text(font, n, x + tam - 1 - font.width(n), grande ? y + tam - 14 : y + tam - 8, 0xFFFFFFFF, true);
 	}
 
 	private static boolean tiene(Paquetes.CasillaRed c, int equipo) {

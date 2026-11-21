@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Fichas e items posibles recibidos del servidor. Se piden una vez por conexión; solo se usa en el hilo del cliente. */
 public final class FichasCliente {
@@ -27,7 +28,14 @@ public final class FichasCliente {
 	private static final Map<Item, Long> pedidas = new HashMap<>();
 	private static final long REINTENTO = 3000;
 	private static List<String> itemsPosibles;
+	private static Set<String> excluidas = Set.of();
+	private static boolean editable;
+	/** Sube cada vez que llega la lista de items posibles (para que la pantalla se rehaga sola). */
+	private static int version;
 	private static long itemsPedidosEn = -REINTENTO;
+	/** Fichas de casillas de logro, por id del logro. */
+	private static final Map<String, Ficha> fichasReto = new HashMap<>();
+	private static final Map<String, Long> retosPedidos = new HashMap<>();
 
 	private FichasCliente() {}
 
@@ -37,7 +45,16 @@ public final class FichasCliente {
 				fichas.put(item, f);
 				pedidas.remove(item);
 			}));
-		ClientPlayNetworking.registerGlobalReceiver(PaquetesFicha.ItemsPosibles.TYPE, (p, ctx) -> itemsPosibles = p.entradas());
+		ClientPlayNetworking.registerGlobalReceiver(PaquetesFicha.ItemsPosibles.TYPE, (p, ctx) -> {
+			itemsPosibles = p.entradas();
+			excluidas = Set.copyOf(p.excluidas());
+			editable = p.editable();
+			version++;
+		});
+		ClientPlayNetworking.registerGlobalReceiver(PaquetesFicha.FichaReto.TYPE, (f, ctx) -> {
+			fichasReto.put(f.reto(), f.ficha());
+			retosPedidos.remove(f.reto());
+		});
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> limpiar());
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> limpiar());
 	}
@@ -46,7 +63,52 @@ public final class FichasCliente {
 		fichas.clear();
 		pedidas.clear();
 		itemsPosibles = null;
+		excluidas = Set.of();
+		editable = false;
 		itemsPedidosEn = -REINTENTO;
+		fichasReto.clear();
+		retosPedidos.clear();
+	}
+
+	/** Ficha de una casilla de logro si ya llegó; si no, la pide y devuelve null. */
+	static Ficha fichaReto(String reto) {
+		Ficha f = fichasReto.get(reto);
+		long ahora = Util.getMillis();
+		if (f == null && ahora - retosPedidos.getOrDefault(reto, -REINTENTO) >= REINTENTO
+			&& ClientPlayNetworking.canSend(PaquetesFicha.PedirFichaReto.TYPE)) {
+			retosPedidos.put(reto, ahora);
+			ClientPlayNetworking.send(new PaquetesFicha.PedirFichaReto(reto));
+		}
+		return f;
+	}
+
+	/** Entradas que el anfitrión quitó del pool. */
+	static Set<String> excluidas() {
+		return excluidas;
+	}
+
+	/** Si este jugador puede quitar o poner items del pool (operador). */
+	static boolean editable() {
+		return editable;
+	}
+
+	static int version() {
+		return version;
+	}
+
+	/** Vuelve a pedir la lista (al abrir la pantalla: pudo cambiar lo quitado o el permiso de operador). */
+	static void refrescarItemsPosibles() {
+		if (ClientPlayNetworking.canSend(PaquetesFicha.PedirItemsPosibles.TYPE)) {
+			itemsPedidosEn = Util.getMillis();
+			ClientPlayNetworking.send(PaquetesFicha.PedirItemsPosibles.INSTANCIA);
+		}
+	}
+
+	/** Pide al servidor quitar del pool (o volver a poner) una entrada. */
+	static void alternarExclusion(String entrada) {
+		if (ClientPlayNetworking.canSend(PaquetesFicha.AlternarExclusion.TYPE)) {
+			ClientPlayNetworking.send(new PaquetesFicha.AlternarExclusion(entrada));
+		}
 	}
 
 	/** La ficha si ya llegó; si no, la pide (una vez) y devuelve null. */

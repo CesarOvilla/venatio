@@ -79,7 +79,14 @@ public final class HudCarton {
 	}
 
 	private static int anchoRastreo(Font font, Paquetes.Estado e) {
-		return Math.max(ANCHO_RASTREO, 50 + font.width(e.casillas().get(0).icono().getHoverName()) + 10);
+		return Math.max(ANCHO_RASTREO, 50 + font.width(nombreRastreo(e.casillas().get(0), e.miEquipo())) + 10);
+	}
+
+	/** Lo que se busca; con cantidad, también lo que junta mi equipo ("16 × Tronco de roble  7/16"). */
+	private static Component nombreRastreo(Paquetes.CasillaRed c, int mio) {
+		if (c.cantidad() <= 1) return c.icono().getHoverName();
+		return c.icono().getHoverName().copy()
+			.append(Component.literal("  " + Math.min(c.progresoDe(mio), c.cantidad()) + "/" + c.cantidad()).withColor(Arte.ORO));
 	}
 
 	/** Rastreo: el item que busca mi equipo, en grande, con su nombre y la barra de progreso. */
@@ -101,7 +108,7 @@ public final class HudCarton {
 		int tx = x0 + 50;
 		Arte.icono(g, Arte.ICONO_RASTREO, tx, y0 + 6);
 		g.text(font, Component.translatable("venatio.hud.busca"), tx + 19, y0 + 10, Arte.GRIS, true);
-		g.text(font, c.icono().getHoverName(), tx, y0 + 25, Arte.CREMA, true);
+		g.text(font, nombreRastreo(c, mio), tx, y0 + 25, Arte.CREMA, true);
 
 		// Barra: en carrera, lo que lleva mi equipo hacia la meta; con límite de tiempo, el tiempo que queda.
 		boolean carrera = Modo.porId(e.modo()) == Modo.RASTREO_CARRERA;

@@ -18,7 +18,9 @@ public enum Opcion {
 	FIN_AUTOMATICO("fin_automatico", c -> c.finAutomatico, (c, v) -> c.finAutomatico = v),
 	RASTREO_INDEPENDIENTE("rastreo_independiente", c -> c.rastreoIndependiente, (c, v) -> c.rastreoIndependiente = v),
 	LOCALIZADOR("localizador", c -> c.localizador, (c, v) -> c.localizador = v),
-	LOCALIZADOR_RIVALES("localizador_rivales", c -> c.localizadorRivales, (c, v) -> c.localizadorRivales = v);
+	LOCALIZADOR_RIVALES("localizador_rivales", c -> c.localizadorRivales, (c, v) -> c.localizadorRivales = v),
+	LOGROS("logros", c -> c.logros, (c, v) -> c.logros = v),
+	CANTIDADES("cantidades", c -> c.cantidades, (c, v) -> c.cantidades = v);
 
 	public final String id;
 	private final Predicate<Configuracion> lector;

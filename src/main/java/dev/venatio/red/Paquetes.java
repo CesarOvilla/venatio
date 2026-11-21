@@ -39,7 +39,28 @@ public final class Paquetes {
 
 	public record Logro(int equipo, int segundo) {}
 
-	public record CasillaRed(ItemStack icono, List<Logro> logros) {}
+	/** Casillas con cantidad: unidades que junta ahora un equipo (ordinal del color). */
+	public record Progreso(int equipo, int cantidad) {}
+
+	/**
+	 * Una casilla. El nombre que se muestra va en el icono (también el de los logros y las cantidades).
+	 * reto: id del logro ("" si es de item); cantidad: unidades que pide (1 = basta una); progreso: lo que junta cada equipo.
+	 */
+	public record CasillaRed(ItemStack icono, List<Logro> logros, String reto, int cantidad, List<Progreso> progreso) {
+		public CasillaRed(ItemStack icono, List<Logro> logros) {
+			this(icono, logros, "", 1, List.of());
+		}
+
+		public boolean esReto() {
+			return !reto.isEmpty();
+		}
+
+		/** Unidades que junta ese equipo (0 si no hay dato). */
+		public int progresoDe(int equipo) {
+			for (Progreso p : progreso) if (p.equipo == equipo) return p.cantidad;
+			return 0;
+		}
+	}
 
 	public record EquipoRed(int color, int puntos, List<String> miembros) {}
 
@@ -80,6 +101,13 @@ public final class Paquetes {
 					buf.writeVarInt(l.equipo);
 					buf.writeVarInt(l.segundo);
 				}
+				buf.writeUtf(c.reto);
+				buf.writeVarInt(c.cantidad);
+				buf.writeVarInt(c.progreso.size());
+				for (Progreso p : c.progreso) {
+					buf.writeVarInt(p.equipo);
+					buf.writeVarInt(p.cantidad);
+				}
 			}
 			buf.writeVarInt(e.equipos.size());
 			for (EquipoRed q : e.equipos) {
@@ -108,7 +136,12 @@ public final class Paquetes {
 				int nl = buf.readVarInt();
 				List<Logro> logros = new ArrayList<>(nl);
 				for (int j = 0; j < nl; j++) logros.add(new Logro(buf.readVarInt(), buf.readVarInt()));
-				casillas.add(new CasillaRed(icono, logros));
+				String reto = buf.readUtf();
+				int cantidad = buf.readVarInt();
+				int np = buf.readVarInt();
+				List<Progreso> juntado = new ArrayList<>(np);
+				for (int j = 0; j < np; j++) juntado.add(new Progreso(buf.readVarInt(), buf.readVarInt()));
+				casillas.add(new CasillaRed(icono, logros, reto, cantidad, juntado));
 			}
 			int ne = buf.readVarInt();
 			List<EquipoRed> equipos = new ArrayList<>(ne);

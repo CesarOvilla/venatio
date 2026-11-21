@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import dev.venatio.Venatio;
 import dev.venatio.juego.ResumenPartida;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -256,7 +255,7 @@ public final class Estadisticas {
 				ResumenPartida.Hito rapida = rapidas.get(uuid);
 				if (rapida != null && (j.casillaMasRapida == null || rapida.segundo() < j.casillaMasRapida.segundos)) {
 					CasillaRapida c = new CasillaRapida();
-					c.item = BuiltInRegistries.ITEM.getKey(rapida.icono().getItem()).toString();
+					c.item = dev.venatio.carton.Objetivo.clave(rapida.icono());
 					c.segundos = rapida.segundo();
 					j.casillaMasRapida = c;
 				}

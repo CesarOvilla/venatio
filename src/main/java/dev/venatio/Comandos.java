@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import dev.venatio.carton.Dificultad;
+import dev.venatio.carton.Exclusiones;
 import dev.venatio.juego.Ajustes;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.juego.Juego;
@@ -12,8 +14,12 @@ import dev.venatio.juego.Modo;
 import dev.venatio.juego.Opcion;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 /** /venatio …: todos los comandos del juego, en español. Los de configuración son para el anfitrión (operador). */
@@ -71,6 +77,22 @@ public final class Comandos {
 		}
 		raiz.then(opcion);
 
+		LiteralArgumentBuilder<CommandSourceStack> dificultad = anfitrion("dificultad");
+		for (Dificultad dif : Dificultad.values()) {
+			dificultad.then(Commands.literal(dif.id()).executes(ctx -> responder(ctx, Ajustes.dificultad(dif), null)));
+		}
+		raiz.then(dificultad);
+
+		// Pool: quitar o volver a poner items (se guarda en config/venatio/pool.json)
+		raiz.then(Commands.literal("pool")
+			.then(Commands.literal("lista").executes(Comandos::listaPool))
+			.then(anfitrion("quitar").then(Commands.argument("item", IdentifierArgument.id())
+				.suggests((ctx, b) -> SharedSuggestionProvider.suggest(sinAlmohadilla(j.pool().entradas(), Exclusiones.lista(), false), b))
+				.executes(ctx -> responder(ctx, Ajustes.excluir(entrada(ctx), true), null))))
+			.then(anfitrion("poner").then(Commands.argument("item", IdentifierArgument.id())
+				.suggests((ctx, b) -> SharedSuggestionProvider.suggest(sinAlmohadilla(Exclusiones.lista(), Exclusiones.lista(), true), b))
+				.executes(ctx -> responder(ctx, Ajustes.excluir(entrada(ctx), false), null)))));
+
 		raiz.then(anfitrion("iniciar").executes(ctx -> responder(ctx, j.iniciar(), null)));
 		raiz.then(anfitrion("terminar").executes(ctx -> responder(ctx, j.terminar(), null)));
 
@@ -89,6 +111,35 @@ public final class Comandos {
 		}
 		if (exito != null) ctx.getSource().sendSuccess(exito, false);
 		return 1;
+	}
+
+	/** Entrada del pool que escribió el anfitrión: el item, o el grupo si el id es de un tag ("minecraft:signs"). */
+	private static String entrada(CommandContext<CommandSourceStack> ctx) {
+		String id = IdentifierArgument.getId(ctx, "item").toString();
+		String e = Ajustes.entradaDelPool(id);
+		return e != null ? e : id;
+	}
+
+	/** Las entradas como se escriben en el comando (los grupos sin "#"); quitadas: true solo las quitadas, false solo las que no. */
+	private static java.util.List<String> sinAlmohadilla(java.util.Collection<String> entradas, Set<String> excluidas, boolean quitadas) {
+		return entradas.stream().filter(e -> excluidas.contains(e) == quitadas).map(e -> e.startsWith("#") ? e.substring(1) : e).toList();
+	}
+
+	private static int listaPool(CommandContext<CommandSourceStack> ctx) {
+		Set<String> quitadas = Exclusiones.lista();
+		if (quitadas.isEmpty()) {
+			ctx.getSource().sendSuccess(() -> Component.translatable("venatio.pool.lista.vacia"), false);
+			return 1;
+		}
+		MutableComponent lista = Component.empty();
+		boolean primera = true;
+		for (String e : quitadas) {
+			if (!primera) lista.append(", ");
+			lista.append(Ajustes.nombreEntrada(e));
+			primera = false;
+		}
+		ctx.getSource().sendSuccess(() -> Component.translatable("venatio.pool.lista", quitadas.size(), lista), false);
+		return quitadas.size();
 	}
 
 	private static int ayuda(CommandContext<CommandSourceStack> ctx) {
