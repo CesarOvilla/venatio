@@ -5,6 +5,7 @@
 	"name": "Venatio",
 	"description": "Bingo de Minecraft y cacería de items para jugar con amigos.",
 	"license": "MIT",
+	"icon": "assets/venatio/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": ["dev.venatio.Venatio"],

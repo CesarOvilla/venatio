@@ -24,13 +24,19 @@ import java.util.Set;
  */
 public final class PantallaCarton extends Screen {
 	private static final int CELDA = 30;
-	private static final int BLANCO = 0xFFFFFFFF;
-	private static final int GRIS = 0xFFAAAAAA;
+	/** Separación entre el marco del cartón y las casillas. */
+	private static final int DENTRO = Arte.BORDE_CARTON + 1;
 	private static final int ANCHO_BOTON = 110;
+	/** Columna derecha: emblema y botón de cada equipo. */
+	private static final int ANCHO_COLUMNA = 18 + ANCHO_BOTON;
+	private static final int ALTO_CABECERA = 24;
+	private static final int ALTO_PIE = 26;
 
 	/** Equipo cuyo cartón se está viendo; -1 = el mío. */
 	private int vista = -1;
 	private int equiposConBoton = -1;
+	/** Momento en que se abrió, para la entrada de las casillas; -1 hasta el primer init. */
+	private long abierta = -1;
 
 	public PantallaCarton() {
 		super(Component.translatable("venatio.pantalla.titulo"));
@@ -43,17 +49,29 @@ public final class PantallaCarton extends Screen {
 
 	@Override
 	protected void init() {
-		addRenderableWidget(Button.builder(Component.translatable("venatio.fichas.boton_items_posibles"),
-			b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton()))).bounds(width / 2 - 70, height - 26, 140, 20).build());
+		if (abierta < 0) {
+			abierta = Animaciones.ahora();
+			Sonidos.tocar(Sonidos.CARTON_ABRIR);
+		}
 		Paquetes.Estado e = EstadoCliente.estado;
 		equiposConBoton = e == null ? 0 : e.equipos().size();
-		if (e == null || e.casillas().isEmpty()) return;
-		int x = xPanel(e), y = y0(e) + 14;
+		if (e == null || e.casillas().isEmpty()) {
+			addRenderableWidget(Button.builder(Component.translatable("venatio.fichas.boton_items_posibles"),
+				b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton()))).bounds(width / 2 - 70, height / 2 + 14, 140, 20).build());
+			return;
+		}
+		int lado = e.tamano() * CELDA;
+		addRenderableWidget(Button.builder(Component.translatable("venatio.fichas.boton_items_posibles"),
+			b -> minecraft.gui.setScreen(new PantallaItemsPosibles(this, itemsDelCarton())))
+			.bounds(x0(e) + lado / 2 - 70, y0(e) + lado + DENTRO + 3, 140, 20).build());
+		int x = xPanel(e) + 18, y = y0(e) + 12;
 		for (Paquetes.EquipoRed q : e.equipos()) {
 			ColorEquipo c = ColorEquipo.porOrdinal(q.color());
 			if (c == null) continue;
+			// El nombre va en blanco (el color ya lo da el emblema): sobre el gris del botón, el azul o el morado no se leen.
 			addRenderableWidget(Button.builder(
-					c.nombre().copy().append(Component.translatable("venatio.pantalla.puntos", q.puntos())),
+					Component.translatable("venatio.equipo." + c.id()).append(q.puntos() == 1
+						? Component.translatable("venatio.pantalla.punto") : Component.translatable("venatio.pantalla.puntos", q.puntos())),
 					b -> vista = c.ordinal())
 				.bounds(x, y, ANCHO_BOTON, 18).build());
 			y += 21;
@@ -74,6 +92,13 @@ public final class PantallaCarton extends Screen {
 		if (mx < x0 || my < y0 || mx >= x0 + lado || my >= y0 + lado) return -1;
 		int i = (int) ((my - y0) / CELDA) * n + (int) ((mx - x0) / CELDA);
 		return i < e.casillas().size() ? i : -1;
+	}
+
+	/** Centro (en coordenadas de interfaz) de una casilla, para las pruebas. */
+	public int[] centroDe(int indice) {
+		Paquetes.Estado e = EstadoCliente.estado;
+		int n = e.tamano();
+		return new int[]{x0(e) + (indice % n) * CELDA + CELDA / 2, y0(e) + (indice / n) * CELDA + CELDA / 2};
 	}
 
 	/** Clic en una casilla: abre su ficha (cómo se consigue). */
@@ -123,12 +148,13 @@ public final class PantallaCarton extends Screen {
 		return e.equipos().isEmpty() ? -1 : e.equipos().get(0).color();
 	}
 
+	/** Esquina de la primera casilla. El conjunto (cabecera, cartón, columna de equipos y pie) va centrado. */
 	private int x0(Paquetes.Estado e) {
-		return width / 2 - (e.tamano() * CELDA) / 2 - 60;
+		return (width - (e.tamano() * CELDA + 16 + ANCHO_COLUMNA)) / 2;
 	}
 
 	private int y0(Paquetes.Estado e) {
-		return height / 2 - (e.tamano() * CELDA) / 2;
+		return (height - (e.tamano() * CELDA + ALTO_CABECERA + ALTO_PIE)) / 2 + ALTO_CABECERA;
 	}
 
 	private int xPanel(Paquetes.Estado e) {
@@ -139,8 +165,12 @@ public final class PantallaCarton extends Screen {
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
 		Paquetes.Estado e = EstadoCliente.estado;
 		if (e == null || e.casillas().isEmpty()) {
+			Component aviso = Component.translatable("venatio.pantalla.sin_partida");
+			int medio = Math.max(90, font.width(aviso) / 2 + 16);
+			Arte.panel(g, width / 2 - medio, height / 2 - 34, medio * 2, 78);
+			Arte.placa(g, font, title, width / 2, height / 2 - 44, Arte.ICONO_BINGO);
+			g.centeredText(font, aviso, width / 2, height / 2 - 6, Arte.CREMA);
 			super.extractRenderState(g, mouseX, mouseY, a);
-			g.centeredText(font, Component.translatable("venatio.pantalla.sin_partida"), width / 2, height / 2 - 4, BLANCO);
 			return;
 		}
 
@@ -150,70 +180,71 @@ public final class PantallaCarton extends Screen {
 		int visto = equipoVisto(e);
 		ColorEquipo colorVisto = ColorEquipo.porOrdinal(visto);
 		boolean exclusivo = Modo.porId(e.modo()).exclusivo();
+		int xp = xPanel(e);
 
+		// Marco de la pantalla, placa con el título y, a su derecha, reloj y modo.
+		Arte.panel(g, x0 - DENTRO - 10, y0 - ALTO_CABECERA - 10, lado + 16 + ANCHO_COLUMNA + DENTRO + 20, lado + ALTO_CABECERA + ALTO_PIE + 20);
 		Component titulo = colorVisto == null ? title
 			: Component.translatable(visto == e.miEquipo() ? "venatio.pantalla.tu_carton" : "venatio.pantalla.carton_de", colorVisto.nombre());
-		g.centeredText(font, titulo.copy().append(" · ").append(HudCarton.lineaReloj(e)), x0 + lado / 2, y0 - 16, BLANCO);
-		g.fill(x0 - 3, y0 - 3, x0 + lado + 3, y0 + lado + 3, 0xC0000000);
+		Arte.placa(g, font, titulo, x0 + lado / 2, y0 - ALTO_CABECERA - 4, Arte.ICONO_BINGO);
+		Arte.icono(g, Arte.ICONO_RELOJ, xp, y0 - ALTO_CABECERA - 2);
+		g.text(font, HudCarton.lineaReloj(e), xp + 19, y0 - ALTO_CABECERA + 2, Arte.CREMA, true);
 
+		// Cartón: las casillas entran en diagonal al abrir.
+		Arte.marcoCarton(g, x0 - DENTRO, y0 - DENTRO, lado - 1 + 2 * DENTRO, lado - 1 + 2 * DENTRO);
+		long entrada = Animaciones.ahora() - abierta;
 		int hover = -1;
 		for (int i = 0; i < e.casillas().size(); i++) {
 			Paquetes.CasillaRed c = e.casillas().get(i);
 			int cx = x0 + (i % n) * CELDA, cy = y0 + (i / n) * CELDA;
-			boolean delVisto = c.logros().stream().anyMatch(l -> l.equipo() == visto);
-			int fondo;
-			if (delVisto) fondo = 0xD0000000 | HudCarton.color(visto);
-			else if (exclusivo && !c.logros().isEmpty()) fondo = 0x50000000 | HudCarton.color(c.logros().get(0).equipo());
-			else fondo = 0x40FFFFFF;
-			g.fill(cx + 1, cy + 1, cx + CELDA - 1, cy + CELDA - 1, fondo);
-			g.item(c.icono(), cx + (CELDA - 16) / 2, cy + (CELDA - 16) / 2);
-			if (!exclusivo) {
-				// Puntitos: los demás equipos que también la tienen.
-				int px = cx + CELDA - 6;
-				for (Paquetes.Logro l : c.logros()) {
-					if (l.equipo() == visto) continue;
-					g.nextStratum();
-					g.fill(px, cy + CELDA - 6, px + 4, cy + CELDA - 2, 0xFF000000 | HudCarton.color(l.equipo()));
-					px -= 5;
-				}
-			}
-			if (mouseX >= cx && mouseX < cx + CELDA && mouseY >= cy && mouseY < cy + CELDA) {
-				hover = i;
-				g.nextStratum();
-				g.outline(cx, cy, CELDA, CELDA, BLANCO);
-			}
+			Arte.fondoCasilla(g, c, cx, cy, CELDA - 1, visto, exclusivo);
+			long retraso = (i % n + i / n) * 18L;
+			Arte.itemCasilla(g, c, i, cx, cy, CELDA - 1, entrada < retraso ? 0f : entrada > retraso + 160 ? 1f : Animaciones.rebote((entrada - retraso) / 160f));
+			if (mouseX >= cx && mouseX < cx + CELDA && mouseY >= cy && mouseY < cy + CELDA) hover = i;
+		}
+		g.nextStratum();
+		for (int i = 0; i < e.casillas().size(); i++) {
+			int cx = x0 + (i % n) * CELDA, cy = y0 + (i / n) * CELDA;
+			Arte.encimaCasilla(g, e.casillas().get(i), i, cx, cy, CELDA - 1, visto, exclusivo);
+			if (i == hover) g.outline(cx - 1, cy - 1, CELDA + 1, CELDA + 1, Arte.ORO_CLARO);
 		}
 
-		// Panel derecho: botones de equipos (widgets) e integrantes del equipo que se está viendo.
-		int xp = xPanel(e);
-		g.text(font, Component.translatable("venatio.pantalla.equipos"), xp, y0, BLANCO, true);
+		// Columna derecha: emblema y botón de cada equipo, y los integrantes del que se está viendo.
+		g.text(font, Component.translatable("venatio.pantalla.equipos"), xp, y0, Arte.ORO, true);
+		int ye = y0 + 12;
+		for (Paquetes.EquipoRed q : e.equipos()) {
+			if (ColorEquipo.porOrdinal(q.color()) == null) continue;
+			Arte.emblema(g, q.color(), xp, ye + 1);
+			if (q.color() == visto) g.outline(xp + 17, ye - 1, ANCHO_BOTON + 2, 20, Arte.ORO);
+			ye += 21;
+		}
 		super.extractRenderState(g, mouseX, mouseY, a);
-		int yMiembros = y0 + 14 + e.equipos().size() * 21 + 6;
+		int yMiembros = ye + 4;
 		for (Paquetes.EquipoRed q : e.equipos()) {
 			if (q.color() != visto) continue;
 			for (String m : q.miembros()) {
-				g.text(font, Component.literal("· " + m), xp + 2, yMiembros, GRIS, false);
+				g.text(font, Component.literal("· " + m), xp + 2, yMiembros, Arte.CREMA, false);
 				yMiembros += font.lineHeight + 1;
 			}
 		}
-		g.text(font, Component.translatable("venatio.pantalla.cambiar_vista"), xp, yMiembros + 6, GRIS, false);
+		g.textWithWordWrap(font, Component.translatable("venatio.pantalla.cambiar_vista"), xp, yMiembros + 5, ANCHO_COLUMNA, Arte.GRIS);
 
 		Component fase = e.fase() == Paquetes.Estado.JUGANDO ? null : HudCarton.lineaFase(e);
-		if (fase != null) g.centeredText(font, fase, x0 + lado / 2, y0 + lado + 8, BLANCO);
+		if (fase != null) g.textWithWordWrap(font, fase, xp, y0 + lado + DENTRO + 4, ANCHO_COLUMNA, Arte.AMARILLO);
 
 		if (hover >= 0) {
 			Paquetes.CasillaRed c = e.casillas().get(hover);
 			List<Component> lineas = new ArrayList<>();
 			lineas.add(c.icono().getHoverName());
 			if (c.logros().isEmpty()) {
-				lineas.add(Component.translatable("venatio.pantalla.pendiente").withColor(GRIS));
+				lineas.add(Component.translatable("venatio.pantalla.pendiente").withColor(Arte.GRIS));
 			} else {
 				for (Paquetes.Logro l : c.logros()) {
 					ColorEquipo eq = ColorEquipo.porOrdinal(l.equipo());
 					if (eq != null) lineas.add(Component.translatable("venatio.pantalla.conseguida", eq.nombre(), EstadoCliente.reloj(l.segundo())));
 				}
 			}
-			lineas.add(Component.translatable("venatio.fichas.clic_para_ver").withColor(GRIS));
+			lineas.add(Component.translatable("venatio.fichas.clic_para_ver").withColor(Arte.GRIS));
 			g.setTooltipForNextFrame(font, lineas, java.util.Optional.empty(), mouseX, mouseY);
 		}
 	}

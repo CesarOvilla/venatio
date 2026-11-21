@@ -9,11 +9,9 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
@@ -41,13 +39,15 @@ public final class AyudasCliente {
 
 	static void registrar() {
 		ClientPlayNetworking.registerGlobalReceiver(PaquetesTienda.Tienda.TYPE, (t, ctx) -> {
+			// El minimapa comprado se nota porque su tiempo restante sube.
+			if (tienda != null && t.minimapaRestante() > tienda.minimapaRestante() + 1) Sonidos.tocar(Sonidos.COMPRA);
 			tienda = t;
 			tiendaRecibida = Util.getMillis();
 		});
 		ClientPlayNetworking.registerGlobalReceiver(PaquetesTienda.Guia.TYPE, (g, ctx) -> recibirGuia(g, ctx.client()));
 		ClientPlayNetworking.registerGlobalReceiver(PaquetesTienda.GuiaTerminada.TYPE, (t, ctx) -> {
 			guia = null;
-			if (t.motivo() == PaquetesTienda.GuiaTerminada.LLEGADA) sonido(ctx.client(), 1.2f);
+			if (t.motivo() == PaquetesTienda.GuiaTerminada.LLEGADA) Sonidos.tocar(Sonidos.GUIA_LLEGADA);
 		});
 		ClientPlayNetworking.registerGlobalReceiver(PaquetesTienda.Marcas.TYPE, (m, ctx) -> recibirMarcas(m, ctx.client()));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> limpiar());
@@ -85,7 +85,7 @@ public final class AyudasCliente {
 		boolean nueva = guia == null || guia.tipo() != g.tipo() || !guia.objetivo().equals(g.objetivo());
 		guia = g;
 		guiaRecibida = Util.getMillis();
-		if (nueva) sonido(mc, 0.8f);
+		if (nueva) Sonidos.tocar(Sonidos.COMPRA);
 	}
 
 	private static void recibirMarcas(PaquetesTienda.Marcas m, Minecraft mc) {
@@ -97,12 +97,10 @@ public final class AyudasCliente {
 			if (marcasVistas.add(r.id())) hayNueva = true;
 		}
 		marcas = nuevas;
-		if (hayNueva) mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BELL, 1.6f));
+		if (hayNueva) Sonidos.tocar(Sonidos.MARCA);
 	}
 
-	private static void sonido(Minecraft mc, float tono) {
-		mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, tono));
-	}
+
 
 	// ---------------------------------------------------------------- consultas para pantallas y HUD
 

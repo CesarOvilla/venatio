@@ -203,12 +203,9 @@ public final class PruebaFichas implements FabricClientGameTest {
 		ctx.waitTicks(2);
 	}
 
-	/** Centro de una casilla en PantallaCarton (misma geometría que la pantalla: celdas de 30). */
+	/** Centro de una casilla en PantallaCarton. */
 	private static int[] centroCasilla(Minecraft mc, int i) {
-		Screen s = mc.gui.screen();
-		int n = Juego.INSTANCIA.partida().carton().tamano, lado = n * 30;
-		int x0 = s.width / 2 - lado / 2 - 60, y0 = s.height / 2 - lado / 2;
-		return new int[]{x0 + (i % n) * 30 + 15, y0 + (i / n) * 30 + 15};
+		return ((PantallaCarton) mc.gui.screen()).centroDe(i);
 	}
 
 	private static void idioma(ClientGameTestContext ctx, String codigo) {

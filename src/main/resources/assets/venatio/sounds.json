@@ -1,0 +1,138 @@
+{
+  "casilla": {
+    "subtitle": "subtitles.venatio.casilla",
+    "sounds": [
+      {
+        "name": "venatio:casilla_1",
+        "volume": 0.9
+      },
+      {
+        "name": "venatio:casilla_2",
+        "volume": 0.9
+      },
+      {
+        "name": "venatio:casilla_3",
+        "volume": 0.9
+      }
+    ]
+  },
+  "casilla_rival": {
+    "subtitle": "subtitles.venatio.casilla_rival",
+    "sounds": [
+      {
+        "name": "venatio:casilla_rival_1",
+        "volume": 0.45
+      },
+      {
+        "name": "venatio:casilla_rival_2",
+        "volume": 0.45
+      }
+    ]
+  },
+  "bingo": {
+    "subtitle": "subtitles.venatio.bingo",
+    "sounds": [
+      {
+        "name": "venatio:bingo",
+        "volume": 0.9
+      }
+    ]
+  },
+  "victoria": {
+    "subtitle": "subtitles.venatio.victoria",
+    "sounds": [
+      {
+        "name": "venatio:victoria"
+      }
+    ]
+  },
+  "derrota": {
+    "subtitle": "subtitles.venatio.derrota",
+    "sounds": [
+      {
+        "name": "venatio:derrota",
+        "volume": 0.8
+      }
+    ]
+  },
+  "fin": {
+    "subtitle": "subtitles.venatio.fin",
+    "sounds": [
+      {
+        "name": "venatio:fin",
+        "volume": 0.7
+      }
+    ]
+  },
+  "cuenta_tic": {
+    "subtitle": "subtitles.venatio.cuenta_tic",
+    "sounds": [
+      {
+        "name": "venatio:cuenta_tic",
+        "volume": 0.55
+      }
+    ]
+  },
+  "cuenta_ya": {
+    "subtitle": "subtitles.venatio.cuenta_ya",
+    "sounds": [
+      {
+        "name": "venatio:cuenta_ya",
+        "volume": 0.9
+      }
+    ]
+  },
+  "compra": {
+    "subtitle": "subtitles.venatio.compra",
+    "sounds": [
+      {
+        "name": "venatio:compra",
+        "volume": 0.6
+      }
+    ]
+  },
+  "marca": {
+    "subtitle": "subtitles.venatio.marca",
+    "sounds": [
+      {
+        "name": "venatio:marca",
+        "volume": 0.6
+      }
+    ]
+  },
+  "guia_llegada": {
+    "subtitle": "subtitles.venatio.guia_llegada",
+    "sounds": [
+      {
+        "name": "venatio:guia_llegada",
+        "volume": 0.7
+      }
+    ]
+  },
+  "rastreo_encontrado": {
+    "subtitle": "subtitles.venatio.rastreo_encontrado",
+    "sounds": [
+      {
+        "name": "venatio:rastreo_encontrado_1",
+        "volume": 0.9
+      },
+      {
+        "name": "venatio:rastreo_encontrado_2",
+        "volume": 0.9
+      },
+      {
+        "name": "venatio:rastreo_encontrado_3",
+        "volume": 0.9
+      }
+    ]
+  },
+  "carton_abrir": {
+    "subtitle": "subtitles.venatio.carton_abrir",
+    "sounds": [
+      {
+        "name": "venatio:carton_abrir",
+        "volume": 0.5
+      }
+    ]
+  }
+}

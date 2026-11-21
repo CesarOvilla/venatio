@@ -152,6 +152,7 @@ public final class Juego {
 		nuevo.experienceLevel = viejo.experienceLevel;
 		nuevo.totalExperience = viejo.totalExperience;
 		nuevo.experienceProgress = viejo.experienceProgress;
+		nuevo.setScore(viejo.getScore());
 	}
 
 	private void alReaparecer(ServerPlayer p) {

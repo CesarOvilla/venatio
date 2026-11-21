@@ -60,7 +60,7 @@ Polymer y sgui, que hacían falta para un cliente vanilla, se quitan: con mod de
 
 Teclas por defecto (se pueden cambiar en Controles, categoría "Venatio"): **B** cartón, **H** ayudas, **N** marca de equipo, **M** minimapa.
 
-**Arte y sonido propios:** marco del cartón, iconos de ayudas, marcas de equipo, sonidos de casilla conseguida, de bingo y de cuenta atrás; animaciones de inicio de partida (presentación de equipos), casilla conseguida, bingo y pantalla final. Todo viaja dentro del jar del mod; no hace falta resource pack aparte.
+**Arte y sonido propios (hecho):** identidad de pabellón de caza, como el lobby: madera oscura, cobre y dorado, con los colores de equipo vivos. Marco del cartón, casillas (vacía, tuya, de rival, bloqueada), emblema de cada equipo (color y figura), iconos, marco de las pantallas e icono del mod; sonidos sintetizados de casilla, bingo, victoria, derrota, cuenta atrás, compra, marca, guía y Rastreo; animaciones de entrada del cartón, cuenta atrás, casilla conseguida, bingo, victoria (banner, confeti y fuegos artificiales) y pantalla final. Los sprites y los sonidos se generan con `tools/arte/texturas.py` y `tools/arte/sonidos.py`; el dibujo vive en `cliente/Arte.java`, los tiempos en `cliente/Animaciones.java` y los sonidos en `cliente/Sonidos.java`. Todo viaja dentro del jar del mod; no hace falta resource pack aparte.
 
 ## 4. Ayudas con costo
 
@@ -179,7 +179,7 @@ Datos (pools, pistas, precios) en `data/venatio/…` con formato de datapack par
 | 2 | Instalador Mac/Linux/Windows | Hecho en local (Windows sin probar). Falta: publicar en GitHub, server en exaroton, prueba con amigos, AutoModpack |
 | 3 | Fichas: recetas, "de dónde sale", pistas en español, items posibles | Hecho |
 | 4 | Ayudas con costo: tienda, guías, minimapa limitado, marcas de equipo | Hecho |
-| 5 | Lobby construido, ranking, estadísticas, pantalla final, panel del anfitrión | Hecho. Falta: arte, sonidos y animaciones propios |
+| 5 | Lobby construido, ranking, estadísticas, pantalla final, panel del anfitrión; arte, sonidos y animaciones propios | Hecho |
 | 6 | Modo Rastreo (ItemFinder): normal y carrera, compartido o independiente | Hecho. Falta: casillas que no son items |
 
 Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runClientGameTest`).

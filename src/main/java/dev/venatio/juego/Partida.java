@@ -173,6 +173,7 @@ public final class Partida {
 			case CUENTA_ATRAS -> tickCuentaAtras();
 			case JUGANDO -> tickJugando();
 			case FINAL -> {
+				Fuegos.tick(this, ticks);
 				if (ticks >= SEGUNDOS_FINAL * 20) juego.cerrarPartida();
 			}
 		}
@@ -223,21 +224,10 @@ public final class Partida {
 		return new BlockPos(base.getX(), mundo.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, base.getX(), base.getZ()), base.getZ());
 	}
 
+	/** Los números y el "¡A cazar!" los dibuja el cliente (HudEfectos) a partir del estado y del evento INICIO. */
 	private void tickCuentaAtras() {
-		if (ticks % 20 == 1) {
-			int restantes = SEGUNDOS_CUENTA - ticks / 20;
-			if (restantes > 0) {
-				Component numero = Component.literal(String.valueOf(restantes));
-				for (ServerPlayer p : jugadoresEnLinea()) {
-					Jugadores.titulo(p, numero, Component.translatable("venatio.cuenta.subtitulo", cfg.modo.nombre()), 0, 25, 0);
-				}
-			}
-		}
 		if (ticks >= SEGUNDOS_CUENTA * 20) {
-			for (ServerPlayer p : jugadoresEnLinea()) {
-				Jugadores.congelar(p, false);
-				Jugadores.titulo(p, Component.translatable("venatio.cuenta.ya"), null, 0, 30, 10);
-			}
+			for (ServerPlayer p : jugadoresEnLinea()) Jugadores.congelar(p, false);
 			fase = Fase.JUGANDO;
 			ticks = 0;
 			juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.INICIO, -1, -1));
@@ -352,10 +342,7 @@ public final class Partida {
 			if (anunciados.add(c)) {
 				if (primerGanador == null) primerGanador = c;
 				juego.difundir(Component.translatable("venatio.bingo.sigue", c.nombre()));
-				for (ServerPlayer p : jugadoresEnLinea()) {
-					Jugadores.titulo(p, Component.translatable("venatio.bingo.titulo"), Component.translatable("venatio.bingo.sigue", c.nombre()), 5, 50, 15);
-				}
-				juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.VICTORIA, c.ordinal(), -1));
+				juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.BINGO, c.ordinal(), -1));
 			}
 		}
 	}
@@ -412,11 +399,7 @@ public final class Partida {
 		for (ColorEquipo c : equipos) {
 			juego.difundir(Component.translatable("venatio.final.puntos", c.nombre(), carton.puntos(c), carton.casillas.size()));
 		}
-		for (ServerPlayer p : jugadoresEnLinea()) {
-			boolean gano = ganador != null && ganador == equipoDe(p);
-			Component titulo = Component.translatable(gano ? "venatio.final.titulo.ganaste" : "venatio.final.titulo.fin");
-			Jugadores.titulo(p, titulo, resumen, 5, 80, 20);
-		}
+		// El banner del resultado lo dibuja el cliente con este evento; los fuegos artificiales salen en el tick del final.
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.VICTORIA, ganador == null ? -1 : ganador.ordinal(), -1));
 		juego.enviarEstadoATodos();
 		ModuloStats.partidaTerminada(this);

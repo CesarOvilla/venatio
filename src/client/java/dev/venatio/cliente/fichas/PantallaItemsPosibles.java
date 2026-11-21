@@ -1,5 +1,6 @@
 package dev.venatio.cliente.fichas;
 
+import dev.venatio.cliente.Arte;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,8 +21,7 @@ import java.util.Set;
  * Los que están en el cartón actual llevan marco dorado; clic en uno abre su ficha.
  */
 public final class PantallaItemsPosibles extends Screen {
-	private static final Identifier RANURA = Identifier.withDefaultNamespace("container/slot");
-	private static final int CELDA = 18, BLANCO = 0xFFFFFFFF, GRIS = 0xFFAAAAAA, DORADO = 0xFFFFC83D;
+	private static final int CELDA = 18, BLANCO = Arte.CREMA, GRIS = Arte.GRIS, DORADO = Arte.ORO;
 
 	private record Entrada(ItemStack icono, boolean grupo, int opciones) {}
 
@@ -68,10 +68,10 @@ public final class PantallaItemsPosibles extends Screen {
 			nuevas.add(new Entrada(FichasCliente.icono(e), grupo, opciones));
 		}
 		entradas = nuevas;
-		columnas = Math.max(1, Math.min(24, (width - 32) / CELDA));
+		columnas = Math.max(1, Math.min(24, (width - 48) / CELDA));
 		int filas = (entradas.size() + columnas - 1) / columnas;
 		x0 = (width - columnas * CELDA) / 2;
-		y0 = Math.max(44, (height - filas * CELDA) / 2);
+		y0 = Math.max(50, (height - filas * CELDA) / 2 + 12);
 	}
 
 	@Override
@@ -81,26 +81,31 @@ public final class PantallaItemsPosibles extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float a) {
-		super.extractRenderState(g, mx, my, a);
 		if (entradas == null) {
-			g.centeredText(font, title, width / 2, 12, BLANCO);
-			g.centeredText(font, Component.translatable("venatio.fichas.cargando"), width / 2, height / 2, GRIS);
+			Arte.panel(g, width / 2 - 110, height / 2 - 30, 220, 60);
+			Arte.placa(g, font, title, width / 2, height / 2 - 40, Arte.ICONO_BINGO);
+			g.centeredText(font, Component.translatable("venatio.fichas.cargando"), width / 2, height / 2 - 2, GRIS);
+			super.extractRenderState(g, mx, my, a);
 			return;
 		}
-		g.centeredText(font, title.copy().append(Component.literal(" (" + entradas.size() + ")").withColor(GRIS)), width / 2, 12, BLANCO);
-		g.centeredText(font, Component.translatable("venatio.fichas.items_posibles.ayuda"), width / 2, 28, GRIS);
+		int filasMarco = (entradas.size() + columnas - 1) / columnas;
+		Arte.panel(g, x0 - 12, y0 - 34, columnas * CELDA + 24, filasMarco * CELDA + 34 + (enCarton.isEmpty() ? 12 : 26));
+		super.extractRenderState(g, mx, my, a);
+		Arte.placa(g, font, title.copy().append(Component.literal(" (" + entradas.size() + ")").withColor(GRIS)), width / 2, y0 - 42, Arte.ICONO_BINGO);
+		g.centeredText(font, Component.translatable("venatio.fichas.items_posibles.ayuda"), width / 2, y0 - 14, GRIS);
 
 		Entrada sobre = null;
 		for (int i = 0; i < entradas.size(); i++) {
 			Entrada e = entradas.get(i);
 			int x = x0 + (i % columnas) * CELDA, y = y0 + (i / columnas) * CELDA;
-			g.blitSprite(RenderPipelines.GUI_TEXTURED, RANURA, x, y, CELDA, CELDA);
-			if (enCarton.contains(e.icono.getItem())) g.outline(x, y, CELDA, CELDA, DORADO);
+			boolean delCarton = enCarton.contains(e.icono.getItem());
+			g.blitSprite(RenderPipelines.GUI_TEXTURED, delCarton ? Arte.CASILLA_MIA : Arte.CASILLA_VACIA, x, y, CELDA - 1, CELDA - 1,
+				delCarton ? DORADO : 0xFFFFFFFF);
 			g.item(e.icono, x + 1, y + 1);
 			if (mx >= x && mx < x + CELDA && my >= y && my < y + CELDA) {
 				sobre = e;
 				g.nextStratum();
-				g.fill(x + 1, y + 1, x + 17, y + 17, 0x80FFFFFF);
+				g.fill(x, y, x + 17, y + 17, 0x60FFFFFF);
 			}
 		}
 		int filas = (entradas.size() + columnas - 1) / columnas;
