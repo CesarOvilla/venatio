@@ -17,7 +17,12 @@ public enum Modo {
 	/** Rastreo (ItemFinder): un item a la vez; gana quien encuentre más antes de que se acabe el tiempo. */
 	RASTREO,
 	/** Rastreo (ItemFinder): un item a la vez; gana el primero en llegar a la meta. */
-	RASTREO_CARRERA;
+	RASTREO_CARRERA,
+	/**
+	 * Todos buscan el mismo item; el primer equipo que lo consigue gana un punto y, si nadie lo consigue en unos minutos,
+	 * cambia solo. Gana quien tenga más puntos al acabar el tiempo o quien llegue primero a la meta.
+	 */
+	SWITCHEROO;
 
 	public String id() {
 		return name().toLowerCase(Locale.ROOT);
@@ -27,8 +32,9 @@ public enum Modo {
 		return Component.translatable("venatio.modo." + id());
 	}
 
+	/** Un item a la vez en vez de cartón (Switcheroo es un Rastreo compartido con tiempo por item). */
 	public boolean esRastreo() {
-		return this == RASTREO || this == RASTREO_CARRERA;
+		return this == RASTREO || this == RASTREO_CARRERA || this == SWITCHEROO;
 	}
 
 	public boolean exclusivo() {

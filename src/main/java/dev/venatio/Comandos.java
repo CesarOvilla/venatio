@@ -7,9 +7,11 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import dev.venatio.juego.Ajustes;
 import dev.venatio.juego.ColorEquipo;
+import dev.venatio.juego.Eventos;
 import dev.venatio.juego.Juego;
 import dev.venatio.juego.Modo;
 import dev.venatio.juego.Opcion;
+import dev.venatio.juego.TipoEvento;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -70,6 +72,23 @@ public final class Comandos {
 				.then(Commands.literal("no").executes(ctx -> responder(ctx, Ajustes.opcion(o, false), null))));
 		}
 		raiz.then(opcion);
+
+		// Switcheroo y eventos sorpresa
+		LiteralArgumentBuilder<CommandSourceStack> switcheroo = anfitrion("switcheroo");
+		for (int m : Ajustes.MINUTOS_SWITCHEROO) {
+			switcheroo.then(Commands.literal(String.valueOf(m)).executes(ctx -> responder(ctx, Ajustes.switcheroo(m), null)));
+		}
+		raiz.then(switcheroo);
+		LiteralArgumentBuilder<CommandSourceStack> eventosMinutos = anfitrion("eventos_minutos");
+		for (int m : Ajustes.MINUTOS_EVENTOS) {
+			eventosMinutos.then(Commands.literal(String.valueOf(m)).executes(ctx -> responder(ctx, Ajustes.eventosMinutos(m), null)));
+		}
+		raiz.then(eventosMinutos);
+		LiteralArgumentBuilder<CommandSourceStack> evento = anfitrion("evento");
+		for (TipoEvento t : TipoEvento.values()) {
+			evento.then(Commands.literal(t.id).executes(ctx -> responder(ctx, Eventos.lanzarDesdeComando(t), null)));
+		}
+		raiz.then(evento);
 
 		raiz.then(anfitrion("iniciar").executes(ctx -> responder(ctx, j.iniciar(), null)));
 		raiz.then(anfitrion("terminar").executes(ctx -> responder(ctx, j.terminar(), null)));

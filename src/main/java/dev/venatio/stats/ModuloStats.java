@@ -74,6 +74,10 @@ public final class ModuloStats {
 		for (ResumenPartida.Hito h : r.hitos()) {
 			hitos.add(new PaquetesStats.Hito(h.casilla(), h.icono(), r.nombre(h.jugador()), h.equipo().ordinal(), h.segundo()));
 		}
+		// Eventos sorpresa e items de Switcheroo que cambiaron sin dueño: también van en la línea de tiempo (sin equipo).
+		Partida enCurso = Juego.INSTANCIA.partida();
+		if (enCurso != null) hitos.addAll(enCurso.eventos().hitosFinales());
+		hitos.sort(java.util.Comparator.comparingInt(PaquetesStats.Hito::segundo).thenComparing(h -> h.equipo() >= 0));
 		List<PaquetesStats.EquipoFinal> equipos = new ArrayList<>();
 		for (ResumenPartida.Equipo e : r.equipos()) {
 			List<String> miembros = new ArrayList<>();

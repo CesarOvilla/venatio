@@ -69,6 +69,8 @@ public final class Partida {
 
 	/** Solo en modo Rastreo: la lista de items y por cuál va cada equipo. En Rastreo, carton es el historial de encontrados. */
 	final Rastreo rastreo;
+	/** Eventos sorpresa y lo que va a la línea de tiempo sin ser casilla. */
+	final Eventos eventos;
 
 	Partida(Juego juego, Configuracion cfg, long semilla, Carton carton, Rastreo rastreo, MundosPartida mundos, Map<UUID, ColorEquipo> participantes) {
 		this.juego = juego;
@@ -80,6 +82,7 @@ public final class Partida {
 		this.participantes = participantes;
 		this.equipos = participantes.values().stream().distinct().sorted().toList();
 		planificarSpawns();
+		this.eventos = new Eventos(this);
 	}
 
 	public Fase fase() {
@@ -96,6 +99,15 @@ public final class Partida {
 
 	public MundosPartida mundos() {
 		return mundos;
+	}
+
+	public Eventos eventos() {
+		return eventos;
+	}
+
+	/** Equipos que juegan la partida. */
+	public List<ColorEquipo> equipos() {
+		return equipos;
 	}
 
 	public boolean participa(ServerPlayer p) {
@@ -239,6 +251,10 @@ public final class Partida {
 		ticksJuego++;
 		if (ticksJuego % 10 == 0) detectar();
 		if (ticksJuego % 20 == 0) reponerRegalos();
+		if (ticksJuego % 20 == 0) {
+			Switcheroo.tick(this);
+			eventos.alSegundo();
+		}
 		int limite = cfg.limiteSegundos();
 		if (fase == Fase.JUGANDO && limite > 0 && segundos() >= limite) terminarPorTiempo();
 	}
@@ -286,8 +302,9 @@ public final class Partida {
 			ItemStack encontrado = buscar(p, objetivo);
 			if (encontrado == null) continue;
 			carton.anotar(objetivo, equipo, segundos(), p.getUUID());
-			rastreo.avanzar(equipo);
-			juego.difundir(Component.translatable("venatio.rastreo.encontrado", p.getDisplayName(), encontrado.getHoverName(), equipo.nombre()));
+			rastreo.avanzar(equipo, segundos());
+			if (cfg.modo == Modo.SWITCHEROO) Switcheroo.punto(this, p, equipo, encontrado);
+			else juego.difundir(Component.translatable("venatio.rastreo.encontrado", p.getDisplayName(), encontrado.getHoverName(), equipo.nombre()));
 			juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.CASILLA, equipo.ordinal(), 0));
 			juego.enviarEstadoATodos();
 			comprobarVictoria();
@@ -298,12 +315,13 @@ public final class Partida {
 	Component saltar(ServerPlayer p) {
 		if (rastreo == null) return Component.translatable("venatio.rastreo.error.no_rastreo");
 		if (fase != Fase.JUGANDO || !participa(p)) return Component.translatable("venatio.rastreo.error.no_jugando");
+		if (cfg.modo == Modo.SWITCHEROO) return Component.translatable("venatio.switcheroo.error.saltar");
 		ColorEquipo equipo = equipoDe(p);
 		int espera = rastreo.esperaParaSaltar(equipo, segundos());
 		if (espera > 0) return Component.translatable("venatio.rastreo.error.espera", espera);
 		Objetivo saltado = rastreo.actual(equipo);
 		rastreo.registrarSalto(equipo, segundos());
-		rastreo.avanzar(equipo);
+		rastreo.avanzar(equipo, segundos());
 		juego.difundir(Component.translatable(rastreo.independiente() ? "venatio.rastreo.salto_equipo" : "venatio.rastreo.salto",
 			p.getDisplayName(), saltado.icono().getHoverName(), equipo.nombre()));
 		juego.enviarEstadoATodos();
@@ -332,7 +350,7 @@ public final class Partida {
 				case APAGON, CONTRARRELOJ -> puntos == total;
 				case LOCKOUT -> carton.tieneLinea(c) || puntos > maxOtros(c) + carton.sinReclamar();
 				case RASTREO -> false;
-				case RASTREO_CARRERA -> puntos >= cfg.meta;
+				case RASTREO_CARRERA, SWITCHEROO -> puntos >= cfg.meta;
 			};
 			if (!gana) continue;
 			if (cfg.finAutomatico || puntos == total || rastreo != null) {
@@ -395,9 +413,12 @@ public final class Partida {
 		Component resumen = ganador != null ? Component.translatable("venatio.final.gana", ganador.nombre())
 			: empate ? Component.translatable("venatio.final.empate")
 			: Component.translatable("venatio.final.cancelada");
+		eventos.terminar();
 		juego.difundir(resumen);
 		for (ColorEquipo c : equipos) {
-			juego.difundir(Component.translatable("venatio.final.puntos", c.nombre(), carton.puntos(c), carton.casillas.size()));
+			juego.difundir(cfg.modo == Modo.SWITCHEROO
+				? Component.translatable("venatio.switcheroo.final.puntos", c.nombre(), carton.puntos(c))
+				: Component.translatable("venatio.final.puntos", c.nombre(), carton.puntos(c), carton.casillas.size()));
 		}
 		// El banner del resultado lo dibuja el cliente con este evento; los fuegos artificiales salen en el tick del final.
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.VICTORIA, ganador == null ? -1 : ganador.ordinal(), -1));

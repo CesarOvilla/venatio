@@ -27,6 +27,8 @@ public final class Rastreo {
 	private final Map<ColorEquipo, Integer> indices = new EnumMap<>(ColorEquipo.class);
 	private final Map<ColorEquipo, Integer> ultimoSalto = new EnumMap<>(ColorEquipo.class);
 	private int ultimoSaltoComun = -ESPERA_SALTO;
+	/** Segundo de partida en que empezó el item compartido actual (Switcheroo cuenta desde aquí). */
+	private int inicioComun;
 
 	private Rastreo(List<Objetivo> secuencia, boolean independiente) {
 		this.secuencia = secuencia;
@@ -52,10 +54,29 @@ public final class Rastreo {
 		return secuencia.get(i % secuencia.size());
 	}
 
-	/** El equipo encontró su item (o lo saltó): pasa al siguiente. En modo compartido avanzan todos. */
-	void avanzar(ColorEquipo equipo) {
+	/** El equipo encontró su item (o lo saltó, o se le acabó el tiempo): pasa al siguiente. En modo compartido avanzan todos. */
+	void avanzar(ColorEquipo equipo, int segundo) {
 		if (independiente) indices.merge(equipo, 1, Integer::sum);
-		else indiceComun++;
+		else {
+			indiceComun++;
+			inicioComun = segundo;
+		}
+	}
+
+	/** Segundo de partida en que empezó el item compartido actual. */
+	public int inicioComun() {
+		return inicioComun;
+	}
+
+	/** Para las pruebas: hace como si el item compartido actual llevara esos segundos más en juego. */
+	public void adelantar(int segundos) {
+		inicioComun -= segundos;
+	}
+
+	/** true si algún item de la lista pide este stack (los eventos no lo regalan). */
+	public boolean pide(net.minecraft.world.item.ItemStack stack) {
+		for (Objetivo o : secuencia) if (o.cumple(stack)) return true;
+		return false;
 	}
 
 	/** Segundos que faltan para poder saltar; 0 si ya se puede. */

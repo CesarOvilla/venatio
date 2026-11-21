@@ -116,7 +116,7 @@ public record ResumenPartida(Modo modo, ColorEquipo ganador, boolean empate, int
 			case LINEA -> linea >= 0 ? linea : duracion;
 			case LOCKOUT -> linea >= 0 ? Math.min(linea, duracion) : duracion;
 			case APAGON, CONTRARRELOJ -> lleno ? c.ultimoLogro(e) : duracion;
-			case RASTREO -> duracion;
+			case RASTREO, SWITCHEROO -> duracion;
 			case RASTREO_CARRERA -> c.ultimoLogro(e) >= 0 ? c.ultimoLogro(e) : duracion;
 		};
 	}

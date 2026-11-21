@@ -32,9 +32,18 @@ public final class Configuracion {
 	public boolean localizador = true;
 	/** En la barra también se ven los rivales que no se esconden; si no, solo los compañeros. */
 	public boolean localizadorRivales = true;
+	/** Eventos sorpresa para todos cada cierto tiempo (noche eterna, horda, lluvia de items…). */
+	public boolean eventos = false;
+	/** Las ayudas cuestan 20 % menos al equipo que va en último lugar por 2 o más. */
+	public boolean descuento = true;
+	/** Switcheroo: minutos que dura cada item antes de cambiar solo (1, 2, 3 o 5). */
+	public int switcheroo = 3;
+	/** Eventos sorpresa: minutos aproximados entre un evento y el siguiente (5, 8 o 10). */
+	public int eventosMinutos = 8;
 
 	public int limiteSegundos() {
-		int min = minutos > 0 ? minutos : modo == Modo.CONTRARRELOJ ? 25 : modo == Modo.RASTREO ? 15 : 0;
+		int min = minutos > 0 ? minutos : modo == Modo.CONTRARRELOJ ? 25 : modo == Modo.RASTREO ? 15
+			: modo == Modo.SWITCHEROO ? 20 : 0;
 		return min * 60;
 	}
 
@@ -58,6 +67,10 @@ public final class Configuracion {
 		c.rastreoIndependiente = rastreoIndependiente;
 		c.localizador = localizador;
 		c.localizadorRivales = localizadorRivales;
+		c.eventos = eventos;
+		c.descuento = descuento;
+		c.switcheroo = switcheroo;
+		c.eventosMinutos = eventosMinutos;
 		return c;
 	}
 }

@@ -277,7 +277,8 @@ public final class Juego {
 		long semilla = config.semilla != null ? config.semilla : new Random().nextLong();
 		boolean esRastreo = config.modo.esRastreo();
 		Carton carton = esRastreo ? Carton.historial() : Carton.generar(pool, semilla, config.tamano);
-		Rastreo rastreo = esRastreo ? Rastreo.crear(pool, semilla, config.rastreoIndependiente) : null;
+		// Switcheroo siempre es compartido: todos buscan el mismo item.
+		Rastreo rastreo = esRastreo ? Rastreo.crear(pool, semilla, config.rastreoIndependiente && config.modo != Modo.SWITCHEROO) : null;
 		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp, config.conservarInventario);
 		partida = new Partida(this, config.copia(), semilla, carton, rastreo, mundos, participantes);
 		difundir(Component.translatable("venatio.partida.preparando", config.modo.nombre(), String.valueOf(semilla)));
