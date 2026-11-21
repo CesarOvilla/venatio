@@ -106,6 +106,11 @@ try {
 	Decir "✔ Juego en español y server $ServidorNombre en la lista"
 
 	# --- 6. Perfil en el launcher (oficial y, si existe, el de Microsoft Store) --
+	# Memoria para Minecraft según la RAM de la computadora (de 3 a 6 GB), con los flags de G1 del launcher oficial.
+	$RamGb = 0
+	try { $RamGb = [math]::Floor((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB) } catch {}
+	$Xmx = if ($RamGb -ge 16) { 6 } elseif ($RamGb -ge 12) { 5 } elseif ($RamGb -ge 8) { 4 } else { 3 }
+	$JavaArgs = "-Xmx${Xmx}G -Xms1G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M"
 	$Fecha = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.000Z')
 	foreach ($archivo in $ArchivosPerfiles) {
 		Copy-Item -Force $archivo "$archivo.respaldo-venatio"
@@ -120,7 +125,7 @@ try {
 			lastUsed      = $Fecha
 			lastVersionId = $VersionId
 			gameDir       = $Juego
-			javaArgs      = if ($previo -and $previo.javaArgs) { $previo.javaArgs } else { '-Xmx4G -Xms1G -XX:+UseG1GC' }
+			javaArgs      = if ($previo -and $previo.javaArgs) { $previo.javaArgs } else { $JavaArgs }
 		}
 		$datos.profiles | Add-Member -Force -NotePropertyName $PerfilId -NotePropertyValue $perfil
 		[IO.File]::WriteAllText($archivo, ($datos | ConvertTo-Json -Depth 32), $Utf8SinBom)

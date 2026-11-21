@@ -49,6 +49,21 @@ dependencies {
 
 	// Jugadores simulados para las pruebas con varios equipos; no va en el jar del mod
 	gametestRuntimeOnly "maven.modrinth:carpet:${project.carpet_version}"
+
+	// Mods de rendimiento del cliente (los que instala el instalador). Para probar que no rompen el HUD de Venatio:
+	// ./gradlew runClientGameTest -Pcliente=1   (o tools/prueba.sh con ORG_GRADLE_PROJECT_cliente=1)
+	if (project.hasProperty('cliente')) {
+		file('instalador/mods-cliente.txt').readLines()
+			.findAll { it.trim() && !it.startsWith('#') && !it.startsWith('fabric-api ') }
+			// Dynamic FPS baja los cuadros cuando la ventana no tiene el foco (la de prueba nunca lo tiene) y el HUD deja de
+			// redibujarse entre pasos: se instala a los jugadores, pero no entra en las pruebas automáticas.
+			.findAll { !it.startsWith('dynamic-fps ') }
+			.each {
+				def c = it.trim().split(/\s+/)
+				// El id de la versión de Modrinth es exacto; el número puede repetirse entre versiones de Minecraft.
+				gametestRuntimeOnly "maven.modrinth:${c[0]}:${c.size() > 2 ? c[2] : c[1]}"
+			}
+	}
 }
 
 processResources {

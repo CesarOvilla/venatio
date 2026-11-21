@@ -128,6 +128,15 @@ fi
 decir "✔ Juego en español y server $SERVIDOR_NOMBRE en la lista"
 
 # --- 6. Perfil en el launcher ---------------------------------------------------
+# Memoria para Minecraft según la RAM de la computadora (de 3 a 6 GB), con los flags de G1 que usa el launcher oficial.
+RAM_GB=0
+if [ "$SISTEMA" = "Darwin" ]; then
+	RAM_GB=$(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1073741824 ))
+elif [ -r /proc/meminfo ]; then
+	RAM_GB=$(( $(awk '/^MemTotal:/ {print $2}' /proc/meminfo) / 1048576 ))
+fi
+if [ "$RAM_GB" -ge 16 ]; then XMX=6; elif [ "$RAM_GB" -ge 12 ]; then XMX=5; elif [ "$RAM_GB" -ge 8 ]; then XMX=4; else XMX=3; fi
+export VENATIO_JAVA_ARGS="-Xmx${XMX}G -Xms1G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M"
 PERFILES="$MC/launcher_profiles.json"
 cp "$PERFILES" "$PERFILES.respaldo-venatio"
 export VENATIO_PERFILES="$PERFILES" VENATIO_PERFIL_ID="$PERFIL_ID" VENATIO_VERSION_ID="$VERSION_ID" VENATIO_JUEGO="$JUEGO"
@@ -152,7 +161,7 @@ datos.profiles[v('VENATIO_PERFIL_ID')] = {
 	lastUsed: v('VENATIO_FECHA'),
 	lastVersionId: v('VENATIO_VERSION_ID'),
 	gameDir: v('VENATIO_JUEGO'),
-	javaArgs: previo.javaArgs || '-Xmx4G -Xms1G -XX:+UseG1GC'
+	javaArgs: previo.javaArgs || v('VENATIO_JAVA_ARGS')
 };
 $(JSON.stringify(datos, null, 2)).writeToFileAtomicallyEncodingError(ruta, true, $.NSUTF8StringEncoding, null);
 JXA
@@ -173,7 +182,7 @@ perfiles[os.environ["VENATIO_PERFIL_ID"]] = {
     "lastUsed": os.environ["VENATIO_FECHA"],
     "lastVersionId": os.environ["VENATIO_VERSION_ID"],
     "gameDir": os.environ["VENATIO_JUEGO"],
-    "javaArgs": previo.get("javaArgs", "-Xmx4G -Xms1G -XX:+UseG1GC"),
+    "javaArgs": previo.get("javaArgs", os.environ["VENATIO_JAVA_ARGS"]),
 }
 tmp = ruta + ".tmp"
 with open(tmp, "w", encoding="utf-8") as f:
