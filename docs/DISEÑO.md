@@ -77,6 +77,8 @@ Recetas y "de dónde sale" son **gratis**: esa información ya existe en el libr
 
 Reglas: se cobra del inventario al confirmar; cada ayuda tiene enfriamiento; en Lockout no se puede comprar guía hacia una casilla ya tomada; el anfitrión puede apagar las ayudas o cambiar su precio. Los precios son un punto de partida y se ajustan jugando.
 
+**Descuento al último lugar (hecho, opción `descuento`, activa por defecto):** con 2 equipos o más, el equipo que va último por al menos 2 casillas o puntos paga las ayudas un 20 % menos (hacia abajo, mínimo 1). Si varios empatan en el último lugar, todos lo tienen. La tienda muestra el precio tachado y el nuevo. Vale en todos los modos (`ayudas/Descuento.java`).
+
 Pendiente: pagar con items (lo que propusiste, va por defecto) o con fichas ganadas por casilla, que permiten dar más al equipo que va perdiendo.
 
 ## 5. Mundo nuevo en cada partida
@@ -97,6 +99,10 @@ Pendiente: pagar con items (lo que propusiste, va por defecto) o con fichas gana
 
 **Rastreo** (ItemFinder)
 - Blitz y Contrarreloj, individual o por equipos; saltar item con costo.
+
+**Switcheroo** (hecho): Rastreo compartido con tiempo por item. El primer equipo que consigue el item gana 1 punto y todos pasan al siguiente; si nadie lo consigue en `/venatio switcheroo 1|2|3|5` minutos (3 por defecto), cambia solo sin puntos. Gana quien llegue a la meta o tenga más puntos a los 20 min. El HUD lleva la cuenta regresiva del item, roja y con tic los últimos 10 s; los items que cambiaron sin dueño quedan en la línea de tiempo final.
+
+**Eventos sorpresa** (hecho, opción `eventos`, apagada por defecto): cada `/venatio eventos_minutos 5|8|10` minutos (8 por defecto, ±25 %), uno al azar para todos, anunciado 10 s antes con banner, sonido e indicador en el HUD. Lista en `juego/TipoEvento.java`: noche eterna, velocidad, teletransporte a 150–300 bloques (solo a superficie segura), intercambio entre rivales, horda (sin creepers el primer minuto, nunca en el Nether), lluvia de items (nunca algo que pida la partida), gravedad lunar, niebla, tormenta (los rayos no lastiman), mercader nómada por equipo, todos a la vista y lluvia de experiencia. El anfitrión lanza uno a mano con `/venatio evento <nombre>`. Cada evento queda en la línea de tiempo final.
 
 **Más adelante:** casillas que no son items (visitar un bioma, entrar a una estructura, matar un mob, conseguir un logro, domar o criar un animal). El motor de casillas admite estos tipos desde el inicio.
 
@@ -199,7 +205,7 @@ Ideas comentadas con el usuario, todavía sin elegir. ★ = recomendadas para em
 | Modo | Cómo funciona |
 |---|---|
 | ★ Cartón oculto | Solo ves las casillas vecinas a las que ya conseguiste; el cartón se descubre conforme avanzas. Premia planear la ruta. |
-| ★ Switcheroo / Rey del item | Todos buscan el mismo item a la vez; cada X minutos cambia. Punto para quien lo consiga primero. Es la idea original de ItemFinder, en grupo. |
+| ★ Switcheroo / Rey del item | Todos buscan el mismo item a la vez; cada X minutos cambia. Punto para quien lo consiga primero. Es la idea original de ItemFinder, en grupo. **Hecho** (sección 6). |
 | Draft | Antes de empezar, cada equipo veta 1 o 2 casillas del cartón. |
 | Casilla secreta | Cada equipo tiene una casilla que solo él conoce y vale doble; se revela al final. |
 | Relevo | Cada miembro del equipo tiene asignada su propia fila. |
@@ -214,8 +220,8 @@ Ideas comentadas con el usuario, todavía sin elegir. ★ = recomendadas para em
 | Espectador | Quien no juega (o el anfitrión) sigue a cualquier equipo con la cámara. |
 | Dificultad del cartón | Fácil / normal / difícil, y pool editable para quitar items. |
 | Kit inicial | Configurable: herramientas de piedra, comida, cama. |
-| Ayuda al que va perdiendo | Descuento en la tienda para el último lugar. |
-| Eventos sorpresa | Opcionales cada 10 min: noche eterna, velocidad para todos 1 min, lluvia de items… |
+| Ayuda al que va perdiendo | Descuento en la tienda para el último lugar. **Hecho** (sección 4). |
+| Eventos sorpresa | Opcionales cada 10 min: noche eterna, velocidad para todos 1 min, lluvia de items… **Hecho** (sección 6). |
 
 **Reglas fijas acordadas**
 - Nada de items ni casillas que obliguen a ir al End (es difícil llegar y estar ahí). El portal del End sigue funcionando.
