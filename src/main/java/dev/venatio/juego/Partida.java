@@ -75,6 +75,8 @@ public final class Partida {
 	private final Map<ColorEquipo, Integer> progresoRastreo = new EnumMap<>(ColorEquipo.class);
 	/** Eventos sorpresa y lo que va a la línea de tiempo sin ser casilla. */
 	final Eventos eventos;
+	/** Cartón oculto, draft, casilla secreta y relevo. */
+	final Variantes variantes;
 
 	Partida(Juego juego, Configuracion cfg, long semilla, Carton carton, Rastreo rastreo, MundosPartida mundos, Map<UUID, ColorEquipo> participantes) {
 		this.juego = juego;
@@ -85,6 +87,7 @@ public final class Partida {
 		this.mundos = mundos;
 		this.participantes = participantes;
 		this.equipos = participantes.values().stream().distinct().sorted().toList();
+		this.variantes = new Variantes(this);
 		planificarSpawns();
 		this.eventos = new Eventos(this);
 	}
@@ -99,6 +102,15 @@ public final class Partida {
 
 	public Carton carton() {
 		return carton;
+	}
+
+	public Variantes variantes() {
+		return variantes;
+	}
+
+	/** Casillas que cuentan para el equipo: las suyas, con la casilla secreta valiendo doble. */
+	public int valor(ColorEquipo c) {
+		return carton.puntos(c) + variantes.extra(c);
 	}
 
 	public MundosPartida mundos() {
@@ -196,10 +208,11 @@ public final class Partida {
 	}
 
 	private void tickPreparando() {
+		variantes.tickPreparando();
 		ServerLevel mundo = mundos.mundo();
 		long listos = carga.stream().filter(c -> mundo.getChunkSource().getChunkNow(c.x(), c.z()) != null).count();
 		progreso = carga.isEmpty() ? 100 : (int) (listos * 100 / carga.size());
-		if (listos == carga.size() || ticks >= MAX_SEGUNDOS_PREPARACION * 20) {
+		if ((listos == carga.size() || ticks >= MAX_SEGUNDOS_PREPARACION * 20) && !variantes.draftEnCurso()) {
 			if (listos < carga.size()) Venatio.LOG.warn("Preparación incompleta ({} de {} chunks); se empieza igual", listos, carga.size());
 			empezarCuenta();
 		}
@@ -217,6 +230,7 @@ public final class Partida {
 		// Los jugadores ya mantienen cargada su zona; los tickets de pregeneración sobran.
 		for (ChunkPos centro : centrosConTicket) mundo.getChunkSource().removeTicketWithRadius(TicketType.FORCED, centro, RADIO_PREGEN);
 		centrosConTicket.clear();
+		variantes.alEmpezarCuenta();
 		fase = Fase.CUENTA_ATRAS;
 		ticks = 0;
 		juego.enviarEstadoATodos();
@@ -254,6 +268,7 @@ public final class Partida {
 	private void tickJugando() {
 		ticksJuego++;
 		if (ticksJuego % 10 == 0) detectar();
+		if (ticksJuego % 20 == 10) variantes.tickSegundo();
 		if (ticksJuego % 20 == 0) reponerRegalos();
 		if (ticksJuego % 20 == 0) {
 			Switcheroo.tick(this);
@@ -278,8 +293,8 @@ public final class Partida {
 			Carton.Casilla cas = carton.casillas.get(i);
 			for (ColorEquipo equipo : equipos) {
 				if (fase != Fase.JUGANDO || cfg.modo.exclusivo() && !cas.logros.isEmpty()) break;
-				if (cas.logros.containsKey(equipo)) continue;
-				Logrado l = comprobar(cas.objetivo, equipo, activos.getOrDefault(equipo, List.of()), cas.progreso);
+				if (cas.logros.containsKey(equipo) || variantes.tapada(i, equipo)) continue;
+				Logrado l = comprobar(cas.objetivo, equipo, variantes.quienesCuentan(i, equipo, activos.getOrDefault(equipo, List.of())), cas.progreso);
 				if (l != null) marcar(i, equipo, l.jugador(), l.nombre());
 			}
 		}
@@ -395,7 +410,9 @@ public final class Partida {
 		Carton.Casilla cas = carton.casillas.get(indice);
 		cas.logros.put(equipo, segundos());
 		cas.jugadores.put(equipo, p.getUUID());
-		juego.difundir(Component.translatable(cas.objetivo.esReto() ? "venatio.casilla.logro" : "venatio.casilla.conseguida",
+		variantes.alMarcar(indice, equipo);
+		// Con el cartón oculto, a quien la tiene tapada no se le dice qué pedía.
+		variantes.anunciar(indice, p, equipo, Component.translatable(cas.objetivo.esReto() ? "venatio.casilla.logro" : "venatio.casilla.conseguida",
 			p.getDisplayName(), conseguido, equipo.nombre()));
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.CASILLA, equipo.ordinal(), indice));
 		juego.enviarEstadoATodos();
@@ -411,7 +428,7 @@ public final class Partida {
 			boolean gana = switch (cfg.modo) {
 				case LINEA -> carton.tieneLinea(c);
 				case APAGON, CONTRARRELOJ -> puntos == total;
-				case LOCKOUT -> carton.tieneLinea(c) || puntos > maxOtros(c) + carton.sinReclamar();
+				case LOCKOUT -> carton.tieneLinea(c) || valor(c) > maxOtros(c);
 				case RASTREO -> false;
 				case RASTREO_CARRERA, SWITCHEROO -> puntos >= cfg.meta;
 			};
@@ -428,9 +445,10 @@ public final class Partida {
 		}
 	}
 
+	/** Lo más que puede llegar a valer otro equipo: lo suyo más todo lo que queda sin dueño (su casilla secreta, doble). */
 	private int maxOtros(ColorEquipo c) {
-		int max = 0;
-		for (ColorEquipo o : equipos) if (o != c) max = Math.max(max, carton.puntos(o));
+		int max = carton.sinReclamar();
+		for (ColorEquipo o : equipos) if (o != c) max = Math.max(max, valor(o) + carton.sinReclamar() + variantes.extraPosible(o));
 		return max;
 	}
 
@@ -447,7 +465,7 @@ public final class Partida {
 				mejor = c;
 				continue;
 			}
-			int dif = Integer.compare(carton.puntos(c), carton.puntos(mejor));
+			int dif = Integer.compare(valor(c), valor(mejor));
 			if (dif == 0) dif = Integer.compare(carton.ultimoLogro(mejor), carton.ultimoLogro(c));
 			if (dif > 0) {
 				mejor = c;
@@ -456,7 +474,7 @@ public final class Partida {
 				empatado = true;
 			}
 		}
-		if (mejor == null || carton.puntos(mejor) == 0) declarar(null, true);
+		if (mejor == null || valor(mejor) == 0) declarar(null, true);
 		else declarar(empatado ? null : mejor, empatado);
 	}
 
@@ -472,6 +490,7 @@ public final class Partida {
 		this.ticks = 0;
 		this.ganador = ganador;
 		this.empate = empate;
+		variantes.alTerminar();
 
 		Component resumen = ganador != null ? Component.translatable("venatio.final.gana", ganador.nombre())
 			: empate ? Component.translatable("venatio.final.empate")
@@ -483,6 +502,7 @@ public final class Partida {
 				? Component.translatable("venatio.switcheroo.final.puntos", c.nombre(), carton.puntos(c))
 				: Component.translatable("venatio.final.puntos", c.nombre(), carton.puntos(c), carton.casillas.size()));
 		}
+		variantes.lineasFinal().forEach(juego::difundir);
 		// El banner del resultado lo dibuja el cliente con este evento; los fuegos artificiales salen en el tick del final.
 		juego.enviarEvento(new Paquetes.Evento(Paquetes.Evento.VICTORIA, ganador == null ? -1 : ganador.ordinal(), -1));
 		juego.enviarEstadoATodos();
@@ -578,10 +598,12 @@ public final class Partida {
 			ColorEquipo quien = miEquipo != null ? miEquipo : equipos.isEmpty() ? null : equipos.get(0);
 			Objetivo actual = rastreo.actual(quien);
 			casillas.add(casillaRed(actual, actual.icono(), List.of(), progresoRastreo));
-		} else for (Carton.Casilla cas : carton.casillas) {
+		} else for (int i = 0; i < carton.casillas.size(); i++) {
+			Carton.Casilla cas = carton.casillas.get(i);
 			List<Paquetes.Logro> logros = new ArrayList<>();
 			cas.logros.forEach((c, s) -> logros.add(new Paquetes.Logro(c.ordinal(), s)));
-			casillas.add(casillaRed(cas.objetivo, cas.icono, logros, cas.progreso));
+			// Cartón oculto: lo tapado no viaja, para que no se pueda leer por fuera.
+			casillas.add(variantes.ocultaPara(miEquipo, i) ? Variantes.casillaTapada(logros) : casillaRed(cas.objetivo, cas.icono, logros, cas.progreso));
 		}
 		List<Paquetes.EquipoRed> equiposRed = new ArrayList<>();
 		for (ColorEquipo c : equipos) {
@@ -589,10 +611,12 @@ public final class Partida {
 			participantes.forEach((uuid, eq) -> {
 				if (eq == c) miembros.add(juego.nombre(uuid));
 			});
-			equiposRed.add(new Paquetes.EquipoRed(c.ordinal(), carton.puntos(c), miembros));
+			// La casilla secreta (doble) solo se nota en el marcador de su propio equipo hasta el final.
+			equiposRed.add(new Paquetes.EquipoRed(c.ordinal(), fase == Fase.FINAL || c == miEquipo ? valor(c) : carton.puntos(c), miembros));
 		}
 		int ganadorRed = fase != Fase.FINAL ? -1 : ganador != null ? ganador.ordinal() : empate ? -2 : -3;
 		return new Paquetes.Estado(faseRed, cfg.modo.id(), segundosRed, cfg.limiteSegundos(), cfg.pvp, progreso, cfg.meta,
-			rastreo != null ? 1 : carton.tamano, casillas, equiposRed, miEquipo == null ? -1 : miEquipo.ordinal(), ganadorRed);
+			rastreo != null ? 1 : carton.tamano, casillas, equiposRed, miEquipo == null ? -1 : miEquipo.ordinal(), ganadorRed,
+			variantes.red(miEquipo));
 	}
 }

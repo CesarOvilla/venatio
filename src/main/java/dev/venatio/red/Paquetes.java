@@ -19,6 +19,7 @@ public final class Paquetes {
 		PayloadTypeRegistry.serverboundPlay().register(Hola.TYPE, Hola.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Estado.TYPE, Estado.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Evento.TYPE, Evento.CODEC);
+		PaquetesVariantes.registrar();
 	}
 
 	private static Identifier id(String nombre) {
@@ -69,10 +70,20 @@ public final class Paquetes {
 	 * fase: 0 lobby, 1 preparando, 2 cuenta atrás, 3 jugando, 4 final.
 	 * segundos: transcurridos en juego, o restantes en la cuenta atrás.
 	 * ganador: ordinal del color, -1 sin ganador todavía, -2 empate, -3 cancelada por el anfitrión.
+	 * variantes: cartón oculto, draft, casilla secreta y relevo (con el cartón oculto, las casillas tapadas para quien
+	 * lo recibe llegan sin lo que piden).
 	 */
 	public record Estado(int fase, String modo, int segundos, int limite, boolean pvp, int progreso, int meta,
-						 int tamano, List<CasillaRed> casillas, List<EquipoRed> equipos, int miEquipo, int ganador)
+						 int tamano, List<CasillaRed> casillas, List<EquipoRed> equipos, int miEquipo, int ganador,
+						 PaquetesVariantes.Variantes variantes)
 		implements CustomPacketPayload {
+
+		/** Sin variantes del cartón (lobby, Rastreo). */
+		public Estado(int fase, String modo, int segundos, int limite, boolean pvp, int progreso, int meta,
+					  int tamano, List<CasillaRed> casillas, List<EquipoRed> equipos, int miEquipo, int ganador) {
+			this(fase, modo, segundos, limite, pvp, progreso, meta, tamano, casillas, equipos, miEquipo, ganador,
+				PaquetesVariantes.Variantes.NINGUNA);
+		}
 
 		public static final int LOBBY = 0, PREPARANDO = 1, CUENTA_ATRAS = 2, JUGANDO = 3, FINAL = 4;
 
@@ -118,6 +129,7 @@ public final class Paquetes {
 			}
 			buf.writeVarInt(e.miEquipo + 1);
 			buf.writeVarInt(e.ganador + 3);
+			PaquetesVariantes.CODEC.encode(buf, e.variantes);
 		}
 
 		private static Estado leer(RegistryFriendlyByteBuf buf) {
@@ -155,7 +167,8 @@ public final class Paquetes {
 			}
 			int miEquipo = buf.readVarInt() - 1;
 			int ganador = buf.readVarInt() - 3;
-			return new Estado(fase, modo, segundos, limite, pvp, progreso, meta, tamano, casillas, equipos, miEquipo, ganador);
+			return new Estado(fase, modo, segundos, limite, pvp, progreso, meta, tamano, casillas, equipos, miEquipo, ganador,
+				PaquetesVariantes.CODEC.decode(buf));
 		}
 	}
 

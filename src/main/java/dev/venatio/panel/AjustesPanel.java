@@ -39,6 +39,10 @@ public final class AjustesPanel {
 			Arrays.stream(Ajustes.MINUTOS_EVENTOS).mapToObj(String::valueOf).toList(),
 			c -> String.valueOf(c.eventosMinutos),
 			v -> Ajustes.eventosMinutos(Integer.parseInt(v))));
+		agregar(new Ajuste("vetos", VARIANTES, "venatio.ajuste.vetos", "venatio.ajuste.vetos.",
+			List.of("1", "2"),
+			c -> String.valueOf(c.vetos),
+			v -> Ajustes.vetos(Integer.parseInt(v))));
 	}
 
 	private AjustesPanel() {}

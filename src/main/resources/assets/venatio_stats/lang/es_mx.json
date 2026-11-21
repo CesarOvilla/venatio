@@ -84,5 +84,8 @@
   "venatio.ajuste.minutos.3": "3 min",
   "venatio.ajuste.minutos.5": "5 min",
   "venatio.ajuste.minutos.8": "8 min",
-  "venatio.ajuste.minutos.10": "10 min"
+  "venatio.ajuste.minutos.10": "10 min",
+  "venatio.ajuste.vetos": "Draft: vetos por equipo",
+  "venatio.ajuste.vetos.1": "1",
+  "venatio.ajuste.vetos.2": "2"
 }

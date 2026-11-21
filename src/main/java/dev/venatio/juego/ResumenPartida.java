@@ -20,7 +20,7 @@ import java.util.UUID;
 public record ResumenPartida(Modo modo, ColorEquipo ganador, boolean empate, int duracion, int segundoVictoria, int totalCasillas,
 							 List<Equipo> equipos, List<Hito> hitos, Map<UUID, ColorEquipo> participantes, Map<UUID, String> nombres) {
 
-	/** puesto: 1 = primero; los equipos empatados comparten puesto. */
+	/** casillas: las que cuentan (con casilla secreta, esa vale doble). puesto: 1 = primero; los empatados comparten puesto. */
 	public record Equipo(ColorEquipo color, int casillas, int puesto, List<UUID> miembros) {}
 
 	/** Una casilla conseguida. jugador puede ser null si no se registró quién fue. */
@@ -72,10 +72,10 @@ public record ResumenPartida(Modo modo, ColorEquipo ganador, boolean empate, int
 		}
 		hitos.sort(Comparator.comparingInt(Hito::segundo).thenComparingInt(Hito::casilla));
 
-		// Orden final: el ganador primero; después más casillas y, a igual número, quien llegó antes.
+		// Orden final: el ganador primero; después más casillas (la secreta vale doble) y, a igual número, quien llegó antes.
 		List<ColorEquipo> orden = new ArrayList<>(p.equipos);
 		orden.sort(Comparator.<ColorEquipo>comparingInt(c -> c == p.ganador ? 0 : 1)
-			.thenComparingInt(c -> -carton.puntos(c))
+			.thenComparingInt(c -> -p.valor(c))
 			.thenComparingInt(c -> llegada(carton, c)));
 		List<Equipo> equipos = new ArrayList<>();
 		for (int i = 0; i < orden.size(); i++) {
@@ -83,14 +83,14 @@ public record ResumenPartida(Modo modo, ColorEquipo ganador, boolean empate, int
 			int puesto = i + 1;
 			if (i > 0) {
 				ColorEquipo anterior = orden.get(i - 1);
-				boolean igual = anterior != p.ganador && carton.puntos(anterior) == carton.puntos(c) && llegada(carton, anterior) == llegada(carton, c);
+				boolean igual = anterior != p.ganador && p.valor(anterior) == p.valor(c) && llegada(carton, anterior) == llegada(carton, c);
 				if (igual) puesto = equipos.get(i - 1).puesto();
 			}
 			List<UUID> miembros = new ArrayList<>();
 			p.participantes.forEach((u, eq) -> {
 				if (eq == c) miembros.add(u);
 			});
-			equipos.add(new Equipo(c, carton.puntos(c), puesto, List.copyOf(miembros)));
+			equipos.add(new Equipo(c, p.valor(c), puesto, List.copyOf(miembros)));
 		}
 
 		int duracion = p.segundos();

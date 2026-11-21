@@ -11,6 +11,7 @@ import dev.venatio.mundo.Lobby;
 import dev.venatio.mundo.MundosPartida;
 import net.minecraft.world.level.gamerules.GameRules;
 import dev.venatio.red.Paquetes;
+import dev.venatio.red.PaquetesVariantes;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -73,6 +74,7 @@ public final class Juego {
 		ServerPlayerEvents.AFTER_RESPAWN.register((viejo, nuevo, vivo) -> alReaparecer(nuevo));
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entidad, fuente, cantidad) -> permitirDano(entidad));
 		ServerPlayNetworking.registerGlobalReceiver(Paquetes.Hola.TYPE, (hola, ctx) -> verificarVersion(ctx.player(), hola.version()));
+		ServerPlayNetworking.registerGlobalReceiver(PaquetesVariantes.Vetar.TYPE, (v, ctx) -> vetar(ctx.player(), v.casilla()));
 		MinadoEnVeta.registrar();
 	}
 
@@ -316,6 +318,12 @@ public final class Juego {
 			if (c != null) conteo.merge(c, 1, Integer::sum);
 		}
 		return conteo.entrySet().stream().min(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(ColorEquipo.ROJO);
+	}
+
+	/** Draft: un jugador veta una casilla desde la pantalla del draft. */
+	private void vetar(ServerPlayer p, int casilla) {
+		Component error = partida == null ? Component.translatable("venatio.draft.error.no_draft") : partida.variantes.vetar(p, casilla);
+		if (error != null) p.sendSystemMessage(error.copy().withStyle(net.minecraft.ChatFormatting.RED));
 	}
 
 	/** /venatio saltar: en Rastreo, pasar al siguiente item. */

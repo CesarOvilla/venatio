@@ -81,7 +81,11 @@ public final class PantallaCarton extends Screen {
 	private static Set<Item> itemsDelCarton() {
 		Set<Item> items = new HashSet<>();
 		if (EstadoCliente.estado != null) {
-			for (Paquetes.CasillaRed c : EstadoCliente.estado.casillas()) if (!c.esReto()) items.add(c.icono().getItem());
+			Paquetes.Estado e = EstadoCliente.estado;
+			for (int i = 0; i < e.casillas().size(); i++) {
+				Paquetes.CasillaRed c = e.casillas().get(i);
+				if (!c.esReto() && !VariantesCliente.tapada(e, i, -1)) items.add(c.icono().getItem());
+			}
 		}
 		return items;
 	}
@@ -108,7 +112,7 @@ public final class PantallaCarton extends Screen {
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		if (super.mouseClicked(event, doubleClick)) return true;
 		int i = event.button() == 0 ? casillaEn(event.x(), event.y()) : -1;
-		if (i < 0) return false;
+		if (i < 0 || VariantesCliente.tapada(EstadoCliente.estado, i, equipoVisto(EstadoCliente.estado))) return false;
 		Paquetes.CasillaRed c = EstadoCliente.estado.casillas().get(i);
 		minecraft.gui.setScreen(c.esReto() ? PantallaFicha.deReto(this, c.reto()) : new PantallaFicha(this, c.icono().getItem()));
 		return true;
@@ -153,7 +157,12 @@ public final class PantallaCarton extends Screen {
 
 	/** Esquina de la primera casilla. El conjunto (cabecera, cartón, columna de equipos y pie) va centrado. */
 	private int x0(Paquetes.Estado e) {
-		return (width - (e.tamano() * CELDA + 16 + ANCHO_COLUMNA)) / 2;
+		return (width - (e.tamano() * CELDA + 16 + extra(e) + ANCHO_COLUMNA)) / 2;
+	}
+
+	/** Con relevo, entre el cartón y los equipos va la columna con la cara del dueño de cada fila. */
+	private static int extra(Paquetes.Estado e) {
+		return VariantesCliente.relevo(e) ? VariantesCliente.COLUMNA_PANTALLA : 0;
 	}
 
 	private int y0(Paquetes.Estado e) {
@@ -161,7 +170,7 @@ public final class PantallaCarton extends Screen {
 	}
 
 	private int xPanel(Paquetes.Estado e) {
-		return x0(e) + e.tamano() * CELDA + 16;
+		return x0(e) + e.tamano() * CELDA + 16 + extra(e);
 	}
 
 	@Override
@@ -186,7 +195,7 @@ public final class PantallaCarton extends Screen {
 		int xp = xPanel(e);
 
 		// Marco de la pantalla, placa con el título y, a su derecha, reloj y modo.
-		Arte.panel(g, x0 - DENTRO - 10, y0 - ALTO_CABECERA - 10, lado + 16 + ANCHO_COLUMNA + DENTRO + 20, lado + ALTO_CABECERA + ALTO_PIE + 20);
+		Arte.panel(g, x0 - DENTRO - 10, y0 - ALTO_CABECERA - 10, lado + 16 + extra(e) + ANCHO_COLUMNA + DENTRO + 20, lado + ALTO_CABECERA + ALTO_PIE + 20);
 		Component titulo = colorVisto == null ? title
 			: Component.translatable(visto == e.miEquipo() ? "venatio.pantalla.tu_carton" : "venatio.pantalla.carton_de", colorVisto.nombre());
 		Arte.placa(g, font, titulo, x0 + lado / 2, y0 - ALTO_CABECERA - 4, Arte.ICONO_BINGO);
@@ -200,11 +209,13 @@ public final class PantallaCarton extends Screen {
 		for (int i = 0; i < e.casillas().size(); i++) {
 			Paquetes.CasillaRed c = e.casillas().get(i);
 			int cx = x0 + (i % n) * CELDA, cy = y0 + (i / n) * CELDA;
-			Arte.fondoCasilla(g, c, cx, cy, CELDA - 1, visto, exclusivo);
+			Arte.fondoCasilla(g, c, i, cx, cy, CELDA - 1, visto, exclusivo);
 			long retraso = (i % n + i / n) * 18L;
-			Arte.itemCasilla(g, c, i, cx, cy, CELDA - 1, entrada < retraso ? 0f : entrada > retraso + 160 ? 1f : Animaciones.rebote((entrada - retraso) / 160f));
+			Arte.itemCasilla(g, c, i, cx, cy, CELDA - 1, visto, entrada < retraso ? 0f : entrada > retraso + 160 ? 1f : Animaciones.rebote((entrada - retraso) / 160f));
 			if (mouseX >= cx && mouseX < cx + CELDA && mouseY >= cy && mouseY < cy + CELDA) hover = i;
 		}
+		int filaHover = VariantesCliente.relevo(e)
+			? VariantesCliente.dibujarCaras(g, e, visto, x0 + lado + DENTRO + 3, y0, CELDA, 16, mouseX, mouseY) : -1;
 		g.nextStratum();
 		for (int i = 0; i < e.casillas().size(); i++) {
 			int cx = x0 + (i % n) * CELDA, cy = y0 + (i / n) * CELDA;
@@ -226,7 +237,9 @@ public final class PantallaCarton extends Screen {
 		for (Paquetes.EquipoRed q : e.equipos()) {
 			if (q.color() != visto) continue;
 			for (String m : q.miembros()) {
-				g.text(font, Component.literal("· " + m), xp + 2, yMiembros, Arte.CREMA, false);
+				String filas = VariantesCliente.relevo(e) ? VariantesCliente.filasDe(e, visto, m) : "";
+				g.text(font, filas.isEmpty() ? Component.literal("· " + m) : Component.translatable("venatio.relevo.filas_de", m, filas),
+					xp + 2, yMiembros, Arte.CREMA, false);
 				yMiembros += font.lineHeight + 1;
 			}
 		}
@@ -235,10 +248,14 @@ public final class PantallaCarton extends Screen {
 		Component fase = e.fase() == Paquetes.Estado.JUGANDO ? null : HudCarton.lineaFase(e);
 		if (fase != null) g.textWithWordWrap(font, fase, xp, y0 + lado + DENTRO + 4, ANCHO_COLUMNA, Arte.AMARILLO);
 
-		if (hover >= 0) {
+		if (filaHover >= 0) g.setTooltipForNextFrame(font, VariantesCliente.textoFila(e, visto, filaHover), mouseX, mouseY);
+		if (hover >= 0 && VariantesCliente.tapada(e, hover, visto)) {
+			g.setTooltipForNextFrame(font, tooltipTapada(e, e.casillas().get(hover), hover, visto, colorVisto), java.util.Optional.empty(), mouseX, mouseY);
+		} else if (hover >= 0) {
 			Paquetes.CasillaRed c = e.casillas().get(hover);
 			List<Component> lineas = new ArrayList<>();
 			lineas.add(c.icono().getHoverName());
+			lineasVariantes(e, hover, visto, lineas);
 			if (c.esReto()) lineas.add(Component.translatable("venatio.reto.etiqueta").withColor(Arte.COBRE));
 			if (c.cantidad() > 1 && colorVisto != null && c.logros().stream().noneMatch(l -> l.equipo() == visto)) {
 				Component quien = visto == e.miEquipo() ? Component.translatable("venatio.carton.progreso.tuyo", c.progresoDe(visto), c.cantidad())
@@ -256,5 +273,31 @@ public final class PantallaCarton extends Screen {
 			lineas.add(Component.translatable(c.esReto() ? "venatio.reto.clic_para_ver" : "venatio.fichas.clic_para_ver").withColor(Arte.GRIS));
 			g.setTooltipForNextFrame(font, lineas, java.util.Optional.empty(), mouseX, mouseY);
 		}
+	}
+
+	/** Casilla secreta y dueño de la fila (relevo), debajo del nombre de la casilla. */
+	private static void lineasVariantes(Paquetes.Estado e, int indice, int visto, List<Component> lineas) {
+		if (indice == VariantesCliente.secreta(visto)) {
+			lineas.add(visto == e.miEquipo() && e.fase() != Paquetes.Estado.FINAL
+				? Component.translatable("venatio.secreta.tuya").withColor(Arte.ORO)
+				: Component.translatable("venatio.secreta.de", ColorEquipo.porOrdinal(visto).nombre()).withColor(Arte.ORO));
+		}
+		String dueno = VariantesCliente.duenoDeFila(e, visto, indice / e.tamano());
+		if (dueno != null) lineas.add(VariantesCliente.textoFila(e, visto, indice / e.tamano()).copy().withColor(Arte.COBRE));
+	}
+
+	/** Tooltip de una casilla tapada: no dice qué pide, solo cómo destaparla y quién la tiene. */
+	private static List<Component> tooltipTapada(Paquetes.Estado e, Paquetes.CasillaRed c, int indice, int visto, ColorEquipo colorVisto) {
+		List<Component> lineas = new ArrayList<>();
+		lineas.add(Component.translatable("venatio.oculto.tapada"));
+		boolean paraMi = VariantesCliente.tapada(e, indice, e.miEquipo());
+		lineas.add((paraMi || colorVisto == null ? Component.translatable("venatio.oculto.como")
+			: Component.translatable("venatio.oculto.de_otro", colorVisto.nombre())).withColor(Arte.GRIS));
+		lineasVariantes(e, indice, visto, lineas);
+		for (Paquetes.Logro l : c.logros()) {
+			ColorEquipo eq = ColorEquipo.porOrdinal(l.equipo());
+			if (eq != null) lineas.add(Component.translatable("venatio.pantalla.conseguida", eq.nombre(), EstadoCliente.reloj(l.segundo())));
+		}
+		return lineas;
 	}
 }

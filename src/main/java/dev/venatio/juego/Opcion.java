@@ -22,7 +22,11 @@ public enum Opcion {
 	LOGROS("logros", c -> c.logros, (c, v) -> c.logros = v),
 	CANTIDADES("cantidades", c -> c.cantidades, (c, v) -> c.cantidades = v),
 	EVENTOS("eventos", c -> c.eventos, (c, v) -> c.eventos = v),
-	DESCUENTO("descuento", c -> c.descuento, (c, v) -> c.descuento = v);
+	DESCUENTO("descuento", c -> c.descuento, (c, v) -> c.descuento = v),
+	OCULTO("oculto", c -> c.oculto, (c, v) -> c.oculto = v),
+	DRAFT("draft", c -> c.draft, (c, v) -> c.draft = v),
+	SECRETA("secreta", c -> c.secreta, (c, v) -> c.secreta = v),
+	RELEVO("relevo", c -> c.relevo, (c, v) -> c.relevo = v);
 
 	public final String id;
 	private final Predicate<Configuracion> lector;

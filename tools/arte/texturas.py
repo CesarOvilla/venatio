@@ -338,6 +338,115 @@ def palomita():
     sprite("carton/palomita", mapa(filas, pal, 9))
 
 
+# ---------------------------------------------------------------- variantes del cartón
+
+ROJO_VETO = ((0x7A, 0x16, 0x14, 255), (0xB8, 0x26, 0x22, 255), (0xE0, 0x4A, 0x3C, 255), (0xFF, 0x8A, 0x70, 255))
+
+
+def casilla_tapada():
+    """Cartón oculto: tapa de tablas oscuras con filo de cobre. El centro se repite, así que las vetas van cada 6 px."""
+    img = lienzo(16, 16, M2)
+    for y in range(2, 14):
+        for x in range(2, 14):
+            img.putpixel((x, y), M3 if (x + y) % 6 < 2 else M1 if (x + y) % 6 == 5 else M2)
+    for i in range(16):
+        img.putpixel((i, 0), N)
+        img.putpixel((0, i), N)
+        img.putpixel((i, 15), C1)
+        img.putpixel((15, i), C1)
+    for i in range(1, 15):
+        img.putpixel((i, 1), C3)
+        img.putpixel((1, i), C3)
+        img.putpixel((i, 14), C2)
+        img.putpixel((14, i), C2)
+    sprite("carton/casilla_tapada", img, borde=2)
+
+
+def interrogacion():
+    """El signo de interrogación dorado que va encima de una casilla tapada: trazo de un píxel con contorno oscuro."""
+    trazo = [
+        ".OYO.",
+        "O...O",
+        "....O",
+        "...O.",
+        "..O..",
+        "..O..",
+        ".....",
+        "..O..",
+    ]
+    img = lienzo(7, 10)
+    puntos = {(x + 1, y + 1) for y, f in enumerate(trazo) for x, ch in enumerate(f) if ch != "."}
+    for x, y in puntos:
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if (x + dx, y + dy) not in puntos:
+                    img.putpixel((x + dx, y + dy), N)
+    for y, f in enumerate(trazo):
+        for x, ch in enumerate(f):
+            if ch != ".":
+                img.putpixel((x + 1, y + 1), O4 if ch == "Y" or y == 0 else O3)
+    sprite("carton/interrogacion", img)
+
+
+def estrella_secreta():
+    """Casilla secreta: estrellita dorada en la esquina."""
+    filas = [
+        "...#...",
+        "..#Y#..",
+        "##YYY##",
+        "#OYYYO#",
+        ".#OYO#.",
+        "#OO#OO#",
+        "##...##",
+    ]
+    pal = {"#": N, "Y": O4, "O": O2}
+    sprite("carton/secreta", mapa(filas, pal, 7))
+
+
+def sello_veto():
+    """Draft: la X roja que marca una casilla vetada."""
+    filas = [
+        "##.....##",
+        "#R#...#R#",
+        ".#R#.#R#.",
+        "..#RLR#..",
+        "...#L#...",
+        "..#RLR#..",
+        ".#R#.#R#.",
+        "#R#...#R#",
+        "##.....##",
+    ]
+    pal = {"#": N, "R": ROJO_VETO[2], "L": ROJO_VETO[3]}
+    sprite("carton/veto", mapa(filas, pal, 9))
+
+
+def icono_veto():
+    """Sello de lacre rojo con una X: el draft."""
+    img = lienzo(16, 16)
+    r1, r2, r3, _ = ROJO_VETO
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+            if d > 7.6:
+                continue
+            if d > 6.6:
+                c = N
+            elif x + y < 12 and d > 5.2:
+                c = r3
+            elif x + y > 18 and d > 5.2:
+                c = r1
+            else:
+                c = r2
+            img.putpixel((x, y), c)
+    for i in range(5, 11):
+        img.putpixel((i, i + 1), r1)
+        img.putpixel((15 - i, i + 1), r1)
+    for i in range(5, 11):
+        img.putpixel((i, i), PERGAMINO)
+        img.putpixel((15 - i, i), PERGAMINO)
+    sprite("icono/veto", img)
+
+
 # ---------------------------------------------------------------- barra de progreso y banner
 
 def barra():
@@ -792,6 +901,11 @@ def main():
     icono_trofeo()
     icono_rastreo()
     emblemas()
+    casilla_tapada()
+    interrogacion()
+    estrella_secreta()
+    sello_veto()
+    icono_veto()
 
     for nombre, (img, meta) in SALIDA.items():
         ruta = SPRITES / f"{nombre}.png"
