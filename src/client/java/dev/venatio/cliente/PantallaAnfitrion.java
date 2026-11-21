@@ -66,7 +66,8 @@ public final class PantallaAnfitrion extends Screen {
 		int nOpciones = c.opciones().size();
 		int filas = 2 + (nOpciones + 1) / 2 + 3;
 		int y = 34;
-		int paso = Mth.clamp((height - y - 4) / filas, 21, 24);
+		// Con pantallas bajas (240 de alto, p. ej. 1280×720) las filas se juntan hasta tocarse para que quepa la última.
+		int paso = Mth.clamp((height - y - 4) / filas, 20, 24);
 		boolean ed = editable();
 		List<AbstractWidget> controles = new ArrayList<>();
 

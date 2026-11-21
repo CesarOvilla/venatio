@@ -3,6 +3,7 @@ package dev.venatio;
 import dev.venatio.info.Fichas;
 import dev.venatio.ayudas.Ayudas;
 import dev.venatio.juego.Juego;
+import dev.venatio.localizador.Localizador;
 import dev.venatio.minimapa.ComandoMinimapaDev;
 import dev.venatio.red.Paquetes;
 import dev.venatio.red.PaquetesAyudas;
@@ -27,6 +28,7 @@ public final class Venatio implements ModInitializer {
 		Juego.INSTANCIA.registrar();
 		ModuloStats.registrar();
 		Ayudas.registrar();
+		Localizador.registrar();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Comandos.registrar(dispatcher));
 		ComandoMinimapaDev.registrar(); // solo pruebas: /venatiodev minimapa <segundos> <radio>
 	}

@@ -32,7 +32,8 @@ public final class Lobby {
 			.setGameRule(GameRules.SPAWN_MOBS, false)
 			.setGameRule(GameRules.ADVANCE_TIME, false)
 			.setGameRule(GameRules.ADVANCE_WEATHER, false)
-			.setGameRule(GameRules.PVP, false);
+			.setGameRule(GameRules.PVP, false)
+			.setGameRule(GameRules.LOCATOR_BAR, false); // en el lobby no hay barra de localización
 		nivel = Fantasy.get(server).getOrOpenPersistentLevel(Identifier.fromNamespaceAndPath("venatio", "lobby"), config).asLevel();
 		ConstructorLobby.construir(nivel);
 		TablerosLobby.crear(nivel);

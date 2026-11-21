@@ -16,7 +16,9 @@ public enum Opcion {
 	MINADO("minado", c -> c.minado, (c, v) -> c.minado = v),
 	CONSERVAR_INVENTARIO("inventario", c -> c.conservarInventario, (c, v) -> c.conservarInventario = v),
 	FIN_AUTOMATICO("fin_automatico", c -> c.finAutomatico, (c, v) -> c.finAutomatico = v),
-	RASTREO_INDEPENDIENTE("rastreo_independiente", c -> c.rastreoIndependiente, (c, v) -> c.rastreoIndependiente = v);
+	RASTREO_INDEPENDIENTE("rastreo_independiente", c -> c.rastreoIndependiente, (c, v) -> c.rastreoIndependiente = v),
+	LOCALIZADOR("localizador", c -> c.localizador, (c, v) -> c.localizador = v),
+	LOCALIZADOR_RIVALES("localizador_rivales", c -> c.localizadorRivales, (c, v) -> c.localizadorRivales = v);
 
 	public final String id;
 	private final Predicate<Configuracion> lector;

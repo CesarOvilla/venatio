@@ -58,7 +58,8 @@ public final class MundosPartida {
 			.setGameRule(GameRules.PVP, pvp)
 			.setGameRule(GameRules.KEEP_INVENTORY, conservarInventario)
 			// Los logros no se anuncian en el chat durante la partida (como en MCBingo)
-			.setGameRule(GameRules.SHOW_ADVANCEMENT_MESSAGES, false);
+			.setGameRule(GameRules.SHOW_ADVANCEMENT_MESSAGES, false)
+			.setGameRule(GameRules.LOCATOR_BAR, false); // la dibuja Venatio (dev.venatio.localizador); así no se enciman
 	}
 
 	private static Identifier id(String nombre) {

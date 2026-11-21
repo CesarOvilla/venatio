@@ -89,6 +89,8 @@
   "venatio.modo.rastreo": "Rastreo",
   "venatio.modo.rastreo_carrera": "Rastreo: carrera",
   "venatio.opcion.rastreo_independiente": "Rastreo: cada equipo con su lista",
+  "venatio.opcion.localizador": "Barra de localización",
+  "venatio.opcion.localizador_rivales": "Ver rivales en la barra",
   "venatio.config.meta": "Meta del Rastreo: %s items",
   "venatio.rastreo.encontrado": "%1$s encontró %2$s para el equipo %3$s",
   "venatio.rastreo.salto": "%1$s saltó %2$s: todos pasan al siguiente item",
