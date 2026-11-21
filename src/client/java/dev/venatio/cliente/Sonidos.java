@@ -29,10 +29,13 @@ public final class Sonidos {
 	public static final SoundEvent GUIA_LLEGADA = evento("guia_llegada");
 	public static final SoundEvent RASTREO_ENCONTRADO = evento("rastreo_encontrado");
 	public static final SoundEvent CARTON_ABRIR = evento("carton_abrir");
+	public static final SoundEvent EVENTO_ANUNCIO = evento("evento_anuncio");
+	public static final SoundEvent EVENTO_INICIO = evento("evento_inicio");
+	public static final SoundEvent SWITCHEROO_CAMBIO = evento("switcheroo_cambio");
 
 	/** Todos, para comprobar en las pruebas que el juego los encuentra. */
 	public static final List<SoundEvent> TODOS = List.of(CASILLA, CASILLA_RIVAL, BINGO, VICTORIA, DERROTA, FIN, CUENTA_TIC, CUENTA_YA,
-		COMPRA, MARCA, GUIA_LLEGADA, RASTREO_ENCONTRADO, CARTON_ABRIR);
+		COMPRA, MARCA, GUIA_LLEGADA, RASTREO_ENCONTRADO, CARTON_ABRIR, EVENTO_ANUNCIO, EVENTO_INICIO, SWITCHEROO_CAMBIO);
 
 	/** Cuántas veces se pidió tocar cada sonido (para las pruebas). */
 	private static final java.util.Map<Identifier, Integer> tocados = new java.util.HashMap<>();

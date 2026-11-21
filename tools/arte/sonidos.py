@@ -310,6 +310,36 @@ def carton_abrir():
     return s
 
 
+def evento_anuncio():
+    """Evento sorpresa anunciado: llamada de cuerno de dos notas que se repite, como un aviso de cacería."""
+    s = []
+    for i, (nota, t) in enumerate((("G4", 0.00), ("D5", 0.15), ("G4", 0.40), ("D5", 0.55))):
+        mezclar(s, cuerno(hz(nota), 0.13 if i % 2 == 0 else 0.24, ataque=0.02, brillo=1.0), t, 0.75)
+    mezclar(s, cuerno(hz("G3"), 0.8, ataque=0.05, brillo=0.5), 0.40, 0.35)
+    mezclar(s, campanilla(hz("D6"), 0.5, 7), 0.55, 0.15)
+    return eco(s, cola=0.3)
+
+
+def evento_inicio():
+    """El evento empieza: golpe de bloque grave y un acorde de campanas que se abre hacia arriba."""
+    s = []
+    mezclar(s, bloque(420, 0.08), 0.0, 0.7)
+    for i, nota in enumerate(("D5", "F#5", "A5", "D6")):
+        mezclar(s, campanilla(hz(nota), 0.8, 5), 0.03 + i * 0.045, 0.6)
+    return eco(s, cola=0.35)
+
+
+def switcheroo_cambio():
+    """Switcheroo: el item cambió sin dueño. Barrido de marimba hacia abajo (se va uno) y otro hacia arriba (llega otro)."""
+    s = []
+    for i, r in enumerate((2, 3 / 2, 5 / 4, 1)):
+        mezclar(s, marimba(hz("C5") * r, 0.22, brillo=0.6), i * 0.045, 0.7)
+    for i, r in enumerate((1, 5 / 4, 3 / 2, 2)):
+        mezclar(s, marimba(hz("D5") * r, 0.3 if i < 3 else 0.42), 0.24 + i * 0.045, 0.75)
+    mezclar(s, campanilla(hz("D7"), 0.4, 9), 0.39, 0.15)
+    return s
+
+
 # nombre del evento → (variantes, volumen en sounds.json, subtítulo)
 SONIDOS = {
     "casilla": ([lambda: casilla("E5"), lambda: casilla("G5"), lambda: casilla("D5")], 0.9, "Casilla conseguida"),
@@ -326,6 +356,9 @@ SONIDOS = {
     "rastreo_encontrado": ([lambda: rastreo_encontrado("C5"), lambda: rastreo_encontrado("D5"),
                             lambda: rastreo_encontrado("A#4")], 0.9, "Item encontrado"),
     "carton_abrir": ([carton_abrir], 0.5, "Cartón abierto"),
+    "evento_anuncio": ([evento_anuncio], 0.85, "Evento sorpresa anunciado"),
+    "evento_inicio": ([evento_inicio], 0.75, "Empieza el evento"),
+    "switcheroo_cambio": ([switcheroo_cambio], 0.8, "Cambio de item"),
 }
 
 

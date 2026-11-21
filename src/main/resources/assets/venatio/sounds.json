@@ -134,5 +134,32 @@
         "volume": 0.5
       }
     ]
+  },
+  "evento_anuncio": {
+    "subtitle": "subtitles.venatio.evento_anuncio",
+    "sounds": [
+      {
+        "name": "venatio:evento_anuncio",
+        "volume": 0.85
+      }
+    ]
+  },
+  "evento_inicio": {
+    "subtitle": "subtitles.venatio.evento_inicio",
+    "sounds": [
+      {
+        "name": "venatio:evento_inicio",
+        "volume": 0.75
+      }
+    ]
+  },
+  "switcheroo_cambio": {
+    "subtitle": "subtitles.venatio.switcheroo_cambio",
+    "sounds": [
+      {
+        "name": "venatio:switcheroo_cambio",
+        "volume": 0.8
+      }
+    ]
   }
 }
