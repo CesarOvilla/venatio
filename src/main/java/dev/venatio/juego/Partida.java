@@ -11,6 +11,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.core.registries.Registries;
@@ -431,6 +432,10 @@ public final class Partida {
 		BlockPos pos = spawns.get(equipoDe(p));
 		if (pos == null) return;
 		p.teleportTo(mundos.mundo(), pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, Set.of(), p.getYRot(), 0f, true);
+		// Reaparecer directamente en el spawn del equipo, dentro del mundo de la partida. Además de ahorrar un viaje,
+		// es necesario para keepInventory: vanilla decide si copia el inventario según las reglas del mundo donde reapareces.
+		p.setRespawnPosition(new ServerPlayer.RespawnConfig(
+			LevelData.RespawnData.of(mundos.mundo().dimension(), pos, p.getYRot(), 0f), true), false);
 	}
 
 	/** Un participante volvió a entrar al server. */

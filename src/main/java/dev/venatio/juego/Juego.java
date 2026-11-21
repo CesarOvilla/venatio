@@ -7,6 +7,7 @@ import dev.venatio.lobby.ConstructorLobby;
 import dev.venatio.lobby.TablerosLobby;
 import dev.venatio.mundo.Lobby;
 import dev.venatio.mundo.MundosPartida;
+import net.minecraft.world.level.gamerules.GameRules;
 import dev.venatio.red.Paquetes;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -66,6 +67,7 @@ public final class Juego {
 		});
 		ServerTickEvents.END_SERVER_TICK.register(s -> tick());
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> alEntrar(handler.player));
+		ServerPlayerEvents.COPY_FROM.register(this::conservarInventario);
 		ServerPlayerEvents.AFTER_RESPAWN.register((viejo, nuevo, vivo) -> alReaparecer(nuevo));
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entidad, fuente, cantidad) -> permitirDano(entidad));
 		ServerPlayNetworking.registerGlobalReceiver(Paquetes.Hola.TYPE, (hola, ctx) -> verificarVersion(ctx.player(), hola.version()));
@@ -135,6 +137,21 @@ public final class Juego {
 		if (!propia.equals(versionCliente)) {
 			p.connection.disconnect(Component.literal(VERSION_DISTINTA.formatted(versionCliente, propia)));
 		}
+	}
+
+	/**
+	 * Red de seguridad de "Conservar inventario": vanilla solo copia el inventario si el mundo donde reapareces tiene
+	 * keepInventory. Si alguien muere en la partida y reaparece fuera (por ejemplo, le rompieron la cama y cae en el
+	 * spawn del mundo principal), los items no se soltaron al morir y se perderían. Aquí se copian igual.
+	 */
+	private void conservarInventario(ServerPlayer viejo, ServerPlayer nuevo, boolean vivo) {
+		if (vivo || partida == null || !partida.participa(viejo) || !partida.cfg.conservarInventario) return;
+		if (!MundosPartida.esDePartida(viejo.level())) return;
+		if (nuevo.level().getGameRules().get(GameRules.KEEP_INVENTORY)) return; // vanilla ya lo copió
+		nuevo.getInventory().replaceWith(viejo.getInventory());
+		nuevo.experienceLevel = viejo.experienceLevel;
+		nuevo.totalExperience = viejo.totalExperience;
+		nuevo.experienceProgress = viejo.experienceProgress;
 	}
 
 	private void alReaparecer(ServerPlayer p) {
