@@ -256,3 +256,8 @@ En curso: tres agentes en paralelo (cartón ampliado: logros, cantidades, dificu
 - Moneda de las ayudas: items (implementado) o fichas por casilla.
 - Nombre definitivo.
 - Si se queda el comando de prueba `/venatiodev minimapa`.
+- **Saltar por votación en Rastreo** (propuesto 2026-11-21, sin hacer). Hoy cualquiera salta solo con `/venatio saltar` (60 s
+  entre saltos). Propuesta: botón "Votar saltar" en el cartón (B) y en el chat con clic, contador "Saltar: 1/3" en el HUD,
+  la votación caduca a los 30 s, se mantienen los 60 s entre saltos; en Rastreo por equipo votan solo los compañeros.
+  Falta decidir quién vota: un voto por equipo (recomendado), todos los jugadores, o que el anfitrión elija en el panel
+  entre libre / por equipo / todos.
