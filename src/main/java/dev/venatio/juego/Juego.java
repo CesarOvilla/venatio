@@ -20,6 +20,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.TeamColor;
 
@@ -66,6 +67,7 @@ public final class Juego {
 		});
 		ServerTickEvents.END_SERVER_TICK.register(s -> tick());
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> alEntrar(handler.player));
+		ServerPlayerEvents.COPY_FROM.register(Juego::conservarInventario);
 		ServerPlayerEvents.AFTER_RESPAWN.register((viejo, nuevo, vivo) -> alReaparecer(nuevo));
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entidad, fuente, cantidad) -> permitirDano(entidad));
 		ServerPlayNetworking.registerGlobalReceiver(Paquetes.Hola.TYPE, (hola, ctx) -> verificarVersion(ctx.player(), hola.version()));
@@ -135,6 +137,21 @@ public final class Juego {
 		if (!propia.equals(versionCliente)) {
 			p.connection.disconnect(Component.literal(VERSION_DISTINTA.formatted(versionCliente, propia)));
 		}
+	}
+
+	/**
+	 * keepInventory está puesto en los mundos de la partida, pero al reaparecer el juego lo consulta en el mundo
+	 * donde aparece el jugador nuevo (el principal, que no lo tiene): lo que traía ni se cae al morir ni se copia.
+	 * Si murió en un mundo que conserva el inventario, se copia aquí, con la experiencia.
+	 */
+	private static void conservarInventario(ServerPlayer viejo, ServerPlayer nuevo, boolean vivo) {
+		if (vivo || viejo.isSpectator()) return;
+		if (!viejo.level().getGameRules().get(GameRules.KEEP_INVENTORY) || nuevo.level().getGameRules().get(GameRules.KEEP_INVENTORY)) return;
+		nuevo.getInventory().replaceWith(viejo.getInventory());
+		nuevo.experienceLevel = viejo.experienceLevel;
+		nuevo.totalExperience = viejo.totalExperience;
+		nuevo.experienceProgress = viejo.experienceProgress;
+		nuevo.setScore(viejo.getScore());
 	}
 
 	private void alReaparecer(ServerPlayer p) {
