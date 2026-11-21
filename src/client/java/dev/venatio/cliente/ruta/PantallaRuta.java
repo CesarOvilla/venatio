@@ -41,7 +41,8 @@ public final class PantallaRuta extends Screen {
 	private static final int ARRIBA = 30;
 	private static final int ABAJO = 28;
 	private static final int ANCHO_LEYENDA = 120;
-	private static final float ESCALA_MIN = 0.02f, ESCALA_MAX = 6f;
+	/** Píxeles de interfaz por bloque: de muy lejos (cabe un recorrido de decenas de miles de bloques) a muy cerca. */
+	private static final float ESCALA_MIN = 0.002f, ESCALA_MAX = 6f;
 	private static final float PASO_ZOOM = 1.25f;
 	private static final int FONDO_MAPA = 0xFF17110C;
 	private static final int FONDO_ICONO = 0xF0231A12;
@@ -62,6 +63,7 @@ public final class PantallaRuta extends Screen {
 	/** Píxeles de interfaz por bloque. */
 	private float escala = 1f;
 	private boolean ajustada, arrastrando;
+	private int anchoAjustado, altoAjustado;
 	private int mx0, my0, mx1, my1, leyendaX;
 	private boolean conLeyenda;
 	private final LineasRuta lineas = new LineasRuta();
@@ -73,6 +75,7 @@ public final class PantallaRuta extends Screen {
 	private final List<int[]> filasLeyenda = new ArrayList<>();
 	private int tramos;
 	private boolean terrenoVisible;
+	private int mosaicosVisibles;
 	private List<Component> hover;
 
 	public PantallaRuta(Screen anterior, DatosRuta ruta, List<ItemStack> iconos) {
@@ -118,9 +121,12 @@ public final class PantallaRuta extends Screen {
 		mx1 = width - MARGEN - (conLeyenda ? ANCHO_LEYENDA + 10 : 0);
 		my1 = height - ABAJO - 6;
 		leyendaX = mx1 + 10;
-		if (!ajustada) {
+		// Al abrir, y si cambia el tamaño del mapa (ventana o escala de la interfaz), se encuadra todo de nuevo.
+		if (!ajustada || mx1 - mx0 != anchoAjustado || my1 - my0 != altoAjustado) {
 			ajustar();
 			ajustada = true;
+			anchoAjustado = mx1 - mx0;
+			altoAjustado = my1 - my0;
 		}
 
 		int y = height - ABAJO;
@@ -296,14 +302,9 @@ public final class PantallaRuta extends Screen {
 	}
 
 	private void dibujarTerreno(GuiGraphicsExtractor g) {
-		terrenoVisible = false;
 		TexturaTerreno t = RutaCliente.textura(ruta, dim);
-		if (t == null) return;
-		float x = sx(t.x0), y = sy(t.z0);
-		float w = t.ancho * t.bloquesPorPixel * escala, h = t.alto * t.bloquesPorPixel * escala;
-		if (x > mx1 || y > my1 || x + w < mx0 || y + h < my0) return;
-		t.dibujar(g, x, y, escala);
-		terrenoVisible = true;
+		mosaicosVisibles = t == null ? 0 : t.dibujar(g, this::sx, this::sy, escala, mx0, my0, mx1, my1);
+		terrenoVisible = mosaicosVisibles > 0;
 	}
 
 	/** Recorridos: una sombra oscura y encima el color de cada jugador. Se saltan los puntos a menos de 1.5 px del anterior. */
@@ -349,7 +350,7 @@ public final class PantallaRuta extends Screen {
 
 	/**
 	 * Iconos de salidas y eventos, y la cabeza de cada jugador al final de su línea. Los que caerían encimados (varias
-	 * casillas en el mismo sitio, o junto a una cabeza) se recorren a la derecha para que se vean todos.
+	 * casillas en el mismo sitio, o junto a una cabeza) se acomodan alrededor de su sitio para que se vean todos.
 	 */
 	private void dibujarIconos(GuiGraphicsExtractor g) {
 		visibles.clear();
@@ -402,21 +403,28 @@ public final class PantallaRuta extends Screen {
 	/** Dónde va un icono que tocaría (x, y): ahí, o recorrido a la derecha si ya hay otro. null si queda fuera del mapa. */
 	private int[] lugar(int x, int y) {
 		if (!cerca(x, y, 8)) return null;
-		for (int intento = 0; intento < 12; intento++) {
-			boolean choca = false;
-			for (int[] o : ocupados) {
-				if (Math.abs(o[0] - x) < 13 && Math.abs(o[1] - y) < 13) {
-					choca = true;
-					break;
-				}
-			}
-			if (!choca) break;
-			x += 14;
-		}
+		// Alrededor del sitio, en dos anillos como mucho: de lejos (muchos iconos juntos) no se van a otra parte del mapa.
 		int[] p = {x, y};
+		for (int[] d : ALREDEDOR) {
+			int cx = x + d[0] * 14, cy = y + d[1] * 14;
+			if (libre(cx, cy)) {
+				p = new int[]{cx, cy};
+				break;
+			}
+		}
 		ocupados.add(p);
 		return p;
 	}
+
+	private boolean libre(int x, int y) {
+		for (int[] o : ocupados) if (Math.abs(o[0] - x) < 13 && Math.abs(o[1] - y) < 13) return false;
+		return true;
+	}
+
+	/** Desplazamientos (en iconos) que se prueban, del sitio exacto hacia fuera; si no hay hueco, se encima. */
+	private static final int[][] ALREDEDOR = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1},
+		{2, 0}, {-2, 0}, {0, 2}, {0, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2},
+		{2, 2}, {-2, 2}, {2, -2}, {-2, -2}};
 
 	private boolean cerca(int x, int y, int margen) {
 		return x >= mx0 - margen && x < mx1 + margen && y >= my0 - margen && y < my1 + margen;
@@ -627,9 +635,33 @@ public final class PantallaRuta extends Screen {
 		return hover == null || hover.isEmpty() ? null : hover.getFirst().getString();
 	}
 
-	/** Píxeles con color de la textura del terreno de la dimensión vista (0 si no hay). */
+	/** Píxeles con color del terreno de la dimensión vista (0 si no hay). */
 	public int pixelesTerreno() {
 		TexturaTerreno t = RutaCliente.textura(ruta, dim);
 		return t == null ? 0 : t.pintados;
+	}
+
+	/** Mosaicos de terreno de la dimensión vista, y cuántos se dibujaron en el último cuadro. */
+	public int[] mosaicos() {
+		TexturaTerreno t = RutaCliente.textura(ruta, dim);
+		return new int[]{t == null ? 0 : t.mosaicos(), mosaicosVisibles};
+	}
+
+	/** ¿Todos los puntos del recorrido de esta dimensión caen dentro del mapa con la vista actual? */
+	public boolean recorridoCompletoVisible() {
+		for (DatosRuta.Jugador j : ruta.jugadores()) {
+			for (DatosRuta.Punto p : j.puntos()) {
+				if (p.dim() == dim && !enMapa(sx(p.x() + 0.5), sy(p.z() + 0.5))) return false;
+			}
+		}
+		return true;
+	}
+
+	/** Centro en pantalla de la fila de un jugador en la leyenda (clic ahí: va al final de su recorrido), o null. */
+	public int[] filaDeLeyenda(String nombre) {
+		for (int[] f : filasLeyenda) {
+			if (ruta.jugadores().get(f[4]).nombre().equals(nombre)) return new int[]{f[0] + f[2] / 2, f[1] + f[3] / 2};
+		}
+		return null;
 	}
 }

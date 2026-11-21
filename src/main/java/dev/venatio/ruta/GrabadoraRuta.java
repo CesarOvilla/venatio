@@ -25,6 +25,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Util;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -35,10 +36,14 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Graba la ruta de la partida mientras se juega (sustituye a BingoCam): posición de cada participante cada 2 s,
@@ -55,7 +60,13 @@ public final class GrabadoraRuta {
 	/** Radio en chunks del terreno que se muestrea alrededor de cada jugador (en el Nether, menos: es cueva). */
 	private static final int RADIO = 6, RADIO_TECHO = 4;
 	private static final int CHUNKS_POR_TICK = 6;
-	private static final int MAX_CHUNKS = 60_000;
+	/** Tope de chunks muestreados por dimensión (unos 16 bytes cada uno). */
+	private static final int MAX_CHUNKS = 100_000;
+	/**
+	 * Resolución del terreno que se manda: 4×4 colores por chunk (1 cada 4 bloques) hasta este total de chunks; con más,
+	 * 2×2; con mucho más, 1. Así una partida con alguien que se fue muy lejos no hace crecer la ruta sin límite.
+	 */
+	private static final int CHUNKS_RESOLUCION_MEDIA = 40_000, CHUNKS_RESOLUCION_BAJA = 120_000;
 	/** Con el jugador quieto no se repite el punto, salvo cada tanto para que la línea de tiempo siga. */
 	private static final int SEGUNDOS_QUIETO = 60;
 	/** Una foto en vivo se reutiliza este tiempo si otro espectador la pide. */
@@ -70,7 +81,13 @@ public final class GrabadoraRuta {
 	private static DatosRuta ultimaDatos;
 	private static Envio foto;
 	private static int fotoTick;
+	private static boolean fotoEnCamino;
+	private static final Set<UUID> pendientesFoto = new LinkedHashSet<>();
 	private static int siguienteId = 1;
+	/** Sube con cada partida nueva: lo que se comprimía para la anterior ya no se usa. */
+	private static int generacion;
+	/** La ruta final se está comprimiendo (fuera del hilo del servidor). */
+	private static boolean preparando;
 
 	private GrabadoraRuta() {}
 
@@ -125,6 +142,9 @@ public final class GrabadoraRuta {
 			ultima = null;
 			ultimaDatos = null;
 			foto = null;
+			preparando = false;
+			fotoEnCamino = false;
+			pendientesFoto.clear();
 		});
 		ServerTickEvents.END_SERVER_TICK.register(s -> tick());
 		ServerLivingEntityEvents.AFTER_DEATH.register(GrabadoraRuta::alMorir);
@@ -140,6 +160,7 @@ public final class GrabadoraRuta {
 		if (p != partida) {
 			partida = p;
 			g = p == null ? null : new Grabacion();
+			if (p != null) generacion++;
 			if (p != null && ultima != null) {
 				// Empezó otra: la ruta de la anterior ya no se puede ver (y el tablero deja de ofrecerla).
 				ultima = null;
@@ -147,6 +168,8 @@ public final class GrabadoraRuta {
 				ModuloStats.actualizarTableros();
 			}
 			foto = null;
+			fotoEnCamino = false;
+			pendientesFoto.clear();
 		}
 		if (p == null || g == null) return;
 		Partida.Fase fase = p.fase();
@@ -356,6 +379,10 @@ public final class GrabadoraRuta {
 		for (EventoG e : g.eventos) {
 			eventos.add(new DatosRuta.Evento(e.tipo, indices.getOrDefault(e.jugador, -1), e.segundo, e.dim, e.x, e.z, e.icono, e.extra));
 		}
+		int total = 0;
+		for (Capa c : g.capas) for (byte[] b : c.chunks.values()) if (b.length > 0) total++;
+		int m = total > CHUNKS_RESOLUCION_BAJA ? 1 : total > CHUNKS_RESOLUCION_MEDIA ? 2 : DatosRuta.MUESTRAS_POR_LADO;
+		int paso = DatosRuta.MUESTRAS_POR_LADO / m;
 		List<DatosRuta.Terreno> terrenos = new ArrayList<>();
 		for (int d = 0; d < g.capas.length; d++) {
 			Long2ObjectOpenHashMap<byte[]> chunks = g.capas[d].chunks;
@@ -366,25 +393,54 @@ public final class GrabadoraRuta {
 			Long[] orden = Arrays.stream(claves).boxed().toArray(Long[]::new);
 			Arrays.sort(orden, (a, b) -> ChunkPos.getZ(a) != ChunkPos.getZ(b) ? Integer.compare(ChunkPos.getZ(a), ChunkPos.getZ(b))
 				: Integer.compare(ChunkPos.getX(a), ChunkPos.getX(b)));
-			byte[] colores = new byte[orden.length * DatosRuta.MUESTRAS_POR_CHUNK];
-			for (int i = 0; i < orden.length; i++) {
-				claves[i] = orden[i];
-				System.arraycopy(chunks.get(claves[i]), 0, colores, i * DatosRuta.MUESTRAS_POR_CHUNK, DatosRuta.MUESTRAS_POR_CHUNK);
+			byte[] colores = new byte[orden.length * m * m];
+			for (int k = 0; k < orden.length; k++) {
+				claves[k] = orden[k];
+				byte[] muestra = chunks.get(claves[k]);
+				// Con menos resolución se toma la muestra del centro de cada cuadro de paso × paso.
+				for (int j = 0; j < m; j++) {
+					for (int i = 0; i < m; i++) {
+						colores[k * m * m + j * m + i] = muestra[(j * paso + paso / 2) * DatosRuta.MUESTRAS_POR_LADO + i * paso + paso / 2];
+					}
+				}
 			}
-			terrenos.add(new DatosRuta.Terreno(d, claves, colores));
+			terrenos.add(new DatosRuta.Terreno(d, m, claves, colores));
 		}
 		return new DatosRuta(p.segundos(), enVivo, jugadores, eventos, List.copyOf(g.spawns), terrenos);
 	}
 
-	private static Envio empaquetar(DatosRuta datos) {
-		byte[] comprimida = datos.comprimir();
+	/** Los iconos de las casillas, copiados para mandarlos (la grabación sigue cambiando si la partida sigue). */
+	private static List<ItemStack> copiarIconos() {
+		List<ItemStack> iconos = new ArrayList<>();
+		for (ItemStack s : g.iconos) iconos.add(s.copy());
+		return iconos;
+	}
+
+	/** Ruta comprimida en trozos que caben en un paquete. */
+	private static Envio empaquetar(byte[] comprimida, List<ItemStack> iconos) {
 		List<byte[]> trozos = new ArrayList<>();
 		for (int i = 0; i < comprimida.length || trozos.isEmpty(); i += PaquetesRuta.TAM_TROZO) {
 			trozos.add(Arrays.copyOfRange(comprimida, i, Math.min(comprimida.length, i + PaquetesRuta.TAM_TROZO)));
 		}
-		List<ItemStack> iconos = new ArrayList<>();
-		for (ItemStack s : g.iconos) iconos.add(s.copy());
 		return new Envio(siguienteId++, iconos, trozos);
+	}
+
+	/**
+	 * Comprime fuera del hilo del servidor (con mucho terreno son cientos de KB y no debe dar tirones) y entrega el
+	 * resultado de vuelta en el hilo del servidor, si sigue siendo la misma partida. null si falló.
+	 */
+	private static void comprimir(DatosRuta datos, List<ItemStack> iconos, Consumer<Envio> listo) {
+		int gen = generacion;
+		CompletableFuture.supplyAsync(datos::comprimir, Util.backgroundExecutor())
+			.whenCompleteAsync((bytes, error) -> {
+				if (gen != generacion) return;
+				if (error != null) {
+					Venatio.LOG.error("No se pudo comprimir la ruta de la partida", error);
+					listo.accept(null);
+					return;
+				}
+				listo.accept(empaquetar(bytes, iconos));
+			}, server);
 	}
 
 	private static void enviar(ServerPlayer j, Envio e, boolean abrir) {
@@ -401,23 +457,34 @@ public final class GrabadoraRuta {
 		if (g == null || p != partida) return;
 		muestrear(p, Integer.MAX_VALUE); // lo que quedó en cola sigue cargado: los jugadores todavía están ahí
 		anotarPuntos(p, true);
-		ultimaDatos = armar(p, false);
-		ultima = empaquetar(ultimaDatos);
-		int puntos = ultimaDatos.jugadores().stream().mapToInt(j -> j.puntos().size()).sum();
-		int chunks = ultimaDatos.terrenos().stream().mapToInt(DatosRuta.Terreno::cantidad).sum();
-		Venatio.LOG.info("Ruta de la partida: {} jugadores, {} puntos, {} eventos, {} chunks de terreno, {} KB en {} trozo(s)",
-			ultimaDatos.jugadores().size(), puntos, ultimaDatos.eventos().size(), chunks,
-			ultima.trozos.stream().mapToInt(t -> t.length).sum() / 1024, ultima.trozos.size());
-		Component aviso = Component.translatable("venatio.ruta.lista", Component.translatable("venatio.ruta.ver")
-			.withStyle(s -> s.withColor(ChatFormatting.GOLD).withUnderlined(true)
-				.withClickEvent(new ClickEvent.RunCommand("/venatio ruta"))
-				.withHoverEvent(new HoverEvent.ShowText(Component.translatable("venatio.ruta.ver.ayuda")))));
+		DatosRuta datos = armar(p, false);
+		ultimaDatos = datos;
+		List<UUID> destinatarios = new ArrayList<>();
 		for (ServerPlayer j : server.getPlayerList().getPlayers()) {
-			if (!p.participa(j) && !Espectadores.es(j)) continue;
-			if (!ServerPlayNetworking.canSend(j, PaquetesRuta.RutaTrozo.TYPE)) continue;
-			enviar(j, ultima, false);
-			j.sendSystemMessage(aviso);
+			if ((p.participa(j) || Espectadores.es(j)) && ServerPlayNetworking.canSend(j, PaquetesRuta.RutaTrozo.TYPE)) destinatarios.add(j.getUUID());
 		}
+		preparando = true;
+		comprimir(datos, copiarIconos(), envio -> {
+			preparando = false;
+			if (envio == null) return;
+			ultima = envio;
+			int puntos = datos.jugadores().stream().mapToInt(j -> j.puntos().size()).sum();
+			int chunks = datos.terrenos().stream().mapToInt(DatosRuta.Terreno::cantidad).sum();
+			int m = datos.terrenos().isEmpty() ? 0 : datos.terrenos().getFirst().muestras();
+			Venatio.LOG.info("Ruta de la partida: {} jugadores, {} puntos, {} eventos, {} chunks de terreno ({}×{} colores por chunk), {} KB en {} trozo(s)",
+				datos.jugadores().size(), puntos, datos.eventos().size(), chunks, m, m,
+				envio.trozos.stream().mapToInt(t -> t.length).sum() / 1024, envio.trozos.size());
+			Component aviso = Component.translatable("venatio.ruta.lista", Component.translatable("venatio.ruta.ver")
+				.withStyle(s -> s.withColor(ChatFormatting.GOLD).withUnderlined(true)
+					.withClickEvent(new ClickEvent.RunCommand("/venatio ruta"))
+					.withHoverEvent(new HoverEvent.ShowText(Component.translatable("venatio.ruta.ver.ayuda")))));
+			for (UUID u : destinatarios) {
+				ServerPlayer j = server.getPlayerList().getPlayer(u);
+				if (j == null) continue;
+				enviar(j, envio, false);
+				j.sendSystemMessage(aviso);
+			}
+		});
 	}
 
 	/**
@@ -429,14 +496,30 @@ public final class GrabadoraRuta {
 		Partida p = Juego.INSTANCIA.partida();
 		if (p != null && p == partida && g != null && (p.fase() == Partida.Fase.CUENTA_ATRAS || p.fase() == Partida.Fase.JUGANDO)) {
 			if (!Espectadores.es(j)) return Component.translatable("venatio.ruta.error.en_juego");
-			if (foto == null || ticks - fotoTick > TICKS_FOTO) {
-				foto = empaquetar(armar(p, true));
-				fotoTick = ticks;
+			if (foto != null && ticks - fotoTick <= TICKS_FOTO) {
+				enviar(j, foto, true);
+				return null;
 			}
-			enviar(j, foto, true);
+			// Foto nueva: se arma aquí y se comprime aparte; les llega a todos los que la pidieron mientras tanto.
+			pendientesFoto.add(j.getUUID());
+			if (!fotoEnCamino) {
+				fotoEnCamino = true;
+				comprimir(armar(p, true), copiarIconos(), envio -> {
+					fotoEnCamino = false;
+					if (envio != null) {
+						foto = envio;
+						fotoTick = ticks;
+						for (UUID u : pendientesFoto) {
+							ServerPlayer o = server.getPlayerList().getPlayer(u);
+							if (o != null) enviar(o, envio, true);
+						}
+					}
+					pendientesFoto.clear();
+				});
+			}
 			return null;
 		}
-		if (ultima == null) return Component.translatable("venatio.ruta.error.sin_ruta");
+		if (ultima == null) return Component.translatable(preparando ? "venatio.ruta.error.preparando" : "venatio.ruta.error.sin_ruta");
 		enviar(j, ultima, true);
 		return null;
 	}
@@ -469,5 +552,11 @@ public final class GrabadoraRuta {
 	/** La ruta de la última partida terminada, o null. */
 	public static DatosRuta ultima() {
 		return ultimaDatos;
+	}
+
+	/** {bytes comprimidos, trozos} de la última ruta ya lista para mandar, o null mientras se comprime. */
+	public static int[] tamanoUltima() {
+		Envio e = ultima;
+		return e == null ? null : new int[]{e.trozos.stream().mapToInt(t -> t.length).sum(), e.trozos.size()};
 	}
 }

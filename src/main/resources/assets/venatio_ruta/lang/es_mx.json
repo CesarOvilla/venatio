@@ -31,6 +31,7 @@
   "venatio.ruta.tablero": "Recorrido: /venatio ruta",
   "venatio.ruta.error.sin_mod": "Necesitas el mod Venatio para ver la ruta.",
   "venatio.ruta.error.en_juego": "La ruta se puede ver al terminar la partida.",
+  "venatio.ruta.error.preparando": "La ruta todavía se está preparando: pídela otra vez en un momento.",
   "venatio.ruta.error.sin_ruta": "Todavía no hay ruta: se graba durante la partida y se puede ver hasta que empiece otra.",
   "venatio.ruta.cargando": "Cargando la ruta…",
   "venatio.ruta.dim.0": "Overworld",

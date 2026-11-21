@@ -55,10 +55,11 @@ public record DatosRuta(int duracion, boolean enVivo, List<Jugador> jugadores, L
 	public record Spawn(int equipo, int dim, int x, int z) {}
 
 	/**
-	 * Muestra del terreno de una dimensión: por cada chunk (clave de ChunkPos.pack) 16 colores de mapa empaquetados
-	 * (MapColor.getPackedId: id del color × 4 + brillo), fila por fila de norte a sur. 0 = sin dato.
+	 * Muestra del terreno de una dimensión: por cada chunk (clave de ChunkPos.pack) muestras × muestras colores de mapa
+	 * empaquetados (MapColor.getPackedId: id del color × 4 + brillo), fila por fila de norte a sur. 0 = sin dato.
+	 * muestras: 4 (un color cada 4 bloques); en partidas con mucho terreno explorado baja a 2 o 1 para que la ruta no crezca.
 	 */
-	public record Terreno(int dim, long[] chunks, byte[] colores) {
+	public record Terreno(int dim, int muestras, long[] chunks, byte[] colores) {
 		public int cantidad() {
 			return chunks.length;
 		}
@@ -108,6 +109,7 @@ public record DatosRuta(int duracion, boolean enVivo, List<Jugador> jugadores, L
 		buf.writeVarInt(terrenos.size());
 		for (Terreno t : terrenos) {
 			buf.writeVarInt(t.dim);
+			buf.writeVarInt(t.muestras);
 			buf.writeVarInt(t.chunks.length);
 			int cx = 0, cz = 0;
 			for (long c : t.chunks) {
@@ -157,6 +159,7 @@ public record DatosRuta(int duracion, boolean enVivo, List<Jugador> jugadores, L
 		List<Terreno> terrenos = new ArrayList<>(nt);
 		for (int i = 0; i < nt; i++) {
 			int dim = buf.readVarInt();
+			int muestras = Math.clamp(buf.readVarInt(), 1, MUESTRAS_POR_LADO);
 			int n = buf.readVarInt();
 			long[] chunks = new long[n];
 			int cx = 0, cz = 0;
@@ -165,9 +168,9 @@ public record DatosRuta(int duracion, boolean enVivo, List<Jugador> jugadores, L
 				cz += unzigzag(buf.readVarInt());
 				chunks[k] = clave(cx, cz);
 			}
-			byte[] colores = new byte[n * MUESTRAS_POR_CHUNK];
+			byte[] colores = new byte[n * muestras * muestras];
 			buf.readBytes(colores);
-			terrenos.add(new Terreno(dim, chunks, colores));
+			terrenos.add(new Terreno(dim, muestras, chunks, colores));
 		}
 		return new DatosRuta(duracion, enVivo, jugadores, eventos, spawns, terrenos);
 	}
@@ -193,7 +196,7 @@ public record DatosRuta(int duracion, boolean enVivo, List<Jugador> jugadores, L
 			escribir(buf);
 			byte[] crudo = new byte[buf.readableBytes()];
 			buf.readBytes(crudo);
-			Deflater d = new Deflater(Deflater.BEST_COMPRESSION);
+			Deflater d = new Deflater(Deflater.DEFAULT_COMPRESSION);
 			d.setInput(crudo);
 			d.finish();
 			ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(64, crudo.length / 3));

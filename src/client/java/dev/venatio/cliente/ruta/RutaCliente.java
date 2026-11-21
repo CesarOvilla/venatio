@@ -130,7 +130,7 @@ public final class RutaCliente {
 
 	// ---------------------------------------------------------------- texturas
 
-	/** Textura del terreno de una dimensión de la ruta guardada (se crea la primera vez), o null si no hay terreno. */
+	/** Mosaicos del terreno de una dimensión de la ruta guardada (se crean la primera vez), o null si no hay terreno. */
 	static TexturaTerreno textura(DatosRuta d, int dim) {
 		if (d != ruta || dim < 0 || dim >= texturas.length) return null;
 		if (texturas[dim] == null) {
