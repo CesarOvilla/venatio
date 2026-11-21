@@ -36,8 +36,8 @@ import java.util.UUID;
 
 /**
  * Ruta al final y modo espectador con un cliente real y bots de Carpet. Player0 no tiene equipo: mira la partida
- * siguiendo a Bot1 (Rojo) y a Bot2 (Azul) mientras caminan y se teletransportan por etapas; Bot1 pasa un rato en el
- * Nether. Al terminar, la pantalla final tiene la pestaña Ruta con terreno, líneas e iconos (zoom, arrastre y Nether),
+ * siguiendo a Bot1 (Rojo) y a Bot2 (Azul) mientras caminan y se teletransportan por etapas; Bot2 se va a ~3000 bloques y
+ * Bot1 pasa un rato en el Nether, también a 1000 bloques. Al terminar, la pantalla final tiene la pestaña Ruta con terreno, líneas e iconos (zoom, arrastre y Nether),
  * y la ruta se puede volver a abrir desde el lobby. También: /venatio mirar desde el lobby, un bot que entra a media
  * partida sin equipo queda de espectador y uno de equipo que muere y vuelve sigue jugando.
  */
@@ -84,6 +84,9 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			comprobar(ctx.computeOnClient(mc -> !LocalizadorCliente.encendida()), "el espectador no recibe la barra de localización");
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("ruta_01_espectador_sigue_bot1");
+			ventana(ctx, 1920, 1080, 3);
+			ctx.takeScreenshot("ruta_01b_espectador_1080p_escala3");
+			ventana(ctx, 854, 480, 0);
 			paso("Player0 (sin equipo) mira la partida en primera persona desde Bot1; no es participante");
 
 			// ---------------- Los bots se mueven: caminan y se teletransportan por etapas
@@ -165,6 +168,19 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			mover(sp, "Bot2", 20, -40);
 			paso("Bot2 murió (queda en la ruta), salió y al volver sigue en Azul");
 
+			// ---------------- Lejos: Bot2 se va por etapas a ~3000 bloques del resto
+			sp.getServer().runCommand("effect give Bot2 minecraft:water_breathing 1000 0 true");
+			sp.getServer().runCommand("effect give Bot2 minecraft:fire_resistance 1000 0 true");
+			BlockPos salidaAzul = sp.getServer().computeOnServer(s -> Juego.INSTANCIA.partida().spawnDe(ColorEquipo.AZUL));
+			for (int etapa = 0; etapa < 5; etapa++) {
+				mover(sp, "Bot2", 600, etapa % 2 == 0 ? 80 : -40);
+				ctx.waitTicks(60);
+			}
+			int lejos = sp.getServer().computeOnServer(s -> (int) Math.hypot(bot(s, "Bot2").getX() - salidaAzul.getX(), bot(s, "Bot2").getZ() - salidaAzul.getZ()));
+			comprobar(lejos >= 2800, "Bot2 llegó lejos (" + lejos + " bloques de la salida de Azul)");
+			int chunksLejos = sp.getServer().computeOnServer(s -> GrabadoraRuta.chunksMuestreados(DatosRuta.MUNDO));
+			paso("Bot2 se fue por etapas a " + lejos + " bloques de su salida; terreno muestreado: " + chunksLejos + " chunks");
+
 			// ---------------- Quien entra a media partida sin equipo, mira
 			sp.getServer().runCommand("player Bot3 spawn");
 			sp.getServer().waitFor(s -> {
@@ -176,7 +192,10 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			paso("Bot3 entró a media partida sin equipo: espectador");
 
 			// ---------------- Bot1 pasa por el Nether; el espectador lo sigue
-			sp.getServer().runOnServer(PruebaRutaEspectador::prepararNether);
+			sp.getServer().runOnServer(s -> {
+				prepararNether(0);
+				prepararNether(1000);
+			});
 			BlockPos vuelta = sp.getServer().computeOnServer(s -> bot(s, "Bot1").blockPosition());
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer b = bot(s, "Bot1");
@@ -192,8 +211,17 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			ctx.waitFor(mc -> mc.level.dimension().identifier().getPath().endsWith("_nether") && camaraEn(mc, "Bot1"), 300);
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("ruta_05_espectador_en_el_nether");
+			// En el Nether también se va lejos: a 1000 bloques del primer pasillo.
+			for (int x = 1000; x <= 1060; x += 30) {
+				int destino = x;
+				sp.getServer().runOnServer(s -> bot(s, "Bot1").teleportTo(MundosPartida.activa().nether(), destino + 0.5, Y_NETHER, 0.5, Set.of(), -90f, 0f, true));
+				ctx.waitTicks(45);
+			}
+			sp.getServer().waitFor(s -> bot(s, "Player0").getCamera() == bot(s, "Bot1") && bot(s, "Player0").distanceTo(bot(s, "Bot1")) < 2, 100);
+			boolean camaraLejos = ctx.computeOnClient(mc -> camaraEn(mc, "Bot1"));
 			int puntosNether = sp.getServer().computeOnServer(s -> GrabadoraRuta.chunksMuestreados(DatosRuta.NETHER));
-			paso("Bot1 anduvo por el Nether (" + puntosNether + " chunks muestreados) y el espectador lo siguió de dimensión");
+			paso("Bot1 anduvo por el Nether, también a 1000 bloques (" + puntosNether + " chunks muestreados); el espectador lo siguió de dimensión"
+				+ (camaraLejos ? " y hasta allá" : " (tras el salto de 1000 bloques el cliente quedó sin la cámara enganchada)"));
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer b = bot(s, "Bot1");
 				ServerLevel mundo = MundosPartida.activa().mundo();
@@ -242,6 +270,8 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			ctx.waitFor(mc -> RutaCliente.hayFinal(), 200);
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("ruta_09_final_del_espectador");
+			int[] tamano = sp.getServer().computeOnServer(s -> GrabadoraRuta.tamanoUltima());
+			comprobar(tamano != null && tamano[0] > 0, "la ruta comprimida está lista");
 
 			DatosRuta ruta = sp.getServer().computeOnServer(s -> GrabadoraRuta.ultima());
 			comprobar(ruta != null && ruta.jugadores().size() == 2, "la ruta tiene a los dos bots y a nadie más");
@@ -251,7 +281,8 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			comprobar(ruta.tieneDimension(DatosRuta.NETHER), "la ruta incluye el Nether");
 			comprobar(ruta.spawns().size() == 2, "las salidas de los dos equipos");
 			paso("Pantalla final del espectador; ruta con " + ruta.jugadores().size() + " jugadores, " + ruta.eventos().size() + " eventos y "
-				+ ruta.terrenos().stream().mapToInt(DatosRuta.Terreno::cantidad).sum() + " chunks de terreno");
+				+ ruta.terrenos().stream().mapToInt(DatosRuta.Terreno::cantidad).sum() + " chunks de terreno: " + tamano[0] / 1024 + " KB en "
+				+ tamano[1] + " trozo(s)");
 
 			// ---------------- Pestaña Ruta: terreno, líneas, iconos, zoom, arrastre y Nether
 			ctx.clickScreenButton("venatio.ruta.boton");
@@ -262,8 +293,22 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 				return r.dimension() == DatosRuta.MUNDO && r.terrenoVisible() && r.pixelesTerreno() > 500 && r.tramos() > 10
 					&& r.iconos(DatosRuta.CASILLA) >= 1 && r.iconos(DatosRuta.MUERTE) >= 1 && r.iconos(10) == 2 && r.iconos(11) == 2;
 			}), "el mapa dibuja terreno, líneas, casillas, la muerte, las dos salidas y las dos cabezas: " + resumen(ctx));
+			comprobar(ctx.computeOnClient(mc -> ruta(mc).recorridoCompletoVisible() && ruta(mc).mosaicos()[0] >= 2),
+				"al abrirla se ve todo el recorrido, de la salida hasta los 3000 bloques: " + resumen(ctx));
 			ctx.takeScreenshot("ruta_10_mapa");
-			paso("Pestaña Ruta: " + resumen(ctx));
+			paso("Pestaña Ruta (todo el recorrido a la vista): " + resumen(ctx));
+
+			// Clic en Bot2 en la leyenda: acerca a la zona lejana, con su terreno.
+			int[] filaBot2 = ctx.computeOnClient(mc -> ruta(mc).filaDeLeyenda("Bot2"));
+			cursor(ctx, filaBot2[0], filaBot2[1]);
+			ctx.getInput().pressMouse(0);
+			ctx.waitTicks(5);
+			comprobar(ctx.computeOnClient(mc -> ruta(mc).escala() >= 1f && ruta(mc).terrenoVisible() && ruta(mc).iconos(11) >= 1),
+				"la zona lejana se ve de cerca con su terreno y la cabeza de Bot2: " + resumen(ctx));
+			ctx.takeScreenshot("ruta_10b_zoom_zona_lejana");
+			paso("Clic en Bot2: zona a 3000 bloques de cerca: " + resumen(ctx));
+			ctx.clickScreenButton("venatio.ruta.centrar");
+			ctx.waitTicks(3);
 
 			int[] casillaEnPantalla = ctx.computeOnClient(mc -> ruta(mc).centroDeIcono(DatosRuta.CASILLA));
 			cursor(ctx, casillaEnPantalla[0], casillaEnPantalla[1]);
@@ -292,7 +337,8 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			ctx.clickScreenButton("venatio.ruta.dim.1");
 			ctx.waitTicks(5);
 			comprobar(ctx.computeOnClient(mc -> ruta(mc).dimension() == DatosRuta.NETHER && ruta(mc).tramos() > 0
-				&& ruta(mc).iconos(DatosRuta.PORTAL_LLEGADA) >= 1), "el selector cambió al Nether con su recorrido: " + resumen(ctx));
+				&& ruta(mc).iconos(DatosRuta.PORTAL_LLEGADA) >= 1 && ruta(mc).recorridoCompletoVisible()),
+				"el selector cambió al Nether con todo su recorrido (0 a 1060): " + resumen(ctx));
 			ctx.takeScreenshot("ruta_14_nether");
 			paso("Selector de dimensión: Nether con el recorrido de Bot1 y sus portales");
 			ctx.getInput().pressKey(InputConstants.KEY_ESCAPE);
@@ -310,6 +356,12 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			comprobar(ctx.computeOnClient(mc -> ruta(mc).tramos() > 0 && ruta(mc).terrenoVisible()), "desde el lobby se ve la misma ruta");
 			ctx.takeScreenshot("ruta_15_desde_el_lobby");
+			for (int escala : new int[]{2, 4}) {
+				ventana(ctx, 1920, 1080, escala);
+				comprobar(ctx.computeOnClient(mc -> ruta(mc).tramos() > 0 && ruta(mc).terrenoVisible()), "la ruta se dibuja a escala " + escala);
+				ctx.takeScreenshot("ruta_16_1080p_escala" + escala);
+			}
+			ventana(ctx, 854, 480, 0);
 			ctx.getInput().pressKey(InputConstants.KEY_ESCAPE);
 			ctx.waitFor(mc -> mc.gui.screen() == null, 40);
 			sp.getServer().runCommand("execute as Player0 run venatio ruta");
@@ -332,16 +384,17 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			ServerPlayer b = bot(s, nombre);
 			ServerLevel nivel = b.level();
 			int x = b.getBlockX() + dx, z = b.getBlockZ() + dz;
+			nivel.getChunk(x >> 4, z >> 4); // lejos todavía no existe: se genera para saber la altura del suelo
 			int y = nivel.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 			float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
 			b.teleportTo(nivel, x + 0.5, y, z + 0.5, Set.of(), yaw, 0f, true);
 		});
 	}
 
-	/** Un pasillo de aire con piso en el Nether de la partida, a lo largo de x = 0…60. */
-	private static void prepararNether(MinecraftServer s) {
+	/** Un pasillo de aire con piso en el Nether de la partida, a lo largo de x = x0…x0 + 60. */
+	private static void prepararNether(int x0) {
 		ServerLevel nether = MundosPartida.activa().nether();
-		for (int x = -3; x <= 63; x++) {
+		for (int x = x0 - 3; x <= x0 + 63; x++) {
 			for (int z = -2; z <= 2; z++) {
 				nether.setBlockAndUpdate(new BlockPos(x, Y_NETHER - 1, z), Blocks.NETHERRACK.defaultBlockState());
 				for (int dy = 0; dy < 4; dy++) nether.setBlockAndUpdate(new BlockPos(x, Y_NETHER + dy, z), Blocks.AIR.defaultBlockState());
@@ -364,8 +417,19 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			return "dimensión " + r.dimension() + ", " + r.tramos() + " trazos, terreno " + (r.terrenoVisible() ? r.pixelesTerreno() + " px" : "no")
 				+ ", casillas " + r.iconos(DatosRuta.CASILLA) + ", muertes " + r.iconos(DatosRuta.MUERTE)
 				+ ", portales " + (r.iconos(DatosRuta.PORTAL_SALIDA) + r.iconos(DatosRuta.PORTAL_LLEGADA))
-				+ ", salidas " + r.iconos(10) + ", cabezas " + r.iconos(11);
+				+ ", salidas " + r.iconos(10) + ", cabezas " + r.iconos(11) + ", mosaicos " + r.mosaicos()[1] + "/" + r.mosaicos()[0]
+				+ ", escala " + String.format("%.3f", r.escala()) + " px/bloque";
 		});
+	}
+
+	/** Cambia el tamaño de la ventana y la escala de la interfaz (0 = automática). */
+	private static void ventana(ClientGameTestContext ctx, int ancho, int alto, int escala) {
+		ctx.getInput().resizeWindow(ancho, alto);
+		ctx.runOnClient(mc -> {
+			mc.options.guiScale().set(escala);
+			mc.resizeGui();
+		});
+		ctx.waitTicks(10);
 	}
 
 	/** Pone el ratón en (x, y) de interfaz. */
