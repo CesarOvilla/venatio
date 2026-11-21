@@ -93,7 +93,7 @@ Pendiente: pagar con items (lo que propusiste, va por defecto) o con fichas gana
 - 5 en línea, N líneas, Blackout, Lockout, Contrarreloj.
 - Cartón de 3×3, 4×4 o 5×5.
 - Spawns separados o compartido (PvP).
-- Variante "niebla": solo ves las casillas vecinas a las que ya tienes.
+- Variante "niebla": hecha como *Cartón oculto* (abajo).
 
 **Rastreo** (ItemFinder)
 - Blitz y Contrarreloj, individual o por equipos; saltar item con costo.
@@ -103,6 +103,14 @@ Pendiente: pagar con items (lo que propusiste, va por defecto) o con fichas gana
 - *Casillas con cantidad* (`/venatio opcion cantidades si`, apagada por defecto): ~30 % de las casillas de item piden varias unidades ("16 × Tronco de roble"), según el nivel de la casilla y el tamaño de pila; nunca en items que no se apilan. Cuenta la suma de lo que llevan en el inventario los miembros del equipo; los regalos de la partida no cuentan. El progreso se ve en la casilla (HUD y pantalla B).
 - *Dificultad del cartón* (`/venatio dificultad facil|normal|dificil|mixta`): pesos de los niveles 1, 2 y 3 al elegir cada categoría (fácil 60/30/10, difícil 10/30/60, mixta en tercios exactos). Normal es el reparto de MCBingo y da el mismo cartón que antes con la misma semilla.
 - *Quitar items del pool* (`/venatio pool quitar|poner <item>`, `/venatio pool lista`, o clic derecho de un operador en "Items posibles"): se guarda en `config/venatio/pool.json`; una categoría que se queda sin items no se usa.
+
+**Variantes del cartón (hecho, pestaña "Variantes" del panel; apagadas por defecto, combinables entre sí y con 5 en línea, Apagón, Lockout y Contrarreloj; en Rastreo y Switcheroo no aplican):**
+- *Cartón oculto* (`/venatio opcion oculto si`): cada equipo empieza viendo solo la casilla central (las cuatro del centro en un 4×4); las demás se ven tapadas, con un signo de interrogación. Cada casilla que consigue destapa sus cuatro vecinas para ese equipo, con animación. Una tapada no se marca aunque se tenga el item. El servidor no manda lo que piden las tapadas (llegan como "Casilla tapada"); al que la tiene tapada, el aviso del chat no dice qué era; en la pantalla B, la vista de otro equipo tampoco muestra lo que ese equipo no destapó. En Lockout, la que toma otro equipo se destapa como tomada. Al final se destapa todo.
+- *Draft* (`/venatio opcion draft si`, `/venatio vetos 1|2`): mientras se genera el mundo, con el cartón completo a la vista (aunque sea oculto), todos los equipos vetan a la vez durante 45 s en la pantalla del draft (se abre sola; B la vuelve a abrir): clic para elegir la casilla, otro clic o "Vetar" para vetarla. La vetada se cambia por otra del pool del mismo tipo y nivel, de una categoría que no esté en el cartón. Cualquier miembro decide; la lista dice quién vetó qué y el chat lo anuncia. Termina antes si todos vetaron; quien no vetó a tiempo se queda sin vetar.
+- *Casilla secreta* (`/venatio opcion secreta si`): al empezar la cuenta atrás cada equipo recibe una casilla al azar (distinta por equipo si se puede) que solo él ve resaltada (marco dorado y estrella). Vale doble en todo lo que cuenta casillas: Contrarreloj, mayoría de Lockout, marcador final, puntos del ranking y desempates; en 5 en línea y Apagón no cambia cómo se gana. Durante la partida solo el marcador del propio equipo suma el doble. Se revela al final en el chat y en la pantalla final ("Casilla secreta de Rojo: Diamante (+1)").
+- *Relevo* (`/venatio opcion relevo si`): al empezar la cuenta atrás las filas se reparten entre los miembros de cada equipo (fila r para el miembro r mod n: con dos, 1, 3 y 5 al primero y 2 y 4 al segundo). Una casilla solo cuenta si la consigue el dueño de su fila (en las de cantidad, con lo que lleva él). El HUD y la pantalla B ponen la cara del dueño junto a cada fila (las tuyas con marco dorado) y la lista de miembros dice sus filas. Si el dueño se desconecta, la fila pasa al miembro conectado con menos filas y vuelve cuando regresa.
+
+El código está en `juego/Variantes.java`, `juego/Draft.java`, `carton/Reemplazos.java`, `red/PaquetesVariantes.java` (viaja dentro del estado), `cliente/VariantesCliente.java` y `cliente/PantallaDraft.java`.
 
 **Más adelante:** casillas de estructura ("entra a una aldea") y de logros de vanilla.
 
@@ -188,6 +196,7 @@ Datos (pools, pistas, precios) en `data/venatio/…` con formato de datapack par
 | 5 | Lobby construido, ranking, estadísticas, pantalla final, panel del anfitrión; arte, sonidos y animaciones propios | Hecho |
 | 6 | Modo Rastreo (ItemFinder): normal y carrera, compartido o independiente | Hecho |
 | 7 | Cartón ampliado: casillas de logros, casillas con cantidad, dificultad del cartón, quitar items del pool | Hecho. Falta: integrarlos al panel del anfitrión |
+| 8 | Variantes del cartón: cartón oculto, draft, casilla secreta y relevo | Hecho |
 
 Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runClientGameTest`).
 
