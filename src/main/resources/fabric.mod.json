@@ -10,7 +10,7 @@
 		"main": ["dev.venatio.Venatio"],
 		"client": ["dev.venatio.cliente.VenatioCliente"]
 	},
-	"mixins": ["venatio.mixins.json", "venatio-lobby.mixins.json"],
+	"mixins": ["venatio.mixins.json", "venatio-lobby.mixins.json", {"config": "venatio.client.mixins.json", "environment": "client"}],
 	"depends": {
 		"fabricloader": ">=0.20.1",
 		"minecraft": "~26.3",

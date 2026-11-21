@@ -56,7 +56,9 @@ public final class MundosPartida {
 			.setDifficulty(Difficulty.NORMAL)
 			.setShouldTickTime(true)
 			.setGameRule(GameRules.PVP, pvp)
-			.setGameRule(GameRules.KEEP_INVENTORY, conservarInventario);
+			.setGameRule(GameRules.KEEP_INVENTORY, conservarInventario)
+			// Los logros no se anuncian en el chat durante la partida (como en MCBingo)
+			.setGameRule(GameRules.SHOW_ADVANCEMENT_MESSAGES, false);
 	}
 
 	private static Identifier id(String nombre) {
