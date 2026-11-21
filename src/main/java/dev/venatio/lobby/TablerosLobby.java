@@ -206,6 +206,22 @@ public final class TablerosLobby {
 			}
 			return true;
 		});
+		// Con Moonrise (y otros sistemas de chunks que reemplazan PersistentEntitySectionManager) ALLOW_LOAD no se llama;
+		// ENTITY_LOAD sí. Hace lo mismo: el tablero recupera su texto y los de arranques anteriores se van.
+		ServerEntityEvents.ENTITY_LOAD.register((entidad, nivelEntidad) -> {
+			if (nivelEntidad != nivel || !entidad.entityTags().contains(ETIQUETA)) return;
+			Tablero t = porId.get(entidad.getUUID());
+			if (t == null) {
+				// Quitarla dentro del aviso de carga confundiría al gestor de entidades: al siguiente tick.
+				if (!fijos.contains(entidad.getUUID())) nivelEntidad.getServer().execute(entidad::discard);
+				return;
+			}
+			if (entidad instanceof Display.TextDisplay d) {
+				entidades.put(t, d);
+				Component texto = contenido.get(t);
+				if (texto != null) d.setText(texto);
+			}
+		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			nivel = null;
 			entidades.clear();
