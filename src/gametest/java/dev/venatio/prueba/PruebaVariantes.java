@@ -421,7 +421,7 @@ public final class PruebaVariantes implements FabricClientGameTest {
 	private static void clic(ClientGameTestContext ctx, int x, int y) {
 		apuntar(ctx, x, y);
 		ctx.waitTick();
-		ctx.getInput().pressMouse(0);
+		ctx.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
 		ctx.waitTicks(2);
 	}
 

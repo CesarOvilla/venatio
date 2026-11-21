@@ -1,5 +1,6 @@
 package dev.venatio.prueba;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.Venatio;
 import dev.venatio.carton.Carton;
 import dev.venatio.carton.Dificultad;
@@ -231,12 +232,12 @@ public final class PruebaCartonAmpliado implements FabricClientGameTest {
 		ctx.waitTicks(10);
 		int indice = ctx.computeOnClient(mc -> ((PantallaItemsPosibles) mc.gui.screen()).indiceDe("minecraft:cocoa_beans"));
 		int[] centro = ctx.computeOnClient(mc -> ((PantallaItemsPosibles) mc.gui.screen()).centroDe(indice));
-		clic(ctx, centro[0], centro[1], 1);
+		clic(ctx, centro[0], centro[1], InputConstants.MOUSE_BUTTON_RIGHT);
 		sp.getServer().waitFor(s -> Exclusiones.excluida("minecraft:cocoa_beans"), 100);
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("carton_amp_01_items_posibles_quitados");
 		paso("Clic derecho de operador en Items posibles quitó los granos de cacao; se ven tachados con la esmeralda y los letreros");
-		clic(ctx, centro[0], centro[1], 1);
+		clic(ctx, centro[0], centro[1], InputConstants.MOUSE_BUTTON_RIGHT);
 		sp.getServer().waitFor(s -> !Exclusiones.excluida("minecraft:cocoa_beans"), 100);
 		ctx.getInput().setCursorPos(0, 0);
 		ctx.setScreen(() -> null);
@@ -315,7 +316,7 @@ public final class PruebaCartonAmpliado implements FabricClientGameTest {
 		apuntar(ctx, creeper[0], creeper[1]);
 		ctx.waitTicks(5);
 		ctx.takeScreenshot("carton_amp_03_pantalla_b_tooltip_logro");
-		clic(ctx, creeper[0], creeper[1], 0);
+		clic(ctx, creeper[0], creeper[1], InputConstants.MOUSE_BUTTON_LEFT);
 		ctx.waitFor(pantalla(PantallaFicha.class, p -> p.reto() != null && p.reto().id().equals("matar_creeper") && p.cargada()), 200);
 		ctx.getInput().setCursorPos(0, 0);
 		ctx.waitTicks(10);
@@ -324,7 +325,7 @@ public final class PruebaCartonAmpliado implements FabricClientGameTest {
 		ctx.clickScreenButton("Volver");
 		ctx.waitFor(pantalla(PantallaCarton.class, p -> true), 100);
 		int[] celdaBioma = ctx.computeOnClient(mc -> ((PantallaCarton) mc.gui.screen()).centroDe(iBioma));
-		clic(ctx, celdaBioma[0], celdaBioma[1], 0);
+		clic(ctx, celdaBioma[0], celdaBioma[1], InputConstants.MOUSE_BUTTON_LEFT);
 		ctx.waitFor(pantalla(PantallaFicha.class, p -> p.reto() != null && p.cargada()), 200);
 		ctx.getInput().setCursorPos(0, 0);
 		ctx.waitTicks(10);

@@ -301,7 +301,7 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			// Clic en Bot2 en la leyenda: acerca a la zona lejana, con su terreno.
 			int[] filaBot2 = ctx.computeOnClient(mc -> ruta(mc).filaDeLeyenda("Bot2"));
 			cursor(ctx, filaBot2[0], filaBot2[1]);
-			ctx.getInput().pressMouse(0);
+			ctx.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
 			ctx.waitTicks(5);
 			comprobar(ctx.computeOnClient(mc -> ruta(mc).escala() >= 1f && ruta(mc).terrenoVisible() && ruta(mc).iconos(11) >= 1),
 				"la zona lejana se ve de cerca con su terreno y la cabeza de Bot2: " + resumen(ctx));
@@ -327,9 +327,9 @@ public final class PruebaRutaEspectador implements FabricClientGameTest {
 			float despues = ctx.computeOnClient(mc -> ruta(mc).escala());
 			comprobar(despues > antes * 2, "la rueda acercó el mapa (" + antes + " → " + despues + " px por bloque)");
 			ctx.takeScreenshot("ruta_12_zoom");
-			ctx.getInput().holdMouse(0);
+			ctx.getInput().holdMouse(InputConstants.MOUSE_BUTTON_LEFT);
 			ctx.getInput().moveCursor(-120, -60);
-			ctx.getInput().releaseMouse(0);
+			ctx.getInput().releaseMouse(InputConstants.MOUSE_BUTTON_LEFT);
 			ctx.waitTicks(3);
 			ctx.takeScreenshot("ruta_13_arrastre");
 			paso("Zoom con la rueda (" + String.format("%.2f", antes) + " → " + String.format("%.2f", despues) + " px por bloque) y arrastre");

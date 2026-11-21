@@ -1,5 +1,6 @@
 package dev.venatio.prueba;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.Venatio;
 import dev.venatio.carton.Carton;
 import dev.venatio.cliente.PantallaCarton;
@@ -199,7 +200,7 @@ public final class PruebaFichas implements FabricClientGameTest {
 	private static void clic(ClientGameTestContext ctx, int x, int y) {
 		apuntar(ctx, x, y);
 		ctx.waitTick();
-		ctx.getInput().pressMouse(0);
+		ctx.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
 		ctx.waitTicks(2);
 	}
 

@@ -1,5 +1,6 @@
 package dev.venatio.prueba;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.Venatio;
 import dev.venatio.carton.Objetivo;
 import dev.venatio.juego.Juego;
@@ -104,7 +105,7 @@ public final class PruebaRegalos implements FabricClientGameTest {
 			ctx.waitTicks(5);
 			ctx.getInput().lookAt(cama);
 			ctx.waitTicks(3);
-			ctx.getInput().pressMouse(1);
+			ctx.getInput().pressKey(o -> o.keyUse);
 			sp.getServer().waitFor(s -> {
 				var cfg = jugador(s).getRespawnConfig();
 				return cfg != null && cfg.respawnData().dimension() == Juego.INSTANCIA.partida().mundos().mundo().dimension()
