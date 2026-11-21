@@ -16,11 +16,13 @@ public final class EstadoCliente {
 		estado = e;
 		recibidoEn = Util.getMillis();
 		Animaciones.alCambiarEstado(antes, e);
+		VariantesCliente.alCambiarEstado(antes, e);
 	}
 
 	static void limpiar() {
 		estado = null;
 		Animaciones.limpiar();
+		VariantesCliente.limpiar();
 	}
 
 	/** Segundos de juego, avanzando entre paquetes para que el reloj no salte. */

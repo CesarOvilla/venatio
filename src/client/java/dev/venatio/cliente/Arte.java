@@ -38,6 +38,11 @@ public final class Arte {
 	public static final Identifier CASILLA_BLOQUEADA = sprite("carton/casilla_bloqueada");
 	public static final Identifier CANDADO = sprite("carton/candado");
 	public static final Identifier PALOMITA = sprite("carton/palomita");
+	/** Variantes: tapa del cartón oculto, su signo de interrogación, estrella de la casilla secreta y sello de veto. */
+	public static final Identifier CASILLA_TAPADA = sprite("carton/casilla_tapada");
+	public static final Identifier INTERROGACION = sprite("carton/interrogacion");
+	public static final Identifier SECRETA = sprite("carton/secreta");
+	public static final Identifier VETO = sprite("carton/veto");
 	public static final Identifier MARCO_PANTALLA = sprite("pantalla/marco");
 	public static final Identifier PLACA = sprite("pantalla/placa");
 	public static final Identifier FILA = sprite("pantalla/fila");
@@ -56,6 +61,7 @@ public final class Arte {
 	public static final Identifier ICONO_RELOJ = sprite("icono/reloj");
 	public static final Identifier ICONO_TROFEO = sprite("icono/trofeo");
 	public static final Identifier ICONO_RASTREO = sprite("icono/rastreo");
+	public static final Identifier ICONO_VETO = sprite("icono/veto");
 
 	private static final Identifier[] EMBLEMAS = new Identifier[ColorEquipo.values().length];
 
@@ -83,7 +89,8 @@ public final class Arte {
 	public static java.util.List<Identifier> todos() {
 		java.util.List<Identifier> lista = new java.util.ArrayList<>(java.util.List.of(MARCO_CARTON, CASILLA_VACIA, CASILLA_MIA, CASILLA_RIVAL,
 			CASILLA_BLOQUEADA, CANDADO, PALOMITA, MARCO_PANTALLA, PLACA, FILA, FILA_ACTIVA, BARRA_FONDO, BARRA_RELLENO, BANNER_CUERPO,
-			BANNER_BORDE, ICONO_BINGO, ICONO_TIENDA, ICONO_GUIA, ICONO_MARCA, ICONO_MINIMAPA, ICONO_RELOJ, ICONO_TROFEO, ICONO_RASTREO));
+			BANNER_BORDE, ICONO_BINGO, ICONO_TIENDA, ICONO_GUIA, ICONO_MARCA, ICONO_MINIMAPA, ICONO_RELOJ, ICONO_TROFEO, ICONO_RASTREO,
+			CASILLA_TAPADA, INTERROGACION, SECRETA, VETO, ICONO_VETO));
 		lista.addAll(java.util.List.of(EMBLEMAS));
 		return lista;
 	}
@@ -169,9 +176,12 @@ public final class Arte {
 
 	// ---------------------------------------------------------------- casillas del cartón
 
-	/** Fondo de una casilla según su estado, visto desde el equipo dado. */
-	static void fondoCasilla(GuiGraphicsExtractor g, Paquetes.CasillaRed c, int x, int y, int tam, int visto, boolean exclusivo) {
-		if (tiene(c, visto)) {
+	/** Fondo de una casilla según su estado, visto desde el equipo dado. Tapada (cartón oculto), lleva la tapa. */
+	static void fondoCasilla(GuiGraphicsExtractor g, Paquetes.CasillaRed c, int indice, int x, int y, int tam, int visto, boolean exclusivo) {
+		boolean tapada = VariantesCliente.tapada(indice, visto);
+		if (tapada && !tiene(c, visto) && !(exclusivo && !c.logros().isEmpty())) {
+			sprite(g, CASILLA_TAPADA, x, y, tam, tam);
+		} else if (tiene(c, visto)) {
 			sprite(g, CASILLA_MIA, x, y, tam, tam, 0xFF000000 | color(visto));
 		} else if (c.logros().isEmpty()) {
 			sprite(g, CASILLA_VACIA, x, y, tam, tam);
@@ -182,8 +192,30 @@ public final class Arte {
 		}
 	}
 
-	/** El item centrado en la casilla; escala alrededor del centro (1 = tamaño normal, 0 = no se dibuja). */
-	static void itemCasilla(GuiGraphicsExtractor g, Paquetes.CasillaRed c, int indice, int x, int y, int tam, float escala) {
+	/**
+	 * El item centrado en la casilla; escala alrededor del centro (1 = tamaño normal, 0 = no se dibuja). Tapada para el
+	 * equipo visto, un signo de interrogación; al destaparse, la tapa se cierra de lado y el item entra creciendo.
+	 */
+	static void itemCasilla(GuiGraphicsExtractor g, Paquetes.CasillaRed c, int indice, int x, int y, int tam, int visto, float escala) {
+		if (VariantesCliente.tapada(indice, visto)) {
+			interrogacion(g, x, y, tam, escala, 1f);
+			return;
+		}
+		float d = VariantesCliente.destape(indice);
+		if (d >= 0 && d < 0.5f) {
+			// Primera mitad: la tapa (con su interrogación) se encoge de lado hasta desaparecer.
+			float ancho = 1 - d * 2;
+			g.pose().pushMatrix();
+			g.pose().translate(x + tam / 2f, y);
+			g.pose().scale(ancho, 1f);
+			sprite(g, CASILLA_TAPADA, -tam / 2, 0, tam, tam);
+			g.pose().popMatrix();
+			interrogacion(g, x, y, tam, escala, ancho);
+			return;
+		}
+		if (d >= 0.5f) escala *= rebote((d - 0.5f) * 2);
+		float v = VariantesCliente.veto(indice);
+		if (v >= 0) escala *= rebote(v);
 		Animaciones.Casilla a = Animaciones.casilla(indice);
 		if (a != null && a.propia()) {
 			float t = (float) (Animaciones.ahora() - a.inicio()) / Animaciones.CASILLA_MS;
@@ -201,13 +233,31 @@ public final class Arte {
 		g.pose().popMatrix();
 	}
 
+	/** Signo de interrogación de una casilla tapada (2× en la pantalla grande). ancho: escala horizontal (la tapa al girar). */
+	private static void interrogacion(GuiGraphicsExtractor g, int x, int y, int tam, float escala, float ancho) {
+		if (escala <= 0.02f || ancho <= 0.02f) return;
+		float z = (tam >= 24 ? 2f : 1f) * escala;
+		g.pose().pushMatrix();
+		g.pose().translate(x + tam / 2f, y + tam / 2f);
+		g.pose().scale(z * ancho, z);
+		sprite(g, INTERROGACION, -4, -5, 7, 10);
+		g.pose().popMatrix();
+	}
+
+	private static float rebote(float t) {
+		return Animaciones.rebote(t);
+	}
+
 	/**
 	 * Lo que va encima del item: candado de Lockout, puntos de los rivales, palomita y las animaciones de casilla
-	 * conseguida. Hay que llamarlo después de {@code g.nextStratum()} para que tape al item.
+	 * conseguida; con las variantes, la estrella de la casilla secreta, el sello de vetada y el destello al destapar.
+	 * Hay que llamarlo después de {@code g.nextStratum()} para que tape al item.
 	 */
 	static void encimaCasilla(GuiGraphicsExtractor g, Paquetes.CasillaRed c, int indice, int x, int y, int tam, int visto, boolean exclusivo) {
 		boolean delVisto = tiene(c, visto);
 		boolean grande = tam >= 24;
+		boolean tapada = VariantesCliente.tapada(indice, visto);
+		encimaVariantes(g, indice, x, y, tam, visto, grande);
 		if (!delVisto && !c.logros().isEmpty()) {
 			if (exclusivo) {
 				// Lockout: la tomó otro equipo. Se oscurece y lleva candado.
@@ -226,8 +276,8 @@ public final class Arte {
 			}
 		}
 		if (delVisto && grande) sprite(g, PALOMITA, x + 2, y + tam - 10, 9, 8);
-		if (c.esReto()) esquinaReto(g, x, y, grande);
-		if (c.cantidad() > 1) cantidadCasilla(g, c, x, y, tam, visto, delVisto || exclusivo && !c.logros().isEmpty());
+		if (c.esReto() && !tapada) esquinaReto(g, x, y, grande);
+		if (c.cantidad() > 1 && !tapada) cantidadCasilla(g, c, x, y, tam, visto, delVisto || exclusivo && !c.logros().isEmpty());
 
 		Animaciones.Casilla a = Animaciones.casilla(indice);
 		if (a == null) return;
@@ -245,6 +295,29 @@ public final class Arte {
 			float f = 1 - t;
 			g.outline(x, y, tam, tam, ARGB.color(f * 0.95f, rgb));
 			g.outline(x + 1, y + 1, tam - 2, tam - 2, ARGB.color(f * 0.45f, rgb));
+		}
+	}
+
+	/** Casilla secreta del equipo visto (marco dorado que late y estrella), vetada en el draft y destello al destaparse. */
+	private static void encimaVariantes(GuiGraphicsExtractor g, int indice, int x, int y, int tam, int visto, boolean grande) {
+		if (indice == VariantesCliente.secreta(visto)) {
+			float pulso = 0.65f + 0.35f * Mth.sin(Animaciones.ahora() % 1600 / 1600f * Mth.TWO_PI);
+			g.outline(x, y, tam, tam, ARGB.color(pulso, ORO_CLARO & 0xFFFFFF));
+			g.outline(x + 1, y + 1, tam - 2, tam - 2, ARGB.color(pulso * 0.6f, ORO & 0xFFFFFF));
+			sprite(g, SECRETA, x + tam - 8, y + 1, 7, 7);
+		}
+		if (VariantesCliente.vetadaEnDraft(indice)) sprite(g, VETO, x + 1, y + 1, 9, 9);
+		float v = VariantesCliente.veto(indice);
+		if (v >= 0) {
+			float f = (1 - v) * (1 - v);
+			g.fill(x, y, x + tam, y + tam, ARGB.color(f * 0.7f, 0xE04A3C));
+		}
+		float d = VariantesCliente.destape(indice);
+		if (d >= 0.5f) {
+			float f = 1 - (d - 0.5f) * 2;
+			int r = Math.round((1 - f) * (grande ? 5 : 3));
+			g.outline(x - r, y - r, tam + 2 * r, tam + 2 * r, ARGB.color(f, ORO_CLARO & 0xFFFFFF));
+			g.fill(x + 1, y + 1, x + tam - 1, y + tam - 1, ARGB.color(f * 0.35f, 0xFFFFFF));
 		}
 	}
 

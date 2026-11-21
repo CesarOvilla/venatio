@@ -108,6 +108,9 @@ public final class PantallaFinal extends Screen {
 		cabecera(g);
 		PaquetesStats.Hito hover = lineaDeTiempo(g, mouseX, mouseY);
 		marcador(g);
+		// Casilla secreta (variante): debajo del marcador, la de cada equipo y si la consiguió.
+		VariantesCliente.dibujarSecretasFinal(g, font, marcadorX + 2, listaY + 25 * f.equipos().size() + 2, marcadorAncho - 4,
+			listaY + listaAlto, entrada(f.equipos().size(), ESPERA_FILAS + 100, 110));
 		g.centeredText(font, Component.translatable("venatio.stats.final.ayuda"), width / 2, height - 44, GRIS_OSCURO);
 		if (hover != null) tooltip(g, hover, mouseX, mouseY);
 

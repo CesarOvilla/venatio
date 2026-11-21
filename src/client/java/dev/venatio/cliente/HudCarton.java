@@ -37,7 +37,7 @@ public final class HudCarton {
 		// Entrada: el cartón se desliza desde la izquierda y las casillas aparecen en diagonal.
 		long entrada = Animaciones.tiempoEntrada();
 		boolean rastreo = Modo.porId(e.modo()).esRastreo();
-		int ancho = rastreo ? anchoRastreo(font, e) : lado(e);
+		int ancho = rastreo ? anchoRastreo(font, e) : anchoCarton(e);
 		int dx = entrada >= 300 ? 0 : -Math.round((ancho + MARGEN + 2) * (1 - Animaciones.suaveFuera(entrada / 300f)));
 
 		int alto;
@@ -46,7 +46,7 @@ public final class HudCarton {
 			alto = ALTO_RASTREO;
 		} else {
 			dibujarCarton(g, e, MARGEN + dx, MARGEN, entrada);
-			alto = ancho;
+			alto = lado(e);
 		}
 		dibujarInfo(g, font, e, MARGEN + dx, MARGEN + alto + 2, ancho, rastreo);
 	}
@@ -55,22 +55,28 @@ public final class HudCarton {
 		return e.tamano() * CELDA - 1 + 2 * DENTRO;
 	}
 
+	/** Con relevo, el cartón lleva a la derecha una columna con la cara del dueño de cada fila. */
+	private static int anchoCarton(Paquetes.Estado e) {
+		return lado(e) + (VariantesCliente.relevo(e) ? VariantesCliente.COLUMNA_HUD : 0);
+	}
+
 	private static void dibujarCarton(GuiGraphicsExtractor g, Paquetes.Estado e, int x0, int y0, long entrada) {
 		int n = e.tamano();
 		int lado = lado(e);
 		boolean exclusivo = Modo.porId(e.modo()).exclusivo();
 		int mio = e.miEquipo();
-		Arte.marcoCarton(g, x0, y0, lado, lado);
+		Arte.marcoCarton(g, x0, y0, anchoCarton(e), lado);
 
 		for (int i = 0; i < e.casillas().size(); i++) {
 			Paquetes.CasillaRed c = e.casillas().get(i);
 			int cx = x0 + DENTRO + (i % n) * CELDA, cy = y0 + DENTRO + (i / n) * CELDA;
-			Arte.fondoCasilla(g, c, cx, cy, CELDA - 1, mio, exclusivo);
+			Arte.fondoCasilla(g, c, i, cx, cy, CELDA - 1, mio, exclusivo);
 			// Cada casilla aparece un poco después que la de su izquierda y la de arriba.
 			long retraso = 250 + (i % n + i / n) * 40L;
 			float aparece = entrada >= Animaciones.ENTRADA_MS ? 1f : Animaciones.rebote((entrada - retraso) / 220f);
-			Arte.itemCasilla(g, c, i, cx, cy, CELDA - 1, entrada < retraso ? 0f : aparece);
+			Arte.itemCasilla(g, c, i, cx, cy, CELDA - 1, mio, entrada < retraso ? 0f : aparece);
 		}
+		if (VariantesCliente.relevo(e)) VariantesCliente.dibujarCaras(g, e, mio, x0 + DENTRO + n * CELDA + 1, y0 + DENTRO, CELDA, 8, -1, -1);
 		g.nextStratum();
 		for (int i = 0; i < e.casillas().size(); i++) {
 			int cx = x0 + DENTRO + (i % n) * CELDA, cy = y0 + DENTRO + (i / n) * CELDA;
@@ -221,7 +227,8 @@ public final class HudCarton {
 
 	static Component lineaFase(Paquetes.Estado e) {
 		return switch (e.fase()) {
-			case Paquetes.Estado.PREPARANDO -> Component.translatable("venatio.hud.preparando", e.progreso());
+			case Paquetes.Estado.PREPARANDO -> VariantesCliente.enDraft() ? VariantesCliente.lineaDraft(e)
+				: Component.translatable("venatio.hud.preparando", e.progreso());
 			case Paquetes.Estado.CUENTA_ATRAS -> Component.translatable("venatio.hud.cuenta", Math.max(1, Animaciones.segundoCuenta()));
 			case Paquetes.Estado.FINAL -> {
 				ColorEquipo g = ColorEquipo.porOrdinal(e.ganador());

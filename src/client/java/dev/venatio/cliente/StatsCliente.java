@@ -27,9 +27,9 @@ public final class StatsCliente {
 		return ultimoFinal != null && e != null && e.fase() == Paquetes.Estado.FINAL;
 	}
 
-	/** Tecla B: durante el final abre el resumen; el resto del tiempo, el cartón. */
+	/** Tecla B: durante el final abre el resumen; durante el draft, la pantalla para vetar; el resto del tiempo, el cartón. */
 	static Screen pantallaTeclaB() {
-		return hayFinal() ? new PantallaFinal(ultimoFinal) : new PantallaCarton();
+		return hayFinal() ? new PantallaFinal(ultimoFinal) : VariantesCliente.enDraft() ? new PantallaDraft() : new PantallaCarton();
 	}
 
 	private static void alTerminar(PaquetesStats.FinalPartida f, Minecraft mc) {
