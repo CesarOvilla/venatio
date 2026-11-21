@@ -44,7 +44,8 @@ import java.util.stream.Collectors;
 /**
  * Medición del servidor con una partida de verdad: Player0 (cliente real, quieto en su punto de aparición, con vista
  * corta para no frenar al servidor) y N bots de Carpet que se alejan cada uno en una dirección distinta a velocidad fija,
- * como amigos explorando a pie o con élitro.
+ * como amigos explorando a pie o con élitro; igual que el cliente real, no avanzan hacia un chunk que todavía no existe,
+ * así que la velocidad lograda dice qué tan rápido se puede explorar.
  * Cada partida genera mundos nuevos (con la misma semilla en todos los escenarios, para comparar), así que casi todo el
  * costo es generar chunks. Cada 10 s registra MSPT media, p95 y máximo, chunks, chunks faltantes y memoria; al final de
  * cada escenario, un resumen en una línea y una fila en build/run/clientGameTest/rendimiento/resultados.csv.
@@ -101,6 +102,8 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 	/** Estado del movimiento de cada bot (solo se toca en el hilo del servidor). */
 	private static final class Rumbo {
 		double x, y, z;
+		/** Bloques que avanzó de verdad (se queda quieto mientras el chunk de enfrente no existe). */
+		double recorrido;
 		final double angulo;
 
 		Rumbo(double angulo) {
@@ -235,6 +238,8 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 		}
 		server.runOnServer(s -> MedidorRendimiento.alTick = null);
 		server.runOnServer(s -> medidor.terminar());
+		double segundosMovidos = (System.nanoTime() - inicio) / 1e9;
+		double lograda = server.computeOnServer(s -> rumbos.values().stream().mapToDouble(r -> r.recorrido).average().orElse(0)) / segundosMovidos;
 		int chunks = server.computeOnServer(MedidorRendimiento::chunksCargados);
 		long memoriaConMundos = memoriaTrasGc(server); // lo que de verdad ocupan los chunks cargados
 
@@ -245,10 +250,10 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 		if (!registrar) return;
 
 		String resumen = medidor.resumen();
-		MedidorRendimiento.LOG.info("RESUMEN [{}] preparación {} s · faltantes al empezar {} · {} · chunks al final {} · memoria tras GC con los mundos {} MB y tras borrarlos {} MB · autoguardado {} ms",
-			etiqueta, String.format(Locale.ROOT, "%.1f", preparacion), faltantesInicio, resumen, chunks, memoriaConMundos, memoriaTrasGc,
-			String.format(Locale.ROOT, "%.1f", autoguardado));
-		anotar(e, preparacion, faltantesInicio, medidor, chunks, memoriaConMundos, memoriaTrasGc, autoguardado);
+		MedidorRendimiento.LOG.info("RESUMEN [{}] preparación {} s · faltantes al empezar {} · velocidad lograda {} de {} b/s · {} · chunks al final {} · memoria tras GC con los mundos {} MB y tras borrarlos {} MB · autoguardado {} ms",
+			etiqueta, String.format(Locale.ROOT, "%.1f", preparacion), faltantesInicio, f(lograda), f(e.velocidad()), resumen, chunks,
+			memoriaConMundos, memoriaTrasGc, String.format(Locale.ROOT, "%.1f", autoguardado));
+		anotar(e, preparacion, faltantesInicio, lograda, medidor, chunks, memoriaConMundos, memoriaTrasGc, autoguardado);
 		paso("Escenario medido: " + etiqueta);
 	}
 
@@ -278,7 +283,11 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 		return rumbos;
 	}
 
-	/** Corre al principio de cada tick (dentro del tick medido, como los paquetes de movimiento de un jugador real). */
+	/**
+	 * Corre al principio de cada tick (dentro del tick medido, como los paquetes de movimiento de un jugador real). Como
+	 * el cliente de verdad, que no deja avanzar hacia un chunk que todavía no tiene, el bot espera si el chunk de enfrente
+	 * no está cargado: así la velocidad lograda dice qué tan rápido se puede explorar de verdad.
+	 */
 	private void moverBots(MinecraftServer s, Map<String, Rumbo> rumbos, double velocidad) {
 		double paso = velocidad / 20.0;
 		boolean volando = velocidad > 12;
@@ -288,13 +297,14 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 			// Un cliente real confirma los lotes de chunks que recibe; sin esto el servidor deja de mandarle al bot.
 			b.connection.chunkSender.onChunkBatchReceivedByClient(chunksPorTick);
 			Rumbo r = entrada.getValue();
-			r.x += Math.cos(r.angulo) * paso;
-			r.z += Math.sin(r.angulo) * paso;
+			double nx = r.x + Math.cos(r.angulo) * paso, nz = r.z + Math.sin(r.angulo) * paso;
 			ServerLevel nivel = (ServerLevel) b.level();
-			int bx = (int) Math.floor(r.x), bz = (int) Math.floor(r.z);
-			if (nivel.getChunkSource().getChunkNow(bx >> 4, bz >> 4) != null) {
-				r.y = nivel.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz) + (volando ? 30 : 0);
-			}
+			int bx = (int) Math.floor(nx), bz = (int) Math.floor(nz);
+			if (nivel.getChunkSource().getChunkNow(bx >> 4, bz >> 4) == null) continue;
+			r.x = nx;
+			r.z = nz;
+			r.recorrido += paso;
+			r.y = nivel.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz) + (volando ? 30 : 0);
 			float yaw = (float) Math.toDegrees(r.angulo) - 90f;
 			b.teleportTo(nivel, r.x, r.y, r.z, Set.of(), yaw, 0f, false);
 		}
@@ -310,14 +320,14 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 		});
 	}
 
-	private void anotar(Escenario e, double preparacion, int faltantesInicio, MedidorRendimiento m, int chunks, long memoriaConMundos,
+	private void anotar(Escenario e, double preparacion, int faltantesInicio, double lograda, MedidorRendimiento m, int chunks, long memoriaConMundos,
 						long memoriaTrasGc, double autoguardado) {
 		try {
 			Files.createDirectories(RESULTADOS.getParent());
 			boolean nuevo = !Files.exists(RESULTADOS);
 			StringBuilder sb = new StringBuilder();
 			if (nuevo) {
-				sb.append("fecha,conjunto,procesadores,dedicado,vista,simulacion,velocidad,bots,equipos,pregen,segundos,preparacion_s,"
+				sb.append("fecha,conjunto,procesadores,dedicado,vista,simulacion,velocidad,velocidad_lograda,bots,equipos,pregen,segundos,preparacion_s,"
 					+ "faltantes_inicio,mspt_media,mspt_p95,mspt_max,peor_p95_10s,tps,venatio_ms,faltantes_media,faltantes_max,"
 					+ "faltantes_final,generados,generados_por_s,chunks_final,memoria_max_mb,memoria_con_mundos_mb,memoria_tras_gc_mb,autoguardado_ms,cpu_hilo_pct,cpu_proceso_nucleos,jvm,mods\n");
 			}
@@ -326,7 +336,7 @@ public final class PruebaRendimiento implements FabricClientGameTest {
 			sb.append(String.join(",",
 				LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), conjunto,
 				String.valueOf(Runtime.getRuntime().availableProcessors()), String.valueOf(dedicado), String.valueOf(e.vista()),
-				String.valueOf(e.simulacion()), f(e.velocidad()), String.valueOf(bots), String.valueOf(equipos),
+				String.valueOf(e.simulacion()), f(e.velocidad()), f(lograda), String.valueOf(bots), String.valueOf(equipos),
 				e.pregen() == null ? "" : String.valueOf(e.pregen()), String.valueOf(segundos), f(preparacion),
 				String.valueOf(faltantesInicio), f(m.mediaTotal()), f(m.p95Total()), f(m.maxTotal()), f(peorP95), f(m.tps()),
 				String.format(Locale.ROOT, "%.3f", m.venatioMedia()), f(m.faltantesMedia()), String.valueOf(m.faltantesMax()),
