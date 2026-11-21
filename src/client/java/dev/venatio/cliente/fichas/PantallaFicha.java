@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.venatio.red.PaquetesFicha.Destilacion;
 import dev.venatio.red.PaquetesFicha.Ficha;
 import dev.venatio.red.PaquetesFicha.Fuente;
+import dev.venatio.cliente.Arte;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -41,6 +42,8 @@ public final class PantallaFicha extends Screen {
 	private static final int BLANCO = 0xFFFFFFFF, GRIS = 0xFFAAAAAA, GRIS_LUGARES = 0xFF9C9C9C, AMARILLO = 0xFFF2E3A0,
 		TEXTO_CAJA = 0xFF404040, VERDE = 0xFF2F6B2F, VERDE_CLARO = 0xFF3F8F3F;
 	private static final int FILA = 22, ANCHO_MAX = 470;
+	/** Margen inferior: el marco de la pantalla y un respiro. */
+	private static final int ABAJO = 10;
 
 	private final @Nullable Screen padre;
 	private final Deque<Item> historial = new ArrayDeque<>();
@@ -186,10 +189,11 @@ public final class PantallaFicha extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float a) {
+		Arte.panel(g, x0 - 8, 0, ancho + 16, height);
 		super.extractRenderState(g, mx, my, a);
 		ItemStack stack = new ItemStack(item);
 		g.item(stack, x0 + 60, 8);
-		g.text(font, stack.getHoverName(), x0 + 80, 12, BLANCO, true);
+		g.text(font, stack.getHoverName(), x0 + 80, 12, Arte.ORO, true);
 		if (ficha == null) {
 			g.centeredText(font, Component.translatable("venatio.fichas.cargando"), width / 2, height / 2, GRIS);
 			return;
@@ -229,7 +233,7 @@ public final class PantallaFicha extends Screen {
 	}
 
 	private ItemStack dibujarRecetas(GuiGraphicsExtractor g, int mx, int my) {
-		g.text(font, Component.translatable("venatio.fichas.como_se_fabrica"), xCaja, yColumnas, BLANCO, true);
+		g.text(font, Component.translatable("venatio.fichas.como_se_fabrica"), xCaja, yColumnas, Arte.ORO, true);
 		if (recetas.isEmpty()) {
 			g.textWithWordWrap(font, Component.translatable("venatio.fichas.no_se_fabrica"), xCaja, yCaja + 2, RecetaVista.ANCHO, GRIS, true);
 			return ItemStack.EMPTY;
@@ -278,14 +282,14 @@ public final class PantallaFicha extends Screen {
 	}
 
 	private void dibujarFuentes(GuiGraphicsExtractor g, int mx, int my) {
-		g.text(font, Component.translatable("venatio.fichas.de_donde_sale"), xLista, yColumnas, BLANCO, true);
+		g.text(font, Component.translatable("venatio.fichas.de_donde_sale"), xLista, yColumnas, Arte.ORO, true);
 		List<Fuente> fuentes = ficha.fuentes();
 		if (fuentes.isEmpty()) {
 			Component texto = Component.translatable(recetas.isEmpty() ? "venatio.fichas.sin_fuentes" : "venatio.fichas.solo_fabricando");
 			g.textWithWordWrap(font, texto, xLista, yLista + 2, anchoLista, GRIS, true);
 			return;
 		}
-		int abajo = height - 6;
+		int abajo = height - ABAJO;
 		g.enableScissor(xLista, yLista, xLista + anchoLista, abajo);
 		List<Component> tooltip = null;
 		for (int i = 0; i < fuentes.size(); i++) {
@@ -417,7 +421,7 @@ public final class PantallaFicha extends Screen {
 				return true;
 			}
 		}
-		int abajo = height - 6;
+		int abajo = height - ABAJO;
 		if (dentro(mx, my, xLista, yLista, anchoLista, abajo - yLista)) {
 			int i = (int) ((my - yLista + scroll) / FILA);
 			List<Fuente> fuentes = ficha.fuentes();
@@ -459,7 +463,7 @@ public final class PantallaFicha extends Screen {
 
 	private double maxScroll() {
 		if (ficha == null) return 0;
-		return Math.max(0, ficha.fuentes().size() * FILA - (height - 6 - yLista));
+		return Math.max(0, ficha.fuentes().size() * FILA - (height - ABAJO - yLista));
 	}
 
 	// ------------------------------------------------------------------------------------------------ pruebas

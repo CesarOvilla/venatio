@@ -9,10 +9,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -21,12 +19,11 @@ import net.minecraft.world.item.Items;
 public final class PantallaTienda extends Screen {
 	private static final int ANCHO = 370;
 	private static final int FILA = 28;
-	private static final int BLANCO = 0xFFFFFFFF;
-	private static final int GRIS = 0xFFAAAAAA;
-	private static final int VERDE = 0xFF7CFF7C;
-	private static final int ROJO = 0xFFFF6B6B;
-	private static final int AMARILLO = 0xFFFFE066;
-	private static final Identifier ROMBO = Identifier.fromNamespaceAndPath("venatio_ayudas", "textures/gui/marca.png");
+	private static final int BLANCO = Arte.CREMA;
+	private static final int GRIS = Arte.GRIS;
+	private static final int VERDE = Arte.VERDE;
+	private static final int ROJO = Arte.ROJO;
+	private static final int AMARILLO = Arte.AMARILLO;
 
 	private final Button[] botones = new Button[TipoAyuda.values().length];
 	private int x0, y0;
@@ -44,7 +41,7 @@ public final class PantallaTienda extends Screen {
 	protected void init() {
 		x0 = (width - ANCHO) / 2;
 		int altoTotal = TipoAyuda.values().length * FILA + 30;
-		y0 = Math.max(34, (height - altoTotal) / 2 + 14);
+		y0 = Math.max(46, (height - altoTotal) / 2 + 18);
 		for (TipoAyuda t : TipoAyuda.values()) {
 			int y = y0 + t.ordinal() * FILA;
 			botones[t.ordinal()] = addRenderableWidget(Button.builder(textoBoton(t), b -> accion(t))
@@ -133,10 +130,12 @@ public final class PantallaTienda extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-		g.centeredText(font, title, width / 2, y0 - 28, BLANCO);
+		int filas = TipoAyuda.values().length;
+		Arte.panel(g, x0 - 12, y0 - 34, ANCHO + 24, filas * FILA + 34 + 38);
+		Arte.placa(g, font, title, width / 2, y0 - 42, Arte.ICONO_TIENDA);
 		Component estado = estado();
 		g.centeredText(font, estado != null ? estado : Component.translatable("venatio.ayudas.tienda.subtitulo").withColor(GRIS),
-			width / 2, y0 - 15, BLANCO);
+			width / 2, y0 - 14, BLANCO);
 
 		for (TipoAyuda t : TipoAyuda.values()) dibujarFila(g, t, y0 + t.ordinal() * FILA, mouseX, mouseY);
 		super.extractRenderState(g, mouseX, mouseY, a);
@@ -144,12 +143,14 @@ public final class PantallaTienda extends Screen {
 
 	private void dibujarFila(GuiGraphicsExtractor g, TipoAyuda t, int y, int mouseX, int mouseY) {
 		boolean encima = mouseX >= x0 && mouseX < x0 + ANCHO && mouseY >= y && mouseY < y + FILA - 2;
-		g.fill(x0, y, x0 + ANCHO, y + FILA - 2, encima ? 0xC0202020 : 0xB0000000);
+		Arte.fila(g, x0, y, ANCHO, FILA - 2, encima);
 
-		// Ícono de la ayuda
+		// Ícono de la ayuda: el banderín va del color de tu equipo
 		if (t == TipoAyuda.MARCA) {
-			int color = EstadoCliente.estado == null ? 0xFFFFFF : HudCarton.color(EstadoCliente.estado.miEquipo());
-			g.blit(RenderPipelines.GUI_TEXTURED, ROMBO, x0 + 6, y + 5, 0, 0, 16, 16, 16, 16, 16, 16, 0xFF000000 | color);
+			int equipo = EstadoCliente.estado == null ? -1 : EstadoCliente.estado.miEquipo();
+			Arte.icono(g, Arte.ICONO_MARCA, x0 + 6, y + 5, equipo < 0 ? 0xFFFFFFFF : 0xFF000000 | HudCarton.color(equipo));
+		} else if (t == TipoAyuda.MINIMAPA) {
+			Arte.icono(g, Arte.ICONO_MINIMAPA, x0 + 6, y + 5);
 		} else {
 			g.item(new ItemStack(icono(t)), x0 + 6, y + 5);
 		}

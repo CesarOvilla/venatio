@@ -23,11 +23,10 @@ import java.util.TreeSet;
  * y avisa en el chat. Quien no es operador la ve en modo lectura.
  */
 public final class PantallaAnfitrion extends Screen {
-	private static final int BLANCO = 0xFFFFFFFF;
-	private static final int GRIS = 0xFFAAAAAA;
-	private static final int AMARILLO = 0xFFFFDD55;
-	private static final int ROJO = 0xFFFF6655;
-	private static final int ORO = 0xFFF2B84B;
+	private static final int BLANCO = Arte.CREMA;
+	private static final int GRIS = Arte.GRIS;
+	private static final int AMARILLO = Arte.AMARILLO;
+	private static final int ROJO = Arte.ROJO;
 	private static final int[] MINUTOS = {0, 5, 10, 15, 20, 25, 30, 45, 60, 90, 120};
 	private static final int[] DISTANCIAS = {0, 100, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000};
 
@@ -37,6 +36,8 @@ public final class PantallaAnfitrion extends Screen {
 	private Component aviso;
 	private int equiposAzar = 2;
 	private int ySemilla, xSemilla;
+	/** Marco: se calcula en init() alrededor de los controles. */
+	private int marcoX, marcoAncho, marcoAbajo;
 
 	public PantallaAnfitrion(PaquetesStats.ConfigPanel c) {
 		super(Component.translatable("venatio.stats.panel.titulo"));
@@ -66,7 +67,11 @@ public final class PantallaAnfitrion extends Screen {
 		int nOpciones = c.opciones().size();
 		int filas = 2 + (nOpciones + 1) / 2 + 3;
 		int y = 34;
-		int paso = Mth.clamp((height - y - 4) / filas, 21, 24);
+		// En ventanas bajas los botones van pegados (paso 20) para que quepa la fila de Iniciar y Cerrar.
+		int paso = Mth.clamp((height - y - 5) / filas, 20, 24);
+		marcoX = x0 - 12;
+		marcoAncho = 2 * col + gap + 24;
+		marcoAbajo = y + (filas - 1) * paso + 20 + 8;
 		boolean ed = editable();
 		List<AbstractWidget> controles = new ArrayList<>();
 
@@ -176,8 +181,9 @@ public final class PantallaAnfitrion extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
+		Arte.panel(g, marcoX, 12, marcoAncho, Math.min(height, marcoAbajo) - 12);
 		super.extractRenderState(g, mouseX, mouseY, a);
-		g.centeredText(font, title, width / 2, 8, ORO);
+		Arte.placa(g, font, title, width / 2, 2, Arte.ICONO_BINGO);
 		Component estado;
 		int color;
 		if (aviso != null) {
@@ -193,7 +199,7 @@ public final class PantallaAnfitrion extends Screen {
 			estado = Component.translatable("venatio.stats.panel.ayuda");
 			color = GRIS;
 		}
-		g.centeredText(font, estado, width / 2, 20, color);
+		g.centeredText(font, estado, width / 2, 24, color);
 		g.text(font, Component.translatable("venatio.stats.panel.semilla"), xSemilla, ySemilla + 6, editable() ? BLANCO : GRIS, true);
 	}
 }

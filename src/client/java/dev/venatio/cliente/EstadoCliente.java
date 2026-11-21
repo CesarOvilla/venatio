@@ -2,31 +2,25 @@ package dev.venatio.cliente;
 
 import dev.venatio.red.Paquetes;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Util;
 
-import java.util.HashMap;
-import java.util.Map;
-
-/** Último estado recibido del servidor y animaciones en curso. Solo se usa en el hilo del cliente. */
+/** Último estado recibido del servidor. Las animaciones y los sonidos que dispara van en {@link Animaciones}. Solo se usa en el hilo del cliente. */
 public final class EstadoCliente {
 	static Paquetes.Estado estado;
 	private static long recibidoEn;
-	/** Casilla → momento (ms) en que la consiguió mi equipo, para la animación. */
-	static final Map<Integer, Long> animaciones = new HashMap<>();
-	static final long DURACION_ANIMACION = 1500;
 
 	private EstadoCliente() {}
 
 	static void recibir(Paquetes.Estado e) {
+		Paquetes.Estado antes = estado;
 		estado = e;
 		recibidoEn = Util.getMillis();
+		Animaciones.alCambiarEstado(antes, e);
 	}
 
 	static void limpiar() {
 		estado = null;
-		animaciones.clear();
+		Animaciones.limpiar();
 	}
 
 	/** Segundos de juego, avanzando entre paquetes para que el reloj no salte. */
@@ -38,20 +32,7 @@ public final class EstadoCliente {
 	}
 
 	static void evento(Paquetes.Evento ev, Minecraft mc) {
-		int miEquipo = estado == null ? -1 : estado.miEquipo();
-		switch (ev.tipo()) {
-			case Paquetes.Evento.CASILLA -> {
-				if (ev.equipo() == miEquipo) {
-					animaciones.put(ev.casilla(), Util.getMillis());
-					mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1.4f));
-				} else {
-					mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_PLING, 0.6f));
-				}
-			}
-			case Paquetes.Evento.VICTORIA -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f));
-			case Paquetes.Evento.INICIO -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_PLING, 1.5f));
-			default -> {}
-		}
+		Animaciones.evento(ev, estado);
 	}
 
 	static String reloj(int segundos) {

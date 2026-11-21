@@ -49,6 +49,7 @@ public final class VenatioCliente implements ClientModInitializer {
 		AyudasCliente.registrar();
 		ClientTickEvents.END_CLIENT_TICK.register(VenatioCliente::alTick);
 		ServidorEnLista.registrar();
+		HudEfectos.registrar(); // después de AyudasCliente: envuelve sus receptores para los sonidos propios
 	}
 
 	static KeyMapping teclaCarton() {

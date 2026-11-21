@@ -22,11 +22,11 @@ import java.util.List;
 public final class PantallaObjetivos extends Screen {
 	private static final int ANCHO = 280;
 	private static final int FILA = 18;
-	private static final int Y_LISTA = 46;
-	private static final int BLANCO = 0xFFFFFFFF;
-	private static final int GRIS = 0xFF8A8A8A;
-	private static final int ROJO = 0xFFFF6B6B;
-	private static final int AMARILLO = 0xFFFFE066;
+	private static final int Y_LISTA = 56;
+	private static final int BLANCO = Arte.CREMA;
+	private static final int GRIS = Arte.GRIS_OSCURO;
+	private static final int ROJO = Arte.ROJO;
+	private static final int AMARILLO = Arte.AMARILLO;
 
 	private final TipoAyuda tipo;
 	private final Screen padre;
@@ -55,9 +55,9 @@ public final class PantallaObjetivos extends Screen {
 	@Override
 	protected void init() {
 		x0 = (width - ANCHO) / 2;
-		altoLista = Math.max(FILA * 3, (height - Y_LISTA - 54) / FILA * FILA);
+		altoLista = Math.max(FILA * 3, (height - Y_LISTA - 60) / FILA * FILA);
 		String previo = buscador == null ? "" : buscador.getValue();
-		buscador = new EditBox(font, x0, 22, ANCHO, 18, Component.translatable("venatio.ayudas.objetivos.buscar"));
+		buscador = new EditBox(font, x0, 32, ANCHO, 18, Component.translatable("venatio.ayudas.objetivos.buscar"));
 		buscador.setHint(Component.translatable("venatio.ayudas.objetivos.buscar").withStyle(EditBox.SEARCH_HINT_STYLE));
 		buscador.setValue(previo);
 		buscador.setResponder(this::filtrar);
@@ -169,8 +169,9 @@ public final class PantallaObjetivos extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-		g.centeredText(font, title, width / 2, 8, BLANCO);
-		g.fill(x0 - 2, Y_LISTA - 2, x0 + ANCHO + 2, Y_LISTA + altoLista + 2, 0xB0000000);
+		Arte.panel(g, x0 - 14, 14, ANCHO + 28, Y_LISTA + altoLista + 26 + 20 + 10 - 14);
+		Arte.placa(g, font, title, width / 2, 6, Arte.ICONO_GUIA);
+		Arte.fila(g, x0 - 2, Y_LISTA - 2, ANCHO + 4, altoLista + 4, false);
 
 		desplazamiento = Mth.clamp(desplazamiento, 0, maxDesplazamiento());
 		if (filtradas.isEmpty()) {
@@ -183,7 +184,7 @@ public final class PantallaObjetivos extends Screen {
 			CatalogoObjetivos.Entrada e = filtradas.get(i);
 			int y = Y_LISTA + i * FILA - (int) desplazamiento;
 			boolean encima = mouseX >= x0 && mouseX < x0 + ANCHO && mouseY >= Math.max(y, Y_LISTA) && mouseY < Math.min(y + FILA, Y_LISTA + altoLista);
-			if (i == seleccion) g.fill(x0, y, x0 + ANCHO, y + FILA, 0x70FFFFFF);
+			if (i == seleccion) Arte.fila(g, x0, y, ANCHO, FILA, true);
 			else if (encima) g.fill(x0, y, x0 + ANCHO, y + FILA, 0x30FFFFFF);
 			g.item(e.icono(), x0 + 2, y + 1);
 			g.text(font, e.nombre(), x0 + 22, y + 5, e.disponible() ? BLANCO : GRIS);
@@ -199,7 +200,7 @@ public final class PantallaObjetivos extends Screen {
 		if (max > 0) {
 			int alto = Math.max(12, altoLista * altoLista / (filtradas.size() * FILA));
 			int y = Y_LISTA + (int) ((altoLista - alto) * (desplazamiento / max));
-			g.fill(x0 + ANCHO - 2, y, x0 + ANCHO, y + alto, 0xFFC0C0C0);
+			g.fill(x0 + ANCHO - 2, y, x0 + ANCHO, y + alto, Arte.COBRE);
 		}
 
 		g.centeredText(font, lineaPrecio(), width / 2, Y_LISTA + altoLista + 8, BLANCO);

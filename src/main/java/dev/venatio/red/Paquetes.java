@@ -128,7 +128,8 @@ public final class Paquetes {
 
 	/** Servidor → cliente: algo que merece animación y sonido. */
 	public record Evento(int tipo, int equipo, int casilla) implements CustomPacketPayload {
-		public static final int CASILLA = 0, VICTORIA = 1, INICIO = 2;
+		/** BINGO: un equipo cumplió el objetivo pero la partida sigue (fin automático apagado). VICTORIA: terminó. */
+		public static final int CASILLA = 0, VICTORIA = 1, INICIO = 2, BINGO = 3;
 
 		public static final Type<Evento> TYPE = new Type<>(id("evento"));
 		public static final StreamCodec<FriendlyByteBuf, Evento> CODEC = StreamCodec.of(
