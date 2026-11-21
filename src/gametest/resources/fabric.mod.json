@@ -16,7 +16,8 @@
 			"dev.venatio.prueba.PruebaEscala",
 			"dev.venatio.prueba.PruebaLocalizador",
 			"dev.venatio.prueba.PruebaRegalos",
-			"dev.venatio.prueba.PruebaArte"
+			"dev.venatio.prueba.PruebaArte",
+			"dev.venatio.prueba.PruebaRutaEspectador"
 		]
 	},
 	"depends": {
