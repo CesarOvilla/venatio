@@ -12,7 +12,8 @@
 			"dev.venatio.prueba.PruebaMinimapa",
 			"dev.venatio.prueba.PruebaStats",
 			"dev.venatio.prueba.PruebaRastreo",
-			"dev.venatio.prueba.PruebaMultijugador"
+			"dev.venatio.prueba.PruebaMultijugador",
+			"dev.venatio.prueba.PruebaArte"
 		]
 	},
 	"depends": {
