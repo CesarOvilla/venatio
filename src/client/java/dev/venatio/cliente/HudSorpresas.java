@@ -181,7 +181,8 @@ public final class HudSorpresas {
 			float escala = maximo * Animaciones.rebote(entra) * (1f + 0.15f * sale);
 			float alfa = Math.min(1f, entra * 2) * (1 - sale);
 			if (alfa < 0.04f) return;
-			float cy = alto / 2f - 46;
+			// Donde sale el "¡A cazar!", o más abajo si ahí está el indicador del evento.
+			float cy = Math.max(alto / 2f - 46, indicadorAbajo + 4 + 4 * maximo);
 			Arte.textoGrande(g, font, texto, ancho / 2f, cy, escala, Arte.ORO_CLARO, alfa);
 			Component desc = textoEvento.descripcion();
 			int medio = font.width(desc) / 2 + 6;
