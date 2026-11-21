@@ -79,8 +79,9 @@ public final class PruebaMultijugador implements FabricClientGameTest {
 
 			// ---------------- Minimapa con compañero
 			sp.getServer().runCommand("execute as Player0 run venatiodev minimapa 120 64");
-			sp.getServer().runCommand("execute as Player0 at @s run tp Bot1 ~12 ~ ~-12");
-			sp.getServer().runCommand("execute as Player0 at @s run tp Bot2 ~-12 ~ ~-12");
+			// Sobre el suelo: a la altura de Player0 podían quedar dentro de una loma y morir asfixiados antes del final.
+			sp.getServer().runCommand("execute as Player0 at @s positioned ~12 ~ ~-12 positioned over motion_blocking_no_leaves run tp Bot1 ~ ~ ~");
+			sp.getServer().runCommand("execute as Player0 at @s positioned ~-12 ~ ~-12 positioned over motion_blocking_no_leaves run tp Bot2 ~ ~ ~");
 			ctx.waitTicks(60);
 			ctx.takeScreenshot("multi_03_minimapa_companero");
 			paso("Minimapa con Bot1 (compañero) cerca; Bot2 (rival) no debe aparecer");
