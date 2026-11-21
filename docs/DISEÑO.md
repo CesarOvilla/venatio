@@ -98,7 +98,13 @@ Pendiente: pagar con items (lo que propusiste, va por defecto) o con fichas gana
 **Rastreo** (ItemFinder)
 - Blitz y Contrarreloj, individual o por equipos; saltar item con costo.
 
-**Más adelante:** casillas que no son items (visitar un bioma, entrar a una estructura, matar un mob, conseguir un logro, domar o criar un animal). El motor de casillas admite estos tipos desde el inicio.
+**Cartón ampliado (hecho, opciones del anfitrión; valen en todos los modos, también en Rastreo):**
+- *Casillas de logros* (`/venatio opcion logros si`, apagada por defecto): ~25–30 % de las casillas piden hacer algo en vez de tener un item: entrar a un bioma (también del Nether), matar un mob, comer algo, dormir, criar, domesticar, pescar, encantar, comerciar, montar, tocar una campana, minar un mineral, subir a la altura 200 o bajar a −50, entrar al Nether. Nada del End. Se detectan por la posición o por las estadísticas del jugador (comparando contra el valor del principio); domesticar y comer, con los disparadores de logros de vanilla. Catálogo en `carton/Retos.java`, textos en `assets/venatio_carton/lang`. Cada uno tiene icono, nombre y ficha con "Guíame" a sus biomas o mobs.
+- *Casillas con cantidad* (`/venatio opcion cantidades si`, apagada por defecto): ~30 % de las casillas de item piden varias unidades ("16 × Tronco de roble"), según el nivel de la casilla y el tamaño de pila; nunca en items que no se apilan. Cuenta la suma de lo que llevan en el inventario los miembros del equipo; los regalos de la partida no cuentan. El progreso se ve en la casilla (HUD y pantalla B).
+- *Dificultad del cartón* (`/venatio dificultad facil|normal|dificil|mixta`): pesos de los niveles 1, 2 y 3 al elegir cada categoría (fácil 60/30/10, difícil 10/30/60, mixta en tercios exactos). Normal es el reparto de MCBingo y da el mismo cartón que antes con la misma semilla.
+- *Quitar items del pool* (`/venatio pool quitar|poner <item>`, `/venatio pool lista`, o clic derecho de un operador en "Items posibles"): se guarda en `config/venatio/pool.json`; una categoría que se queda sin items no se usa.
+
+**Más adelante:** casillas de estructura ("entra a una aldea") y de logros de vanilla.
 
 ## 7. Lobby, equipos y ranking
 
@@ -180,7 +186,8 @@ Datos (pools, pistas, precios) en `data/venatio/…` con formato de datapack par
 | 3 | Fichas: recetas, "de dónde sale", pistas en español, items posibles | Hecho |
 | 4 | Ayudas con costo: tienda, guías, minimapa limitado, marcas de equipo | Hecho |
 | 5 | Lobby construido, ranking, estadísticas, pantalla final, panel del anfitrión; arte, sonidos y animaciones propios | Hecho |
-| 6 | Modo Rastreo (ItemFinder): normal y carrera, compartido o independiente | Hecho. Falta: casillas que no son items |
+| 6 | Modo Rastreo (ItemFinder): normal y carrera, compartido o independiente | Hecho |
+| 7 | Cartón ampliado: casillas de logros, casillas con cantidad, dificultad del cartón, quitar items del pool | Hecho. Falta: integrarlos al panel del anfitrión |
 
 Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runClientGameTest`).
 
@@ -208,11 +215,11 @@ Ideas comentadas con el usuario, todavía sin elegir. ★ = recomendadas para em
 
 | Mejora | Detalle |
 |---|---|
-| ★ Casillas que no son items | "Entra a un pantano", "mata un creeper", "llega a la altura 200", "duerme en una cama", "entra al Nether". Sin nada del End. |
-| ★ Casillas con cantidad | "16 troncos", "5 diamantes", con barra de progreso en la casilla. |
+| ★ Casillas que no son items | Hecho (opción "Casillas de logros", sección 6). |
+| ★ Casillas con cantidad | Hecho (opción "Casillas con cantidad", sección 6). |
 | ★ Ruta al final | En la pantalla final, un mapa con el recorrido de cada equipo. Sustituye a BingoCam. |
 | Espectador | Quien no juega (o el anfitrión) sigue a cualquier equipo con la cámara. |
-| Dificultad del cartón | Fácil / normal / difícil, y pool editable para quitar items. |
+| Dificultad del cartón | Hecho: fácil / normal / difícil / mixta, y quitar items del pool (sección 6). |
 | Kit inicial | Configurable: herramientas de piedra, comida, cama. |
 | Ayuda al que va perdiendo | Descuento en la tienda para el último lugar. |
 | Eventos sorpresa | Opcionales cada 10 min: noche eterna, velocidad para todos 1 min, lluvia de items… |
