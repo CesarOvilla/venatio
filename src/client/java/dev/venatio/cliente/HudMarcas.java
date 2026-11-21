@@ -24,7 +24,8 @@ final class HudMarcas {
 	private static final Identifier ROMBO = Identifier.fromNamespaceAndPath("venatio_ayudas", "textures/gui/marca.png");
 	private static final Identifier PUNTA = Identifier.fromNamespaceAndPath("venatio_ayudas", "textures/gui/borde.png");
 	private static final int MARGEN = 16;
-	private static final int MARGEN_ABAJO = 56;
+	// Por encima del mensaje de la barra de acción (alto - 68): la punta y su texto no deben encimarse con él.
+	private static final int MARGEN_ABAJO = 86;
 	private static final int BLANCO = 0xFFFFFFFF;
 
 	private HudMarcas() {}
