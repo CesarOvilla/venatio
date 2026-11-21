@@ -38,6 +38,16 @@ public final class PantallaAnfitrion extends Screen {
 	private int ySemilla, xSemilla;
 	/** Marco: se calcula en init() alrededor de los controles. */
 	private int marcoX, marcoAncho, marcoAbajo;
+	/** Pestañas: Partida (modo, tiempo, semilla…), Opciones (sí/no de siempre) y Variantes (cambian las reglas). */
+	private static final String[] PESTANAS = {"venatio.stats.panel.pestana.partida", "venatio.stats.panel.pestana.opciones", "venatio.stats.panel.pestana.variantes"};
+	/** Opciones que cambian las reglas del juego: van en la pestaña Variantes. Las demás, en Opciones. */
+	private static final java.util.Set<String> VARIANTES = java.util.Set.of(
+		"rastreo_independiente", "logros", "cantidades", "eventos", "descuento", "oculto", "draft", "secreta", "relevo");
+	private static int pestana;
+	private int pagina;
+	private Component textoPagina;
+	private int yTextoPagina, yVacia;
+	private boolean vacia;
 
 	public PantallaAnfitrion(PaquetesStats.ConfigPanel c) {
 		super(Component.translatable("venatio.stats.panel.titulo"));
@@ -64,81 +74,133 @@ public final class PantallaAnfitrion extends Screen {
 		int gap = 6;
 		int col = Math.min(160, (width - 30) / 2);
 		int x0 = width / 2 - col - gap / 2, x1 = width / 2 + gap / 2;
-		int nOpciones = c.opciones().size();
-		int filas = 2 + (nOpciones + 1) / 2 + 3;
-		int y = 34;
-		// En ventanas bajas los botones van pegados (paso 20) para que quepa la fila de Iniciar y Cerrar.
-		int paso = Mth.clamp((height - y - 5) / filas, 20, 24);
-		marcoX = x0 - 12;
-		marcoAncho = 2 * col + gap + 24;
-		marcoAbajo = y + (filas - 1) * paso + 20 + 8;
+		int ancho = 2 * col + gap;
 		boolean ed = editable();
 		List<AbstractWidget> controles = new ArrayList<>();
 
-		Modo modo = Modo.porId(c.modo());
-		controles.add(addRenderableWidget(CycleButton.<Modo>builder(Modo::nombre, modo).withValues(Modo.values())
-			.create(x0, y, col, 20, Component.translatable("venatio.stats.panel.modo"),
-				(b, m) -> enviar(AccionPanel.MODO, m.id(), 0))));
-		controles.add(addRenderableWidget(CycleButton.<Integer>builder(PantallaAnfitrion::textoMinutos, c.minutos())
-			.withValues(valores(MINUTOS, c.minutos(), c.maxMinutos()))
-			.create(x1, y, col, 20, Component.translatable("venatio.stats.panel.tiempo"),
-				(b, m) -> enviar(AccionPanel.TIEMPO, "", m))));
-		y += paso;
-
-		controles.add(addRenderableWidget(siNo(c.pvp()).create(x0, y, col, 20, Component.translatable("venatio.stats.panel.pvp"),
-			(b, v) -> enviar(AccionPanel.PVP, "", v ? 1 : 0))));
-		controles.add(addRenderableWidget(CycleButton.<Integer>builder(d -> Component.translatable("venatio.stats.panel.bloques", d), c.distancia())
-			.withValues(valores(DISTANCIAS, c.distancia(), c.maxDistancia()))
-			.create(x1, y, col, 20, Component.translatable("venatio.stats.panel.distancia"),
-				(b, d) -> enviar(AccionPanel.DISTANCIA, "", d))));
-		y += paso;
-
-		for (int i = 0; i < nOpciones; i++) {
-			PaquetesStats.OpcionRed o = c.opciones().get(i);
-			int x = i % 2 == 0 ? x0 : x1;
-			controles.add(addRenderableWidget(siNo(o.valor()).create(x, y, col, 20, Component.translatable("venatio.opcion." + o.id()),
-				(b, v) -> enviar(AccionPanel.OPCION, o.id(), v ? 1 : 0))));
-			if (i % 2 == 1 || i == nOpciones - 1) y += paso;
+		// Pestañas: siempre activas (quien solo mira también puede recorrerlas).
+		int yPest = 34;
+		int anchoPest = (ancho - 8) / 3;
+		for (int i = 0; i < PESTANAS.length; i++) {
+			int n = i;
+			Button b = Button.builder(Component.translatable(PESTANAS[i]), x -> {
+				pestana = n;
+				pagina = 0;
+				rebuildWidgets();
+			}).bounds(x0 + i * (anchoPest + 4), yPest, anchoPest, 18).build();
+			b.active = pestana != i;
+			addRenderableWidget(b);
 		}
 
-		// Semilla: etiqueta, campo de texto, Fijar y Aleatoria.
-		Component etiqueta = Component.translatable("venatio.stats.panel.semilla");
-		int anchoEtiqueta = font.width(etiqueta) + 6;
-		ySemilla = y;
-		xSemilla = x0;
-		EditBox campo = new EditBox(font, x0 + anchoEtiqueta, y, col - anchoEtiqueta, 20, etiqueta);
-		campo.setMaxLength(20);
-		campo.setHint(Component.translatable("venatio.stats.panel.semilla_hint"));
-		campo.setValue(semillaEscrita != null ? semillaEscrita : c.semillaFija() ? String.valueOf(c.semilla()) : "");
-		campo.setResponder(s -> {
-			semillaEscrita = s;
-			aviso = null;
-		});
-		campo.setEditable(ed);
-		controles.add(addRenderableWidget(campo));
-		int medio = (col - 4) / 2;
-		controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.fijar"), b -> fijarSemilla(campo.getValue()))
-			.bounds(x1, y, medio, 20).build()));
-		controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.aleatoria"), b -> {
-			semillaEscrita = null;
-			enviar(AccionPanel.SEMILLA, "aleatoria", 0);
-		}).bounds(x1 + medio + 4, y, col - medio - 4, 20).build()));
-		y += paso;
+		int y = yPest + 24;
+		int yAbajo = Math.max(y + 24, height - 30);
+		int paso = Mth.clamp((yAbajo - y) / 7, 20, 24);
+		int filasCaben = Math.max(1, (yAbajo - y) / paso);
+		xSemilla = -1;
 
-		controles.add(addRenderableWidget(CycleButton.<Integer>builder(n -> Component.literal(String.valueOf(n)), equiposAzar)
-			.withValues(1, 2, 3, 4, 5, 6, 7, 8)
-			.create(x0, y, col, 20, Component.translatable("venatio.stats.panel.equipos"), (b, n) -> equiposAzar = n)));
-		controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.repartir"),
-			b -> enviar(AccionPanel.ALEATORIOS, "", equiposAzar)).bounds(x1, y, col, 20).build()));
-		y += paso;
+		if (pestana == 0) {
+			Modo modo = Modo.porId(c.modo());
+			controles.add(addRenderableWidget(CycleButton.<Modo>builder(Modo::nombre, modo).withValues(Modo.values())
+				.create(x0, y, col, 20, Component.translatable("venatio.stats.panel.modo"),
+					(b, m) -> enviar(AccionPanel.MODO, m.id(), 0))));
+			controles.add(addRenderableWidget(CycleButton.<Integer>builder(PantallaAnfitrion::textoMinutos, c.minutos())
+				.withValues(valores(MINUTOS, c.minutos(), c.maxMinutos()))
+				.create(x1, y, col, 20, Component.translatable("venatio.stats.panel.tiempo"),
+					(b, m) -> enviar(AccionPanel.TIEMPO, "", m))));
+			y += paso;
+
+			controles.add(addRenderableWidget(siNo(c.pvp()).create(x0, y, col, 20, Component.translatable("venatio.stats.panel.pvp"),
+				(b, v) -> enviar(AccionPanel.PVP, "", v ? 1 : 0))));
+			controles.add(addRenderableWidget(CycleButton.<Integer>builder(d -> Component.translatable("venatio.stats.panel.bloques", d), c.distancia())
+				.withValues(valores(DISTANCIAS, c.distancia(), c.maxDistancia()))
+				.create(x1, y, col, 20, Component.translatable("venatio.stats.panel.distancia"),
+					(b, d) -> enviar(AccionPanel.DISTANCIA, "", d))));
+			y += paso;
+
+			// Semilla: etiqueta, campo de texto, Fijar y Aleatoria.
+			Component etiqueta = Component.translatable("venatio.stats.panel.semilla");
+			int anchoEtiqueta = font.width(etiqueta) + 6;
+			ySemilla = y;
+			xSemilla = x0;
+			EditBox campo = new EditBox(font, x0 + anchoEtiqueta, y, col - anchoEtiqueta, 20, etiqueta);
+			campo.setMaxLength(20);
+			campo.setHint(Component.translatable("venatio.stats.panel.semilla_hint"));
+			campo.setValue(semillaEscrita != null ? semillaEscrita : c.semillaFija() ? String.valueOf(c.semilla()) : "");
+			campo.setResponder(t -> {
+				semillaEscrita = t;
+				aviso = null;
+			});
+			campo.setEditable(ed);
+			controles.add(addRenderableWidget(campo));
+			int medio = (col - 4) / 2;
+			controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.fijar"), b -> fijarSemilla(campo.getValue()))
+				.bounds(x1, y, medio, 20).build()));
+			controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.aleatoria"), b -> {
+				semillaEscrita = null;
+				enviar(AccionPanel.SEMILLA, "aleatoria", 0);
+			}).bounds(x1 + medio + 4, y, col - medio - 4, 20).build()));
+			y += paso;
+
+			controles.add(addRenderableWidget(CycleButton.<Integer>builder(n -> Component.literal(String.valueOf(n)), equiposAzar)
+				.withValues(1, 2, 3, 4, 5, 6, 7, 8)
+				.create(x0, y, col, 20, Component.translatable("venatio.stats.panel.equipos"), (b, n) -> equiposAzar = n)));
+			controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.repartir"),
+				b -> enviar(AccionPanel.ALEATORIOS, "", equiposAzar)).bounds(x1, y, col, 20).build()));
+		} else {
+			// Opciones sí/no de la pestaña, en dos columnas y por páginas si no caben.
+			boolean variantes = pestana == 2;
+			List<PaquetesStats.OpcionRed> lista = new ArrayList<>();
+			for (PaquetesStats.OpcionRed o : c.opciones()) if (VARIANTES.contains(o.id()) == variantes) lista.add(o);
+			int filasOpc = Math.max(1, filasCaben - 1);
+			int porPagina = filasOpc * 2;
+			int paginas = Math.max(1, (lista.size() + porPagina - 1) / porPagina);
+			pagina = Mth.clamp(pagina, 0, paginas - 1);
+			int desde = pagina * porPagina, hasta = Math.min(lista.size(), desde + porPagina);
+			for (int i = desde; i < hasta; i++) {
+				PaquetesStats.OpcionRed o = lista.get(i);
+				int k = i - desde;
+				int x = k % 2 == 0 ? x0 : x1;
+				controles.add(addRenderableWidget(siNo(o.valor()).create(x, y + (k / 2) * paso, col, 20,
+					Component.translatable("venatio.opcion." + o.id()), (b, v) -> enviar(AccionPanel.OPCION, o.id(), v ? 1 : 0))));
+			}
+			if (lista.isEmpty()) vacia = true;
+			if (paginas > 1) {
+				int yPag = y + filasOpc * paso;
+				Button atras = Button.builder(Component.literal("◀"), b -> {
+					pagina--;
+					rebuildWidgets();
+				}).bounds(x0, yPag, 24, 20).build();
+				atras.active = pagina > 0;
+				addRenderableWidget(atras);
+				Button adelante = Button.builder(Component.literal("▶"), b -> {
+					pagina++;
+					rebuildWidgets();
+				}).bounds(x1 + col - 24, yPag, 24, 20).build();
+				adelante.active = pagina < paginas - 1;
+				addRenderableWidget(adelante);
+				textoPagina = Component.translatable("venatio.stats.panel.pagina", pagina + 1, paginas);
+				yTextoPagina = yPag + 6;
+			}
+		}
 
 		controles.add(addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.iniciar"), b -> {
 			enviar(AccionPanel.INICIAR, "", 0);
 			onClose();
-		}).bounds(x0, y, col, 20).build()));
-		addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.cerrar"), b -> onClose()).bounds(x1, y, col, 20).build());
+		}).bounds(x0, yAbajo, col, 20).build()));
+		addRenderableWidget(Button.builder(Component.translatable("venatio.stats.panel.cerrar"), b -> onClose()).bounds(x1, yAbajo, col, 20).build());
 
 		for (AbstractWidget w : controles) w.active = ed;
+		marcoX = x0 - 12;
+		marcoAncho = ancho + 24;
+		marcoAbajo = yAbajo + 20 + 8;
+		yVacia = y + 10;
+	}
+
+	@Override
+	protected void rebuildWidgets() {
+		textoPagina = null;
+		vacia = false;
+		super.rebuildWidgets();
 	}
 
 	private static CycleButton.Builder<Boolean> siNo(boolean valor) {
@@ -200,6 +262,10 @@ public final class PantallaAnfitrion extends Screen {
 			color = GRIS;
 		}
 		g.centeredText(font, estado, width / 2, 24, color);
-		g.text(font, Component.translatable("venatio.stats.panel.semilla"), xSemilla, ySemilla + 6, editable() ? BLANCO : GRIS, true);
+		if (pestana == 0 && xSemilla >= 0) {
+			g.text(font, Component.translatable("venatio.stats.panel.semilla"), xSemilla, ySemilla + 6, editable() ? BLANCO : GRIS, true);
+		}
+		if (textoPagina != null) g.centeredText(font, textoPagina, width / 2, yTextoPagina, GRIS);
+		if (vacia) g.centeredText(font, Component.translatable("venatio.stats.panel.sin_opciones"), width / 2, yVacia, GRIS);
 	}
 }

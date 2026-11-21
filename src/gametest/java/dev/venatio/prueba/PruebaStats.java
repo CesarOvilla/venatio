@@ -82,6 +82,15 @@ public final class PruebaStats implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("stats_02_panel_operador");
 			paso("Como operador el panel se abre editable");
+			ctx.clickScreenButton("venatio.stats.panel.pestana.opciones");
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("stats_02b_panel_opciones");
+			ctx.clickScreenButton("venatio.stats.panel.pestana.variantes");
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("stats_02c_panel_variantes");
+			ctx.clickScreenButton("venatio.stats.panel.pestana.partida");
+			ctx.waitTicks(3);
+			paso("Pestañas del panel: Opciones y Variantes");
 
 			ctx.clickScreenButton("venatio.stats.panel.modo");
 			sp.getServer().waitFor(s -> Juego.INSTANCIA.config.modo == Modo.APAGON, 100);

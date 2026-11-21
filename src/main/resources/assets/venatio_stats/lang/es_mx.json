@@ -3,7 +3,6 @@
   "venatio.stats.error.sin_datos": "Las estadísticas todavía no están cargadas.",
   "venatio.stats.error.indica_jugador": "Indica un jugador: /venatio stats <jugador>",
   "venatio.stats.error.sin_stats": "%s todavía no tiene estadísticas.",
-
   "venatio.stats.tablero.ranking": "Ranking · Temporada %s",
   "venatio.stats.tablero.fila": "%1$s · %2$s pts",
   "venatio.stats.tablero.sin_partidas": "Todavía no hay partidas",
@@ -17,7 +16,6 @@
   "venatio.stats.resultado.gana": "Ganó el equipo %s",
   "venatio.stats.resultado.empate": "Empate",
   "venatio.stats.resultado.cancelada": "Cancelada por el anfitrión",
-
   "venatio.stats.ranking.titulo": "Ranking · Temporada %s",
   "venatio.stats.ranking.vacio": "Todavía no hay partidas en la temporada %s.",
   "venatio.stats.ranking.fila": "%1$s %2$s — %3$s pts · %4$s victorias · %5$s casillas · %6$s partidas",
@@ -34,7 +32,6 @@
   "venatio.stats.stats.temporada_sin": "Temporada %s: todavía sin partidas",
   "venatio.stats.temporada.actual": "Temporada %1$s (desde el %2$s)",
   "venatio.stats.temporada.nueva": "¡Empieza la temporada %s! El ranking vuelve a cero.",
-
   "venatio.stats.final.titulo": "Fin de la partida",
   "venatio.stats.final.ver": "Pulsa B para ver el resumen de la partida",
   "venatio.stats.final.subtitulo": "%1$s · duró %2$s",
@@ -50,7 +47,6 @@
   "venatio.stats.final.ver_carton": "Ver cartón",
   "venatio.stats.final.cerrar": "Cerrar",
   "venatio.stats.final.ayuda": "Esc cierra · B la vuelve a abrir mientras dure el final",
-
   "venatio.stats.panel.titulo": "Panel del anfitrión",
   "venatio.stats.panel.ayuda": "Cada cambio se avisa en el chat",
   "venatio.stats.panel.solo_lectura": "Solo lectura: únicamente un operador puede cambiar la partida",
@@ -74,5 +70,10 @@
   "venatio.stats.panel.equipos": "Equipos al azar",
   "venatio.stats.panel.repartir": "Repartir",
   "venatio.stats.panel.iniciar": "Iniciar partida",
-  "venatio.stats.panel.cerrar": "Cerrar"
+  "venatio.stats.panel.cerrar": "Cerrar",
+  "venatio.stats.panel.pestana.partida": "Partida",
+  "venatio.stats.panel.pestana.opciones": "Opciones",
+  "venatio.stats.panel.pestana.variantes": "Variantes",
+  "venatio.stats.panel.pagina": "Página %s de %s",
+  "venatio.stats.panel.sin_opciones": "Todavía no hay variantes en esta versión"
 }
