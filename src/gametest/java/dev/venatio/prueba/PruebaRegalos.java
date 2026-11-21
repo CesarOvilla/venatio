@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -90,6 +91,41 @@ public final class PruebaRegalos implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("regalos_02_reaparecio");
 			paso("Al morir sin conservar inventario no quedan regalos en el suelo, y al reaparecer vuelven élitro y cohetes");
+
+			// ---------------- Cama: usarla (de día también) fija el spawn, y al morir se reaparece junto a ella
+			// Centrado en su bloque: la cama tiene que quedar a menos de 3 bloques (bedInRange) para poder usarla.
+			sp.getServer().runCommand("execute as Player0 at @s align xz run tp @s ~0.5 ~ ~0.5");
+			ctx.waitTicks(5);
+			sp.getServer().runCommand("execute as Player0 at @s run fill ~2 ~-1 ~-2 ~6 ~-1 ~2 minecraft:stone");
+			sp.getServer().runCommand("execute as Player0 at @s run fill ~2 ~ ~-2 ~6 ~3 ~2 minecraft:air");
+			sp.getServer().runCommand("execute as Player0 at @s run setblock ~2 ~ ~ minecraft:red_bed[facing=east,part=foot]");
+			sp.getServer().runCommand("execute as Player0 at @s run setblock ~3 ~ ~ minecraft:red_bed[facing=east,part=head]");
+			BlockPos cama = sp.getServer().computeOnServer(s -> jugador(s).blockPosition().offset(2, 0, 0));
+			ctx.waitTicks(5);
+			ctx.getInput().lookAt(cama);
+			ctx.waitTicks(3);
+			ctx.getInput().pressMouse(1);
+			sp.getServer().waitFor(s -> {
+				var cfg = jugador(s).getRespawnConfig();
+				return cfg != null && cfg.respawnData().dimension() == Juego.INSTANCIA.partida().mundos().mundo().dimension()
+					&& cfg.respawnData().pos().distManhattan(cama) <= 2;
+			}, 60);
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("regalos_03_cama");
+			ServerPlayer antesCama = sp.getServer().computeOnServer(PruebaRegalos::jugador);
+			sp.getServer().runCommand("kill Player0");
+			ctx.waitForScreen(DeathScreen.class);
+			ctx.waitTicks(25);
+			ctx.clickScreenButton("deathScreen.respawn");
+			sp.getServer().waitFor(s -> jugador(s) != antesCama && jugador(s).isAlive(), 200);
+			ctx.waitFor(mc -> mc.gui.screen() == null, 100);
+			double aLaCama = sp.getServer().computeOnServer(s -> Math.sqrt(jugador(s).blockPosition().distSqr(cama)));
+			comprobar(aLaCama <= 3, "reapareció junto a la cama (" + Math.round(aLaCama) + " bloques)");
+			comprobar(sp.getServer().computeOnServer(s -> jugador(s).getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)),
+				"también recuperó el élitro al reaparecer en la cama");
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("regalos_04_reaparecio_en_cama");
+			paso("Usar una cama fija el spawn (de día también) y al morir reaparece junto a ella, a " + Math.round(aLaCama) + " bloques");
 
 			sp.getServer().runCommand("venatio terminar");
 			sp.getServer().waitFor(s -> Juego.INSTANCIA.partida() == null, 20 * 30);
