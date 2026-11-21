@@ -23,7 +23,7 @@ En el server de prueba, `/venatio` responde con la versión y el tamaño del poo
 ```
 docs/DISEÑO.md                          diseño y plan
 src/main/java/dev/venatio/              servidor y código común
-src/client/java/dev/venatio/cliente/    HUD, pantallas, teclas (B cartón, H ayudas, N marca, M minimapa)
+src/client/java/dev/venatio/cliente/    HUD, pantallas, teclas (B cartón, H ayudas, N marca, M minimapa, R ruta)
 src/main/resources/assets/venatio/lang/ textos (es_mx; el mismo español en en_us y es_es)
 src/main/resources/data/venatio/pools/  pools de items (clasico.json = MCBingo)
 tools/extraer_pool_mcbingo.py           regenera clasico.json desde el datapack de MCBingo

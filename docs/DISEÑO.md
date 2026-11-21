@@ -58,7 +58,7 @@ Polymer y sgui, que hacían falta para un cliente vanilla, se quitan: con mod de
 | Tiempo, modo, puntos | Barra superior propia con tiempo, modo y marcador de equipos. |
 | Compañeros | Marcadores de compañeros en el HUD y tecla **N** para poner una marca que ve tu equipo. |
 
-Teclas por defecto (se pueden cambiar en Controles, categoría "Venatio"): **B** cartón, **H** ayudas, **N** marca de equipo, **M** minimapa.
+Teclas por defecto (se pueden cambiar en Controles, categoría "Venatio"): **B** cartón, **H** ayudas, **N** marca de equipo, **M** minimapa, **R** ruta. Como espectador: **← →** jugador, **↑ ↓** equipo y **Espacio** vista libre.
 
 **Arte y sonido propios (hecho):** identidad de pabellón de caza, como el lobby: madera oscura, cobre y dorado, con los colores de equipo vivos. Marco del cartón, casillas (vacía, tuya, de rival, bloqueada), emblema de cada equipo (color y figura), iconos, marco de las pantallas e icono del mod; sonidos sintetizados de casilla, bingo, victoria, derrota, cuenta atrás, compra, marca, guía y Rastreo; animaciones de entrada del cartón, cuenta atrás, casilla conseguida, bingo, victoria (banner, confeti y fuegos artificiales) y pantalla final. Los sprites y los sonidos se generan con `tools/arte/texturas.py` y `tools/arte/sonidos.py`; el dibujo vive en `cliente/Arte.java`, los tiempos en `cliente/Animaciones.java` y los sonidos en `cliente/Sonidos.java`. Todo viaja dentro del jar del mod; no hace falta resource pack aparte.
 
@@ -129,7 +129,8 @@ El código está en `juego/Variantes.java`, `juego/Draft.java`, `carton/Reemplaz
 - **Estadísticas persistentes** (JSON en `config/venatio/` del server): partidas, victorias por modo, casillas totales, bingo más rápido, casilla más rápida, ayudas compradas.
 - **Ranking por temporada** con puntos por puesto.
 - **Pantalla final** con la línea de tiempo de la partida: quién consiguió qué y a qué minuto.
-- Quien entra tarde o muere sin respawn entra como espectador.
+- **Espectador (hecho):** juega quien tiene equipo al iniciar. Quien no tiene equipo (por ejemplo, el anfitrión que no juega), quien entra a media partida sin equipo y quien usa `/venatio mirar` desde el lobby mira la partida en modo espectador dentro de sus mundos; no cuenta para casillas, lockout, localizador, estadísticas ni victoria. Sigue a un jugador en primera persona con la cámara de espectador vanilla; ← → cambia de jugador, ↑ ↓ de equipo, Espacio (o Shift) deja la vista libre, B muestra el cartón del equipo que mira y R la ruta en vivo. `/venatio mirar salir` lo regresa al lobby. Un jugador de equipo que se desconecta y vuelve sigue jugando. Si nadie tiene equipo, la partida no empieza.
+- **Ruta al final (hecho, sustituye a BingoCam):** durante la partida el servidor graba cada 2 s la posición de cada participante, los eventos con su lugar (casilla, muerte, portal, ayuda comprada) y una muestra del terreno explorado (colores de mapa, 1 px cada 4 bloques, solo de chunks cargados, unos pocos chunks por tick). Al terminar la comprime fuera del hilo del servidor y la manda en trozos de 256 KB. Si alguien se va muy lejos: el mapa se abre encuadrando todo el recorrido (el zoom llega hasta 0.002 px por bloque), el terreno se dibuja en mosaicos de 512 bloques (solo donde hay algo, sin una textura enorme y vacía entre zonas) y con zoom o clic en el jugador de la leyenda se acerca a cualquier zona; si el terreno explorado pasa de 40 000 chunks se manda a 2×2 colores por chunk, y de 120 000 a 1 (tope: 100 000 chunks por dimensión). La pantalla final tiene el botón **Ruta**: terreno, línea de cada jugador con el color de su equipo y su cabeza al final, iconos de casillas, muertes, portales, ayudas y salidas de equipo, zoom con la rueda, arrastre y selector Overworld/Nether. Se vuelve a ver desde el lobby con R o `/venatio ruta` hasta que empieza otra partida. Código en `ruta/` (servidor) y `cliente/ruta/`.
 
 ## 8. Instalación para los amigos (Mac, Windows, Linux)
 
@@ -204,6 +205,7 @@ Datos (pools, pistas, precios) en `data/venatio/…` con formato de datapack par
 | 6 | Modo Rastreo (ItemFinder): normal y carrera, compartido o independiente | Hecho |
 | 7 | Cartón ampliado: casillas de logros, casillas con cantidad, dificultad del cartón, quitar items del pool | Hecho. Falta: integrarlos al panel del anfitrión |
 | 8 | Variantes del cartón: cartón oculto, draft, casilla secreta y relevo | Hecho |
+| 9 | Ruta al final de la partida y modo espectador | Hecho |
 
 Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runClientGameTest`).
 
@@ -237,8 +239,8 @@ En curso: tres agentes en paralelo (cartón ampliado: logros, cantidades, dificu
 |---|---|
 | ★ Casillas que no son items | Hecho (opción "Casillas de logros", sección 6). |
 | ★ Casillas con cantidad | Hecho (opción "Casillas con cantidad", sección 6). |
-| ★ Ruta al final | En la pantalla final, un mapa con el recorrido de cada equipo. Sustituye a BingoCam. |
-| Espectador | Quien no juega (o el anfitrión) sigue a cualquier equipo con la cámara. |
+| ★ Ruta al final | Hecho (sección 7): en la pantalla final, un mapa con el recorrido de cada equipo. Sustituye a BingoCam. |
+| Espectador | Hecho (sección 7): quien no tiene equipo al iniciar, o usa /venatio mirar, sigue a cualquier jugador con la cámara. |
 | Dificultad del cartón | Hecho: fácil / normal / difícil / mixta, y quitar items del pool (sección 6). |
 | Kit inicial | Configurable: herramientas de piedra, comida, cama. |
 | Ayuda al que va perdiendo | Descuento en la tienda para el último lugar. **Hecho** (sección 4). |

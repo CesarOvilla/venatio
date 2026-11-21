@@ -5,6 +5,7 @@ import dev.venatio.carton.Carton;
 import dev.venatio.carton.Objetivo;
 import dev.venatio.mundo.MundosPartida;
 import dev.venatio.red.Paquetes;
+import dev.venatio.ruta.GrabadoraRuta;
 import dev.venatio.stats.ModuloStats;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -374,6 +375,7 @@ public final class Partida {
 			Logrado l = comprobar(objetivo, equipo, miembros, progresoRastreo);
 			if (l == null) continue;
 			carton.anotar(objetivo, equipo, segundos(), l.jugador().getUUID());
+			GrabadoraRuta.casilla(l.jugador(), objetivo.icono());
 			rastreo.avanzar(equipo, segundos());
 			if (objetivo.esReto()) retos.olvidar(objetivo.reto(), miembros);
 			if (rastreo.independiente()) progresoRastreo.remove(equipo);
@@ -410,6 +412,7 @@ public final class Partida {
 		Carton.Casilla cas = carton.casillas.get(indice);
 		cas.logros.put(equipo, segundos());
 		cas.jugadores.put(equipo, p.getUUID());
+		GrabadoraRuta.casilla(p, cas.objetivo.icono());
 		variantes.alMarcar(indice, equipo);
 		// Con el cartón oculto, a quien la tiene tapada no se le dice qué pedía.
 		variantes.anunciar(indice, p, equipo, Component.translatable(cas.objetivo.esReto() ? "venatio.casilla.logro" : "venatio.casilla.conseguida",
@@ -574,6 +577,11 @@ public final class Partida {
 	/** Salida del End para un jugador: su cama si está en el mundo de la partida, si no el punto de su equipo. */
 	public BlockPos spawnDe(ServerPlayer p) {
 		return spawns.get(equipoDe(p));
+	}
+
+	/** Punto de aparición de un equipo (en suelo firme desde la cuenta atrás). */
+	public BlockPos spawnDe(ColorEquipo equipo) {
+		return spawns.get(equipo);
 	}
 
 	// ---------------------------------------------------------------- red

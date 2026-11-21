@@ -9,11 +9,13 @@ import dev.venatio.carton.Dificultad;
 import dev.venatio.carton.Exclusiones;
 import dev.venatio.juego.Ajustes;
 import dev.venatio.juego.ColorEquipo;
+import dev.venatio.juego.Espectadores;
 import dev.venatio.juego.Eventos;
 import dev.venatio.juego.Juego;
 import dev.venatio.juego.Modo;
 import dev.venatio.juego.Opcion;
 import dev.venatio.juego.TipoEvento;
+import dev.venatio.ruta.GrabadoraRuta;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -67,6 +69,12 @@ public final class Comandos {
 			.executes(ctx -> responder(ctx, Ajustes.meta(IntegerArgumentType.getInteger(ctx, "items")), null))));
 
 		raiz.then(Commands.literal("saltar").executes(ctx -> responder(ctx, j.saltar(ctx.getSource().getPlayerOrException()), null)));
+
+		// Espectador y ruta (cualquiera)
+		raiz.then(Commands.literal("mirar")
+			.executes(ctx -> responder(ctx, Espectadores.mirar(ctx.getSource().getPlayerOrException()), null))
+			.then(Commands.literal("salir").executes(ctx -> responder(ctx, Espectadores.dejar(ctx.getSource().getPlayerOrException()), null))));
+		raiz.then(Commands.literal("ruta").executes(ctx -> responder(ctx, GrabadoraRuta.pedir(ctx.getSource().getPlayerOrException()), null)));
 
 		raiz.then(anfitrion("distancia").then(Commands.argument("bloques", IntegerArgumentType.integer(0, Ajustes.MAX_DISTANCIA))
 			.executes(ctx -> responder(ctx, Ajustes.distancia(IntegerArgumentType.getInteger(ctx, "bloques")), null))));

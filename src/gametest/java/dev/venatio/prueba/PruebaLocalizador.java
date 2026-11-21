@@ -87,6 +87,19 @@ public final class PruebaLocalizador implements FabricClientGameTest {
 
 			// ---------------------------------------------------------------- lejos: Bot2 sigue en el punto de Azul
 			// A ~400 bloques el cliente no lo tiene cargado: se dibuja con las posiciones de los paquetes.
+			// Los puntos de aparición se corren buscando tierra: si Azul quedó a menos de 400, se aleja a Bot2 en la misma dirección.
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer yo = bot(s, "Player0"), otro = bot(s, "Bot2");
+				double dx = otro.getX() - yo.getX(), dz = otro.getZ() - yo.getZ(), d = Math.hypot(dx, dz);
+				if (d >= 400) return;
+				double f = 420 / Math.max(1, d);
+				int lx = Mth.floor(yo.getX() + dx * f), lz = Mth.floor(yo.getZ() + dz * f);
+				var nivel = otro.level();
+				nivel.getChunk(lx >> 4, lz >> 4);
+				int y = nivel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lx, lz);
+				otro.teleportTo(nivel, lx + 0.5, y, lz + 0.5, java.util.Set.of(), otro.getYRot(), 0f, true);
+			});
+			ctx.waitTicks(20);
 			UUID bot2 = sp.getServer().computeOnServer(s -> bot(s, "Bot2").getUUID());
 			boolean bot2Cargado = ctx.computeOnClient(mc -> mc.level.getPlayerByUUID(bot2) != null);
 			float haciaBot2 = sp.getServer().computeOnServer(s -> {

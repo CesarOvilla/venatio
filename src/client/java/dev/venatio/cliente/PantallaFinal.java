@@ -1,11 +1,13 @@
 package dev.venatio.cliente;
 
+import dev.venatio.cliente.ruta.RutaCliente;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.juego.Modo;
 import dev.venatio.red.PaquetesStats;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
@@ -19,7 +21,8 @@ import java.util.Optional;
 
 /**
  * Pantalla final: línea de tiempo de la partida (qué casilla, quién, de qué equipo y a qué minuto) y marcador final.
- * Se abre sola al terminar; Esc la cierra y B la vuelve a abrir mientras dure el final.
+ * Se abre sola al terminar; Esc la cierra y B la vuelve a abrir mientras dure el final. El botón "Ruta" abre el mapa
+ * con el recorrido de cada jugador.
  */
 public final class PantallaFinal extends Screen {
 	private static final int BLANCO = Arte.CREMA;
@@ -42,6 +45,7 @@ public final class PantallaFinal extends Screen {
 	private long abierta = -1;
 	// Zonas calculadas en init()
 	private int listaX, listaY, listaAncho, listaAlto, marcadorX, marcadorAncho;
+	private Button botonRuta;
 
 	public PantallaFinal(PaquetesStats.FinalPartida f) {
 		super(Component.translatable("venatio.stats.final.titulo"));
@@ -65,12 +69,31 @@ public final class PantallaFinal extends Screen {
 		marcadorAncho = width - marcadorX - MARGEN;
 		scroll = Mth.clamp(scroll, 0, maxScroll());
 
-		int ancho = 110;
+		int ancho = Math.min(104, (width - 2 * MARGEN - 16) / 3);
 		int y = height - 32;
+		int x = width / 2 - (3 * ancho + 16) / 2;
 		addRenderableWidget(Button.builder(Component.translatable("venatio.stats.final.ver_carton"),
-			b -> minecraft.gui.setScreen(new PantallaCarton())).bounds(width / 2 - ancho - 4, y, ancho, 20).build());
+			b -> minecraft.gui.setScreen(new PantallaCarton())).bounds(x, y, ancho, 20).build());
+		// Ruta: el mapa con el recorrido de cada jugador (llega en trozos justo después del final).
+		botonRuta = addRenderableWidget(Button.builder(Component.translatable("venatio.ruta.boton"),
+			b -> RutaCliente.abrir(minecraft, this)).bounds(x + ancho + 8, y, ancho, 20).build());
+		actualizarBotonRuta();
 		addRenderableWidget(Button.builder(Component.translatable("venatio.stats.final.cerrar"),
-			b -> onClose()).bounds(width / 2 + 4, y, ancho, 20).build());
+			b -> onClose()).bounds(x + 2 * (ancho + 8), y, ancho, 20).build());
+	}
+
+	@Override
+	public void tick() {
+		actualizarBotonRuta();
+	}
+
+	private void actualizarBotonRuta() {
+		if (botonRuta == null) return;
+		boolean lista = RutaCliente.hayFinal();
+		if (botonRuta.active != lista) {
+			botonRuta.active = lista;
+			botonRuta.setTooltip(lista ? null : Tooltip.create(Component.translatable("venatio.ruta.cargando")));
+		}
 	}
 
 	@Override

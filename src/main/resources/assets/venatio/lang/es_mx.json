@@ -5,7 +5,7 @@
   "key.venatio.marca": "Marca de equipo",
   "key.venatio.minimapa": "Minimapa",
   "venatio.aviso.pronto": "%s: todavía no está disponible",
-  "venatio.ayuda": "Venatio %s\n/venatio equipo <color> · /venatio equipo salir · /venatio saltar (Rastreo) · /venatio pool lista\nAnfitrión: /venatio modo, tiempo, meta, semilla, pvp, distancia, dificultad, opcion, pool quitar|poner, switcheroo, eventos_minutos, evento, vetos, equipos aleatorios, iniciar, terminar",
+  "venatio.ayuda": "Venatio %s\n/venatio equipo <color> · /venatio equipo salir · /venatio saltar (Rastreo) · /venatio pool lista\nSin equipo: /venatio mirar (espectador) · /venatio mirar salir · /venatio ruta (recorrido de la última partida)\nAnfitrión: /venatio modo, tiempo, meta, semilla, pvp, distancia, dificultad, opcion, pool quitar|poner, switcheroo, eventos_minutos, evento, vetos, equipos aleatorios, iniciar, terminar",
   "venatio.equipo.rojo": "Rojo",
   "venatio.equipo.azul": "Azul",
   "venatio.equipo.verde": "Verde",

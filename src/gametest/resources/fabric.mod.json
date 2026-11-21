@@ -20,7 +20,8 @@
 			"dev.venatio.prueba.PruebaCartonAmpliado",
 			"dev.venatio.prueba.PruebaSpawns",
 			"dev.venatio.prueba.PruebaEventos",
-			"dev.venatio.prueba.PruebaVariantes"
+			"dev.venatio.prueba.PruebaVariantes",
+			"dev.venatio.prueba.PruebaRutaEspectador"
 		]
 	},
 	"depends": {

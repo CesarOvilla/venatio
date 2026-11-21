@@ -73,7 +73,7 @@ public final class HudCarton {
 		int n = e.tamano();
 		int lado = lado(e);
 		boolean exclusivo = Modo.porId(e.modo()).exclusivo();
-		int mio = e.miEquipo();
+		int mio = EspectadorCliente.equipoVisto(e.miEquipo());
 		Arte.marcoCarton(g, x0, y0, anchoCarton(e), lado);
 
 		for (int i = 0; i < e.casillas().size(); i++) {
