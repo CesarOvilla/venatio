@@ -38,6 +38,8 @@ public final class Espectadores {
 	private static final int[] REENVIOS = {10, 30, 70};
 	private static final int CADA_REVISION = 5;
 	private static final int CADA_ESTADO = 20;
+	/** Bloques que se mueve el seguido entre dos revisiones para considerarlo un salto. */
+	private static final int SALTO = 64;
 
 	private static final class Seguimiento {
 		UUID seguido;
@@ -45,6 +47,8 @@ public final class Espectadores {
 		/** Última cámara que puso el servidor, para distinguir "se soltó él" de "el seguido murió o cambió de mundo". */
 		Entity camara;
 		int enganche = Integer.MIN_VALUE;
+		/** Dónde estaba el seguido en la última revisión, para notar un salto (teletransporte, perla). */
+		double ultimoX, ultimoZ;
 	}
 
 	private static final Map<UUID, Seguimiento> lista = new LinkedHashMap<>();
@@ -212,7 +216,17 @@ public final class Espectadores {
 			return;
 		}
 		if (cam == t) {
-			if (t.level() != p.level()) enganchar(p, t, s); // cruzó un portal
+			if (t.level() != p.level()) {
+				enganchar(p, t, s); // cruzó un portal
+			} else if (Math.abs(t.getX() - s.ultimoX) + Math.abs(t.getZ() - s.ultimoZ) > SALTO) {
+				// Un salto largo: el cliente pudo soltar al seguido (dejó de verlo un momento) y quedarse con la cámara
+				// congelada. Se le vuelve a mandar la cámara cuando ya lo tenga cargado otra vez.
+				s.enganche = ticks;
+		s.ultimoX = t.getX();
+		s.ultimoZ = t.getZ();
+			}
+			s.ultimoX = t.getX();
+			s.ultimoZ = t.getZ();
 			return;
 		}
 		if (cam != p) {
@@ -247,6 +261,8 @@ public final class Espectadores {
 		s.camara = t;
 		s.libre = false;
 		s.enganche = ticks;
+		s.ultimoX = t.getX();
+		s.ultimoZ = t.getZ();
 	}
 
 	private static void soltar(ServerPlayer p, Seguimiento s) {
