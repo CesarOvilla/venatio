@@ -100,5 +100,9 @@
   "venatio.rastreo.error.espera": "Todavía no puedes saltar: faltan %s s.",
   "venatio.hud.busca": "Busca:",
   "venatio.hud.meta": "Meta: %s",
-  "venatio.opcion.inventario": "Conservar inventario al morir"
+  "venatio.opcion.inventario": "Conservar inventario al morir",
+  "venatio.regalo.elitro": "Alas de cazador",
+  "venatio.regalo.cohetes": "Cohetes de cazador",
+  "venatio.regalo.botas": "Botas de nado",
+  "venatio.regalo.lore": "Regalo de la partida: no cuenta para el cartón"
 }

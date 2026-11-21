@@ -248,6 +248,7 @@ public final class Partida {
 	private void tickJugando() {
 		ticksJuego++;
 		if (ticksJuego % 10 == 0) detectar();
+		if (ticksJuego % 20 == 0) reponerRegalos();
 		int limite = cfg.limiteSegundos();
 		if (fase == Fase.JUGANDO && limite > 0 && segundos() >= limite) terminarPorTiempo();
 	}
@@ -280,10 +281,11 @@ public final class Partida {
 		Inventory inv = p.getInventory();
 		for (int s = 0; s < inv.getContainerSize(); s++) {
 			ItemStack st = inv.getItem(s);
-			if (objetivo.cumple(st)) return st;
+			if (!Regalos.esRegalo(st) && objetivo.cumple(st)) return st;
 		}
+		// Lo que da la partida (élitro, cohetes, botas) no cuenta: el cohete del cartón hay que craftearlo.
 		ItemStack enCursor = p.containerMenu.getCarried();
-		return objetivo.cumple(enCursor) ? enCursor : null;
+		return !Regalos.esRegalo(enCursor) && objetivo.cumple(enCursor) ? enCursor : null;
 	}
 
 	private void detectarRastreo() {
@@ -456,6 +458,15 @@ public final class Partida {
 		if (fase == Fase.PREPARANDO) return;
 		if (!MundosPartida.esDePartida(p.level())) llevarAlSpawn(p);
 		aplicarEfectos(p);
+		Regalos.reponer(p, cfg);
+	}
+
+	/** Élitro, cohetes y botas que se acabaron o se perdieron: se reponen cada segundo, como en MCBingo. */
+	private void reponerRegalos() {
+		if (!cfg.elitro && !cfg.depthStrider) return;
+		for (ServerPlayer p : jugadoresEnLinea()) {
+			if (p.isAlive() && !p.isSpectator() && MundosPartida.esDePartida(p.level())) Regalos.reponer(p, cfg);
+		}
 	}
 
 	// ---------------------------------------------------------------- opciones de partida
@@ -463,15 +474,7 @@ public final class Partida {
 	/** Efectos, equipo y recetas según las opciones. Se aplica al empezar y al volver de fuera de la partida. */
 	private void aplicarKit(ServerPlayer p) {
 		aplicarEfectos(p);
-		if (cfg.elitro) {
-			p.getInventory().add(new ItemStack(Items.ELYTRA));
-			p.getInventory().add(new ItemStack(Items.FIREWORK_ROCKET, 64));
-		}
-		if (cfg.depthStrider) {
-			ItemStack botas = new ItemStack(Items.LEATHER_BOOTS);
-			botas.enchant(p.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.DEPTH_STRIDER), 3);
-			p.setItemSlot(EquipmentSlot.FEET, botas);
-		}
+		Regalos.reponer(p, cfg);
 		if (cfg.recetas) p.awardRecipes(juego.server().getRecipeManager().getRecipes());
 	}
 
