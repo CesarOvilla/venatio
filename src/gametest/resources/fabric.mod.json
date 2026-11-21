@@ -21,7 +21,8 @@
 			"dev.venatio.prueba.PruebaSpawns",
 			"dev.venatio.prueba.PruebaEventos",
 			"dev.venatio.prueba.PruebaVariantes",
-			"dev.venatio.prueba.PruebaRutaEspectador"
+			"dev.venatio.prueba.PruebaRutaEspectador",
+			"dev.venatio.prueba.PruebaRendimiento"
 		]
 	},
 	"depends": {

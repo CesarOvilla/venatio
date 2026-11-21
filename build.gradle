@@ -39,6 +39,45 @@ fabricApi {
 	}
 }
 
+// ---------------------------------------------------------------- medición de rendimiento (docs/RENDIMIENTO.md)
+// Conjunto de mods de servidor que se agrega SOLO al runtime de las pruebas con cliente:
+//   ./gradlew runClientGameTest -Pmods=a          (o con tools/prueba.sh: ORG_GRADLE_PROJECT_mods=a tools/prueba.sh …)
+// Se pueden sumar conjuntos y mods sueltos con "+": -Pmods=a+spark, -Pmods=b+vmp. Sin -Pmods: base (solo Fabric API).
+def modsServidor = [
+	lithium    : 'maven.modrinth:lithium:mc26.3-0.26.4-fabric',
+	ferritecore: 'maven.modrinth:ferrite-core:9.0.0-fabric',
+	krypton    : 'maven.modrinth:krypton:0.3.2',
+	scalablelux: 'maven.modrinth:scalablelux:0.3.0-alpha.0.6+26.3',
+	c2me       : 'maven.modrinth:c2me-fabric:0.4.2-alpha.0.121+26.3',
+	moonrise   : 'maven.modrinth:moonrise-opt:1.2.2+35bacce',
+	vmp        : 'maven.modrinth:vmp-fabric:0.2.0+beta.7.238+26.3',
+	servercore : 'maven.modrinth:servercore:YNdFPSov', // 1.5.21+26.3; por id porque el número de versión baja el jar de NeoForge
+	chunky     : 'maven.modrinth:chunky:86FKD9qx',     // 1.5.66; ídem (el número de versión baja el de Sponge)
+	dh         : 'maven.modrinth:distanthorizons:3.3.4-26.3',
+	spark      : 'maven.modrinth:spark:1.10.187-fabric',
+]
+def conjuntosServidor = [
+	base      : [],
+	a         : ['lithium', 'ferritecore', 'krypton', 'scalablelux', 'c2me'],
+	a_sin_c2me: ['lithium', 'ferritecore', 'krypton', 'scalablelux'],
+	// Moonrise declara incompatibles C2ME, Starlight y ScalableLux (trae su propio motor de luz)
+	b         : ['moonrise', 'lithium', 'ferritecore', 'krypton'],
+]
+def modsPedidos = providers.gradleProperty('mods').getOrElse('base')
+def modsElegidos = modsPedidos.split('\\+').collectMany { t -> conjuntosServidor.containsKey(t) ? conjuntosServidor[t] : [t] }.unique()
+modsElegidos.each { if (!modsServidor.containsKey(it)) throw new GradleException("Mod desconocido en -Pmods: ${it} (conocidos: ${modsServidor.keySet()})") }
+
+// Parámetros de PruebaRendimiento sin recompilar: -PrendVistas=10,12,16 → -Dvenatio.rend.vistas=10,12,16 (ver la clase).
+// -Pnucleos=3 limita los hilos que ve la JVM (-XX:ActiveProcessorCount); -Pmemoria=6G fija -Xmx; -Pjfr=archivo graba con JFR;
+// -PjvmExtra='-XX:+UseCompactObjectHeaders …' agrega banderas de JVM (separadas por espacios);
+// -PconfigMods=<carpeta> copia esa carpeta a config/ del juego de prueba (la carpeta de la corrida se borra cada vez).
+def propiedadesRend = providers.gradlePropertiesPrefixedBy('rend').get()
+def nucleos = providers.gradleProperty('nucleos').orNull
+def memoria = providers.gradleProperty('memoria').orNull
+def jfr = providers.gradleProperty('jfr').orNull
+def jvmExtra = providers.gradleProperty('jvmExtra').orNull
+def configMods = providers.gradleProperty('configMods').orNull
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -63,6 +102,27 @@ dependencies {
 				// El id de la versión de Modrinth es exacto; el número puede repetirse entre versiones de Minecraft.
 				gametestRuntimeOnly "maven.modrinth:${c[0]}:${c.size() > 2 ? c[2] : c[1]}"
 			}
+	}
+
+	// Mods de servidor elegidos con -Pmods (ver arriba); solo en las pruebas, nunca en el jar
+	modsElegidos.each { gametestRuntimeOnly modsServidor[it] }
+}
+
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+	systemProperty 'venatio.rend.conjunto', modsPedidos
+	propiedadesRend.each { k, v -> systemProperty 'venatio.rend.' + k.substring(4).uncapitalize(), v }
+	if (nucleos) jvmArgs "-XX:ActiveProcessorCount=${nucleos}"
+	if (memoria) jvmArgs "-Xmx${memoria}", "-Xms${memoria}"
+	if (jfr) jvmArgs "-XX:StartFlightRecording=filename=${jfr},settings=profile,dumponexit=true"
+	if (jvmExtra) jvmArgs jvmExtra.trim().split(/\s+/)
+	if (jvmExtra) systemProperty 'venatio.rend.jvm', jvmExtra.trim()
+	if (configMods) {
+		def origen = file(configMods)
+		def destino = file('build/run/clientGameTest/config')
+		doFirst {
+			destino.mkdirs()
+			origen.eachFile { f -> java.nio.file.Files.copy(f.toPath(), destino.toPath().resolve(f.name), java.nio.file.StandardCopyOption.REPLACE_EXISTING) }
+		}
 	}
 }
 

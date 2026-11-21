@@ -12,6 +12,7 @@ import dev.venatio.mundo.MundosPartida;
 import net.minecraft.world.level.gamerules.GameRules;
 import dev.venatio.red.Paquetes;
 import dev.venatio.red.PaquetesVariantes;
+import dev.venatio.rendimiento.Precalentado;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -34,7 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 
 /** Estado global del juego en el servidor: equipos, configuración y la partida en curso. */
@@ -288,7 +288,7 @@ public final class Juego {
 		}
 		if (participantes.isEmpty()) return Component.translatable("venatio.error.sin_equipos");
 
-		long semilla = config.semilla != null ? config.semilla : new Random().nextLong();
+		long semilla = Precalentado.semilla(config); // la fija, o la del mundo que se generó en el lobby
 		boolean esRastreo = config.modo.esRastreo();
 		Pool delaPartida = poolDePartida();
 		Reglas reglas = config.reglas();
@@ -303,7 +303,7 @@ public final class Juego {
 		} catch (IllegalStateException e) {
 			return Component.translatable("venatio.pool.error.no_alcanza", delaPartida.categorias().size(), config.tamano * config.tamano);
 		}
-		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp, config.conservarInventario);
+		MundosPartida mundos = Precalentado.tomar(server, semilla, config.pvp, config.conservarInventario);
 		partida = new Partida(this, config.copia(), semilla, carton, rastreo, mundos, participantes);
 		Espectadores.alIniciar(sinEquipo);
 		difundir(Component.translatable("venatio.partida.preparando", config.modo.nombre(), String.valueOf(semilla)));

@@ -22,6 +22,8 @@ import java.util.Locale;
  */
 public final class MundosPartida {
 	private static MundosPartida activa;
+	/** Para que dos juegos de mundos creados en el mismo segundo no repitan id (Precalentado puede crear y tirar seguido). */
+	private static int creados;
 
 	private final RuntimeLevelHandle hMundo, hNether, hEnd;
 	private final ServerLevel mundo, nether, end;
@@ -36,15 +38,34 @@ public final class MundosPartida {
 	}
 
 	public static MundosPartida crear(MinecraftServer server, long semilla, boolean pvp, boolean conservarInventario) {
-		if (activa != null) throw new IllegalStateException("Ya hay mundos de partida abiertos");
+		return preparar(server, semilla, pvp, conservarInventario).activar();
+	}
+
+	/** Crea los mundos sin hacerlos los de la partida en curso (Precalentado los genera desde el lobby). */
+	public static MundosPartida preparar(MinecraftServer server, long semilla, boolean pvp, boolean conservarInventario) {
 		WorldDimensions dims = WorldPresets.createNormalWorldDimensions(server.registryAccess());
-		String base = "partida_" + Long.toString(System.currentTimeMillis() / 1000L, 36).toLowerCase(Locale.ROOT);
+		String base = "partida_" + Long.toString(System.currentTimeMillis() / 1000L, 36).toLowerCase(Locale.ROOT)
+			+ (creados++ == 0 ? "" : "_" + creados);
 		Fantasy fantasy = Fantasy.get(server);
 		RuntimeLevelHandle m = fantasy.openTemporaryLevel(id(base + "_mundo"), config(dims, LevelStem.OVERWORLD, semilla, pvp, conservarInventario));
 		RuntimeLevelHandle n = fantasy.openTemporaryLevel(id(base + "_nether"), config(dims, LevelStem.NETHER, semilla, pvp, conservarInventario));
 		RuntimeLevelHandle e = fantasy.openTemporaryLevel(id(base + "_end"), config(dims, LevelStem.END, semilla, pvp, conservarInventario));
-		activa = new MundosPartida(m, n, e);
-		return activa;
+		return new MundosPartida(m, n, e);
+	}
+
+	/** Estos pasan a ser los mundos de la partida en curso (los que miran portales, reaparición, etc.). */
+	public MundosPartida activar() {
+		if (activa != null && activa != this) throw new IllegalStateException("Ya hay mundos de partida abiertos");
+		activa = this;
+		return this;
+	}
+
+	/** PvP y conservar inventario pueden cambiar en el lobby después de preparar los mundos (cada mundo tiene sus reglas). */
+	public void ajustarReglas(boolean pvp, boolean conservarInventario) {
+		for (ServerLevel l : new ServerLevel[]{mundo, nether, end}) {
+			l.getGameRules().set(GameRules.PVP, pvp, null);
+			l.getGameRules().set(GameRules.KEEP_INVENTORY, conservarInventario, null);
+		}
 	}
 
 	private static RuntimeLevelConfig config(WorldDimensions dims, ResourceKey<LevelStem> clave, long semilla, boolean pvp, boolean conservarInventario) {

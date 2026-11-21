@@ -6,6 +6,7 @@ import dev.venatio.carton.Objetivo;
 import dev.venatio.mundo.MundosPartida;
 import dev.venatio.red.Paquetes;
 import dev.venatio.ruta.GrabadoraRuta;
+import dev.venatio.rendimiento.Pregeneracion;
 import dev.venatio.stats.ModuloStats;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -43,8 +44,6 @@ public final class Partida {
 	private static final int SEGUNDOS_CUENTA = 10;
 	private static final int SEGUNDOS_FINAL = 15;
 	private static final int MAX_SEGUNDOS_PREPARACION = 120;
-	/** Radio en chunks que se genera alrededor de cada punto de aparición antes de empezar. */
-	private static final int RADIO_PREGEN = 2;
 
 	private final Juego juego;
 	final Configuracion cfg;
@@ -57,6 +56,8 @@ public final class Partida {
 	/** Chunks que tienen que estar generados antes de llevar a los jugadores. */
 	private final List<ChunkPos> carga = new ArrayList<>();
 	private final Set<ChunkPos> centrosConTicket = new java.util.HashSet<>();
+	/** Radio en chunks que se genera alrededor de cada punto de aparición antes de empezar (ver Pregeneracion). */
+	private final int radioPregen = Pregeneracion.radio();
 
 	Fase fase = Fase.PREPARANDO;
 	private int ticks;
@@ -149,34 +150,43 @@ public final class Partida {
 	/** Reparte los equipos en un círculo (o todos al centro con PvP) evitando océanos y ríos, y pide generar esos chunks. */
 	private void planificarSpawns() {
 		ServerLevel mundo = mundos.mundo();
-		Random rnd = new Random(semilla);
-		int n = equipos.size();
-		double angulo0 = rnd.nextDouble() * Math.PI * 2;
-		double radio = (cfg.pvp || n < 2) ? 0 : cfg.distancia / (2 * Math.sin(Math.PI / n));
-		BlockPos compartido = null;
-		for (int i = 0; i < n; i++) {
-			BlockPos pos;
-			if (radio == 0) {
-				if (compartido == null) compartido = buscarTierra(mundo, 0, 0, rnd);
-				pos = compartido;
-			} else {
-				double a = angulo0 + Math.PI * 2 * i / n;
-				pos = buscarTierra(mundo, (int) (Math.cos(a) * radio), (int) (Math.sin(a) * radio), rnd);
-			}
-			spawns.put(equipos.get(i), pos);
-		}
+		List<BlockPos> puntos = puntosDeAparicion(mundo, semilla, equipos.size(), cfg.pvp, cfg.distancia);
+		for (int i = 0; i < equipos.size(); i++) spawns.put(equipos.get(i), puntos.get(i));
 		// Un ticket forzado genera los chunks en segundo plano. (getChunkFuture desde el hilo principal
 		// bloquea el servidor hasta terminar, y mientras procesa tareas a medias: no usarlo aquí.)
 		for (BlockPos pos : Set.copyOf(spawns.values())) {
 			ChunkPos centro = ChunkPos.containing(pos);
 			centrosConTicket.add(centro);
-			mundo.getChunkSource().addTicketWithRadius(TicketType.FORCED, centro, RADIO_PREGEN);
-			for (int dx = -RADIO_PREGEN; dx <= RADIO_PREGEN; dx++) {
-				for (int dz = -RADIO_PREGEN; dz <= RADIO_PREGEN; dz++) {
+			mundo.getChunkSource().addTicketWithRadius(TicketType.FORCED, centro, radioPregen);
+			for (int dx = -radioPregen; dx <= radioPregen; dx++) {
+				for (int dz = -radioPregen; dz <= radioPregen; dz++) {
 					carga.add(new ChunkPos(centro.x() + dx, centro.z() + dz));
 				}
 			}
 		}
+	}
+
+	/**
+	 * Punto de aparición de cada uno de los n equipos (en orden): en un círculo con `distancia` bloques entre vecinos, o
+	 * todos al centro con PvP. Depende solo de la semilla y de estos datos; lo usa también Precalentado para generar el
+	 * terreno antes de que empiece la partida.
+	 */
+	public static List<BlockPos> puntosDeAparicion(ServerLevel mundo, long semilla, int n, boolean pvp, int distancia) {
+		Random rnd = new Random(semilla);
+		double angulo0 = rnd.nextDouble() * Math.PI * 2;
+		double radio = (pvp || n < 2) ? 0 : distancia / (2 * Math.sin(Math.PI / n));
+		List<BlockPos> puntos = new ArrayList<>();
+		BlockPos compartido = null;
+		for (int i = 0; i < n; i++) {
+			if (radio == 0) {
+				if (compartido == null) compartido = buscarTierra(mundo, 0, 0, rnd);
+				puntos.add(compartido);
+			} else {
+				double a = angulo0 + Math.PI * 2 * i / n;
+				puntos.add(buscarTierra(mundo, (int) (Math.cos(a) * radio), (int) (Math.sin(a) * radio), rnd));
+			}
+		}
+		return puntos;
 	}
 
 	/** Busca cerca de (x, z) un bioma que no sea océano ni río, consultando solo el generador (sin generar chunks). */
@@ -229,7 +239,7 @@ public final class Partida {
 			Jugadores.congelar(p, true);
 		}
 		// Los jugadores ya mantienen cargada su zona; los tickets de pregeneración sobran.
-		for (ChunkPos centro : centrosConTicket) mundo.getChunkSource().removeTicketWithRadius(TicketType.FORCED, centro, RADIO_PREGEN);
+		for (ChunkPos centro : centrosConTicket) mundo.getChunkSource().removeTicketWithRadius(TicketType.FORCED, centro, radioPregen);
 		centrosConTicket.clear();
 		variantes.alEmpezarCuenta();
 		fase = Fase.CUENTA_ATRAS;

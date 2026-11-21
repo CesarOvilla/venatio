@@ -13,6 +13,7 @@ import dev.venatio.red.PaquetesEventos;
 import dev.venatio.red.PaquetesRuta;
 import dev.venatio.red.PaquetesStats;
 import dev.venatio.ruta.GrabadoraRuta;
+import dev.venatio.rendimiento.Precalentado;
 import dev.venatio.stats.ModuloStats;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -39,6 +40,7 @@ public final class Venatio implements ModInitializer {
 		Localizador.registrar();
 		Espectadores.registrar();
 		GrabadoraRuta.registrar();
+		Precalentado.registrar();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Comandos.registrar(dispatcher));
 		ComandoMinimapaDev.registrar(); // solo pruebas: /venatiodev minimapa <segundos> <radio>
 	}

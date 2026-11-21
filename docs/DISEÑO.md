@@ -212,7 +212,7 @@ Cada módulo tiene su prueba con cliente real en `src/gametest` (`./gradlew runC
 ## 12. Despliegue del server
 
 - Desarrollo: `./gradlew runServer` + `./gradlew runClient` en local.
-- Producción: server Fabric 26.3 en exaroton con Venatio, Fabric API, Lithium, FerriteCore, Krypton, ScalableLux y C2ME (alpha; probar). Carpet ya no hace falta. VeinMiner tampoco: el minado en veta es parte de Venatio. Los datapacks Craftable y ALL Recycling Recipes que había en el server de MCBingo se pueden copiar a `world/datapacks` si se quieren (las recetas son globales y aplican a los mundos de partida).
+- Producción: server Fabric 26.3 en exaroton con Venatio, Fabric API, Moonrise (con 2 hilos de trabajo), Lithium, FerriteCore y Krypton; `view-distance=12`, `simulation-distance=8`. C2ME no: con Fantasy no libera los mundos borrados (fuga de memoria por partida). Mediciones y configuración completa en [`RENDIMIENTO.md`](RENDIMIENTO.md). Carpet ya no hace falta. VeinMiner tampoco: el minado en veta es parte de Venatio. Los datapacks Craftable y ALL Recycling Recipes que había en el server de MCBingo se pueden copiar a `world/datapacks` si se quieren (las recetas son globales y aplican a los mundos de partida).
 - El server actual de MCBingo (1.21.11) se deja intacto hasta que Venatio esté listo.
 
 ## 13. Propuestas para después (2026-11-20)
