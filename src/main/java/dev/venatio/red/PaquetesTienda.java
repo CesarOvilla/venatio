@@ -72,8 +72,13 @@ public final class PaquetesTienda {
 	/**
 	 * Una ayuda en la tienda. tipo: ordinal de TipoAyuda; item minecraft:air = gratis.
 	 * enfriamiento y restante en segundos (restante: lo que le falta a este jugador para poder volver a usarla).
+	 * original: precio sin descuento (igual a cantidad si este jugador no tiene descuento).
 	 */
-	public record Oferta(int tipo, Identifier item, int cantidad, int enfriamiento, int restante) {}
+	public record Oferta(int tipo, Identifier item, int cantidad, int enfriamiento, int restante, int original) {
+		public boolean conDescuento() {
+			return original > cantidad;
+		}
+	}
 
 	/** Catálogo con precios y enfriamientos del jugador. minimapaRestante: segundos de minimapa comprado que le quedan. */
 	public record Tienda(boolean activas, List<Oferta> ofertas, int minimapaSegundos, int minimapaRadio, int minimapaRestante,
@@ -95,6 +100,7 @@ public final class PaquetesTienda {
 				buf.writeVarInt(o.cantidad);
 				buf.writeVarInt(o.enfriamiento);
 				buf.writeVarInt(o.restante);
+				buf.writeVarInt(o.original);
 			}
 			buf.writeVarInt(t.minimapaSegundos);
 			buf.writeVarInt(t.minimapaRadio);
@@ -108,7 +114,7 @@ public final class PaquetesTienda {
 			int n = buf.readVarInt();
 			List<Oferta> ofertas = new ArrayList<>(n);
 			for (int i = 0; i < n; i++) {
-				ofertas.add(new Oferta(buf.readVarInt(), buf.readIdentifier(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt()));
+				ofertas.add(new Oferta(buf.readVarInt(), buf.readIdentifier(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt()));
 			}
 			return new Tienda(activas, ofertas, buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
 		}

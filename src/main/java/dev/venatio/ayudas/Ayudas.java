@@ -74,6 +74,12 @@ public final class Ayudas {
 		return ticks;
 	}
 
+	/** Lo que le cuesta una ayuda a este jugador: el precio de la tabla, o con descuento si su equipo va en último lugar. */
+	public static Precios.Precio precioPara(ServerPlayer p, TipoAyuda t) {
+		Precios.Precio base = precios().de(t);
+		return Descuento.aplica(p) ? Descuento.rebajar(base) : base;
+	}
+
 	static @Nullable ServerPlayer jugador(UUID id) {
 		return server == null ? null : server.getPlayerList().getPlayer(id);
 	}
@@ -169,9 +175,9 @@ public final class Ayudas {
 		Precios pr = precios();
 		List<PaquetesTienda.Oferta> ofertas = new ArrayList<>();
 		for (TipoAyuda t : TipoAyuda.values()) {
-			Precios.Precio precio = pr.de(t);
+			Precios.Precio base = pr.de(t), precio = precioPara(p, t);
 			ofertas.add(new PaquetesTienda.Oferta(t.ordinal(), BuiltInRegistries.ITEM.getKey(precio.item()),
-				precio.gratis() ? 0 : precio.cantidad(), precio.enfriamiento(), restante(p.getUUID(), t)));
+				precio.gratis() ? 0 : precio.cantidad(), precio.enfriamiento(), restante(p.getUUID(), t), base.gratis() ? 0 : base.cantidad()));
 		}
 		Long hasta = minimapaHasta.get(p.getUUID());
 		int mini = hasta == null ? 0 : (int) Math.max(0, (hasta - ticks) / 20);
@@ -186,7 +192,7 @@ public final class Ayudas {
 			return;
 		}
 		Precios pr = precios();
-		if (!Cobro.cobrar(p, pr.de(TipoAyuda.MINIMAPA), TipoAyuda.MINIMAPA)) return;
+		if (!Cobro.cobrar(p, precioPara(p, TipoAyuda.MINIMAPA), TipoAyuda.MINIMAPA)) return;
 		// Comprar con minimapa activo suma tiempo al que queda.
 		long hasta = Math.max(ticks, minimapaHasta.getOrDefault(p.getUUID(), 0L)) + pr.minimapaSegundos * 20L;
 		minimapaHasta.put(p.getUUID(), hasta);

@@ -1,5 +1,6 @@
 package dev.venatio.cliente;
 
+import dev.venatio.ayudas.Descuento;
 import dev.venatio.ayudas.TipoAyuda;
 import dev.venatio.juego.ColorEquipo;
 import dev.venatio.red.PaquetesTienda;
@@ -99,7 +100,15 @@ public final class PantallaTienda extends Screen {
 		return o.cantidad() == 0 || AyudasCliente.contar(Minecraft.getInstance(), item(o)) >= o.cantidad();
 	}
 
-	static PaquetesTienda.Oferta oferta(TipoAyuda t) {
+	/** Alguna ayuda sale más barata para este jugador (su equipo va en último lugar). */
+	static boolean conDescuento() {
+		PaquetesTienda.Tienda tienda = AyudasCliente.tienda;
+		if (tienda == null) return false;
+		for (PaquetesTienda.Oferta o : tienda.ofertas()) if (o.conDescuento()) return true;
+		return false;
+	}
+
+	public static PaquetesTienda.Oferta oferta(TipoAyuda t) {
 		PaquetesTienda.Tienda tienda = AyudasCliente.tienda;
 		if (tienda == null) return null;
 		for (PaquetesTienda.Oferta o : tienda.ofertas()) if (o.tipo() == t.ordinal()) return o;
@@ -134,6 +143,9 @@ public final class PantallaTienda extends Screen {
 		Arte.panel(g, x0 - 12, y0 - 34, ANCHO + 24, filas * FILA + 34 + 38);
 		Arte.placa(g, font, title, width / 2, y0 - 42, Arte.ICONO_TIENDA);
 		Component estado = estado();
+		if (estado == null && conDescuento()) {
+			estado = Component.translatable("venatio.ayudas.tienda.descuento", Descuento.PORCENTAJE).withColor(VERDE);
+		}
 		g.centeredText(font, estado != null ? estado : Component.translatable("venatio.ayudas.tienda.subtitulo").withColor(GRIS),
 			width / 2, y0 - 14, BLANCO);
 
@@ -172,7 +184,21 @@ public final class PantallaTienda extends Screen {
 			Item item = item(o);
 			g.item(new ItemStack(item), px, y + 5);
 			tx = px + 18;
-			g.text(font, "× " + o.cantidad(), tx, y + 4, BLANCO);
+			if (o.conDescuento()) {
+				// Precio de siempre tachado, el rebajado en verde y la etiqueta del descuento.
+				int x = tx;
+				g.text(font, "× ", x, y + 4, BLANCO);
+				x += font.width("× ");
+				String antes = String.valueOf(o.original());
+				g.text(font, antes, x, y + 4, GRIS);
+				g.fill(x - 1, y + 7, x + font.width(antes), y + 8, ROJO);
+				x += font.width(antes) + 3;
+				g.text(font, String.valueOf(o.cantidad()), x, y + 4, VERDE);
+				x += font.width(String.valueOf(o.cantidad())) + 4;
+				g.text(font, Component.translatable("venatio.ayudas.tienda.descuento_corto", Descuento.PORCENTAJE), x, y + 4, VERDE);
+			} else {
+				g.text(font, "× " + o.cantidad(), tx, y + 4, BLANCO);
+			}
 			int tiene = AyudasCliente.contar(minecraft, item);
 			abajo = Component.translatable("venatio.ayudas.tienda.tienes", tiene);
 			colorAbajo = tiene >= o.cantidad() ? VERDE : ROJO;
