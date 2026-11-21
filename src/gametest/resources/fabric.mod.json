@@ -17,7 +17,8 @@
 			"dev.venatio.prueba.PruebaLocalizador",
 			"dev.venatio.prueba.PruebaRegalos",
 			"dev.venatio.prueba.PruebaArte",
-			"dev.venatio.prueba.PruebaCartonAmpliado"
+			"dev.venatio.prueba.PruebaCartonAmpliado",
+			"dev.venatio.prueba.PruebaVariantes"
 		]
 	},
 	"depends": {
