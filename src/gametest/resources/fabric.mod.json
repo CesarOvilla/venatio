@@ -14,7 +14,8 @@
 			"dev.venatio.prueba.PruebaRastreo",
 			"dev.venatio.prueba.PruebaMultijugador",
 			"dev.venatio.prueba.PruebaEscala",
-			"dev.venatio.prueba.PruebaLocalizador"
+			"dev.venatio.prueba.PruebaLocalizador",
+			"dev.venatio.prueba.PruebaRegalos"
 		]
 	},
 	"depends": {
