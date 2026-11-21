@@ -265,9 +265,11 @@ public final class PruebaEventos implements FabricClientGameTest {
 		comprobar(auto != TipoEvento.EXPERIENCIA, "el evento automático no repite el último");
 		paso("Con la opción activa, el programador anunció solo: " + auto.id);
 
-		// Línea de tiempo: los 12 eventos que empezaron.
+		// Línea de tiempo: cada evento que empezó, una vez por lanzamiento (el teletransporte se lanza 4 veces: normal,
+		// agua, altura y lava), así que son los 12 tipos más 3.
+		int esperados = TipoEvento.values().length + 3;
 		int sucesos = sp.getServer().computeOnServer(s -> partida().eventos().hitosFinales().size());
-		comprobar(sucesos == TipoEvento.values().length, "los " + TipoEvento.values().length + " eventos van a la línea de tiempo (hay " + sucesos + ")");
+		comprobar(sucesos == esperados, "los " + esperados + " eventos lanzados van a la línea de tiempo (hay " + sucesos + ")");
 		sp.getServer().runCommand("venatio terminar");
 		ctx.waitForScreen(PantallaFinal.class);
 		ctx.waitTicks(60);
@@ -365,7 +367,9 @@ public final class PruebaEventos implements FabricClientGameTest {
 		Vec3 antes0 = sp.getServer().computeOnServer(s -> jugador(s).position());
 		Vec3 antesBot = sp.getServer().computeOnServer(s -> bot(s).position());
 		float vida = sp.getServer().computeOnServer(s -> jugador(s).getHealth());
+		Eventos.forzarDestino = LugarSeguro.Destino.SUELO;
 		lanzar(ctx, sp, TipoEvento.TELETRANSPORTE, false);
+		Eventos.forzarDestino = null;
 		BlockPos destino = sp.getServer().computeOnServer(s -> partida().eventos().destinoTeletransporte(jugador(s).getUUID()));
 		comprobar(destino != null, "Player0 fue teletransportado");
 		double distancia = Math.hypot(destino.getX() + 0.5 - antes0.x, destino.getZ() + 0.5 - antes0.z);
@@ -381,6 +385,42 @@ public final class PruebaEventos implements FabricClientGameTest {
 		ctx.waitTicks(40);
 		captura(ctx, "eventos_22_teletransporte");
 		paso("Teletransporte: Player0 apareció a " + Math.round(distancia) + " bloques, en " + destino + ", a salvo");
+
+		// Destinos con riesgo (en partida salen pocas veces: agua 8 %, altura 8 %, lava 4 %)
+		sp.getServer().runCommand("effect give Player0 minecraft:resistance 9999 4 true");
+		Eventos.forzarDestino = LugarSeguro.Destino.ALTURA;
+		lanzar(ctx, sp, TipoEvento.TELETRANSPORTE, false);
+		Eventos.forzarDestino = null;
+		double sobreSuelo = sp.getServer().computeOnServer(s -> {
+			ServerPlayer p = jugador(s);
+			var nivel = partida().mundos().mundo();
+			return p.getY() - nivel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, p.getBlockX(), p.getBlockZ());
+		});
+		comprobar(sobreSuelo >= 10, "teletransporte desde lo alto: quedó a " + Math.round(sobreSuelo) + " bloques sobre el suelo");
+		captura(ctx, "eventos_22b_teletransporte_altura");
+		paso("Teletransporte desde lo alto: a " + Math.round(sobreSuelo) + " bloques del suelo");
+		ctx.waitTicks(80);
+
+		Eventos.forzarDestino = LugarSeguro.Destino.AGUA;
+		lanzar(ctx, sp, TipoEvento.TELETRANSPORTE, false);
+		Eventos.forzarDestino = null;
+		ctx.waitTicks(20);
+		boolean enAgua = sp.getServer().computeOnServer(s -> jugador(s).isInWater());
+		captura(ctx, "eventos_22c_teletransporte_agua");
+		paso(enAgua ? "Teletransporte al agua: cayó en el agua" : "Teletransporte al agua: no había agua cerca y cayó en suelo firme");
+
+		Eventos.forzarDestino = LugarSeguro.Destino.LAVA;
+		lanzar(ctx, sp, TipoEvento.TELETRANSPORTE, false);
+		Eventos.forzarDestino = null;
+		ctx.waitTicks(10);
+		boolean enLava = sp.getServer().computeOnServer(s -> jugador(s).isInLava());
+		boolean resistente = sp.getServer().computeOnServer(s -> jugador(s).hasEffect(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE));
+		comprobar(!enLava || resistente, "en lava lleva resistencia al fuego");
+		captura(ctx, "eventos_22d_teletransporte_lava");
+		paso(enLava ? "Teletransporte a la lava: cayó en lava con resistencia al fuego" : "Teletransporte a la lava: no había lava en la superficie y cayó en suelo firme");
+		sp.getServer().runCommand("effect clear Player0 minecraft:fire_resistance");
+		sp.getServer().runCommand("execute as Player0 at @s run fill ~-2 ~-1 ~-2 ~2 ~1 ~2 minecraft:stone replace minecraft:lava");
+		sp.getServer().runCommand("extinguish Player0");
 	}
 
 	private static void intercambio(ClientGameTestContext ctx, TestSingleplayerContext sp) {
@@ -418,7 +458,7 @@ public final class PruebaEventos implements FabricClientGameTest {
 		paso("Lluvia de items: 4 panes, 3 lingotes de hierro, 6 de carbón y 6 troncos alrededor de Player0");
 	}
 
-	/** Tormenta: llueve y truena, y un rayo encima de Player0 (sin resistencia) no le quita vida ni lo prende. */
+	/** Tormenta: llueve y truena, y un rayo encima de Player0 (sin resistencia) lo lastima, pero moderado. */
 	private static void tormenta(ClientGameTestContext ctx, TestSingleplayerContext sp) {
 		lanzar(ctx, sp, TipoEvento.TORMENTA, false);
 		comprobar(sp.getServer().computeOnServer(s -> partida().mundos().mundo().getWeatherData().isThundering()), "tormenta: truena");
@@ -428,13 +468,14 @@ public final class PruebaEventos implements FabricClientGameTest {
 		sp.getServer().runCommand("execute at Player0 run summon minecraft:lightning_bolt ~ ~ ~");
 		ctx.waitTicks(40);
 		float despues = sp.getServer().computeOnServer(s -> jugador(s).getHealth());
-		comprobar(despues >= vida && !sp.getServer().computeOnServer(s -> jugador(s).isOnFire()),
-			"el rayo no lastimó a Player0 (" + vida + " → " + despues + ")");
+		comprobar(despues < vida && vida - despues <= 6f,
+			"el rayo lastimó a Player0, pero moderado (" + vida + " → " + despues + ")");
 		sp.getServer().runCommand("execute at Player0 run fill ~-3 ~-1 ~-3 ~3 ~2 ~3 minecraft:air replace #minecraft:fire");
 		sp.getServer().runCommand("effect give Player0 minecraft:resistance 9999 4 true");
 		ctx.waitTicks(80);
 		captura(ctx, "eventos_27_tormenta");
-		paso("Tormenta: lluvia y truenos; un rayo encima de Player0 no le hizo daño");
+		paso("Tormenta: lluvia y truenos; un rayo le quitó a Player0 " + (vida - despues) / 2 + " corazones");
+		sp.getServer().runCommand("effect give Player0 minecraft:instant_health 1 3 true");
 	}
 
 	/** /venatio evento: comprueba el anuncio en el servidor y en el HUD, y espera a que empiece (o lo adelanta). */

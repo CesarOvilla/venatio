@@ -14,7 +14,53 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 /** Dónde se puede poner a un jugador o a un mob sin que caiga en lava, en agua, al vacío o dentro de un bloque. */
 public final class LugarSeguro {
+	/** Adónde manda el teletransporte: casi siempre a suelo firme; a veces al agua, a la lava o desde lo alto. */
+	public enum Destino { SUELO, AGUA, LAVA, ALTURA }
+
 	private LugarSeguro() {}
+
+	/**
+	 * Un destino del tipo pedido a entre min y max bloques. AGUA: la superficie de un océano, río o lago. LAVA: un
+	 * charco de lava en la superficie (son raros: si no hay, null). ALTURA: 16–20 bloques sobre suelo firme. null si
+	 * no encontró.
+	 */
+	static BlockPos arriesgado(ServerLevel nivel, BlockPos centro, int min, int max, RandomSource rnd, Destino tipo) {
+		if (tipo == Destino.SUELO) return lejos(nivel, centro, min, max, rnd);
+		if (tipo == Destino.ALTURA) {
+			BlockPos suelo = lejos(nivel, centro, min, max, rnd);
+			if (suelo == null) return null;
+			int alto = 16 + rnd.nextInt(5);
+			for (int dy = 1; dy <= alto + 1; dy++) {
+				if (!nivel.getBlockState(suelo.above(dy)).isAir()) return suelo; // algo encima: mejor en el suelo
+			}
+			return suelo.above(alto);
+		}
+		boolean lava = tipo == Destino.LAVA;
+		for (int intento = 0, generados = 0; intento < 40 && generados < (lava ? 16 : 10); intento++) {
+			double angulo = rnd.nextDouble() * Math.PI * 2, distancia = min + rnd.nextDouble() * (max - min);
+			int x = centro.getX() + (int) Math.round(Math.cos(angulo) * distancia);
+			int z = centro.getZ() + (int) Math.round(Math.sin(angulo) * distancia);
+			if (!lava) {
+				Holder<Biome> bioma = nivel.getUncachedNoiseBiome(x >> 2, 16, z >> 2);
+				boolean acuatico = bioma.is(BiomeTags.IS_OCEAN) || bioma.is(BiomeTags.IS_RIVER) || bioma.is(BiomeTags.IS_DEEP_OCEAN);
+				if (!acuatico && intento < 20) continue; // primero se buscan océanos y ríos (sin generar nada)
+			}
+			generados++;
+			nivel.getChunk(x >> 4, z >> 4);
+			int bx = x & ~15, bz = z & ~15;
+			for (int i = 0; i < 64; i++) {
+				int cx = bx + (i % 8) * 2, cz = bz + (i / 8) * 2;
+				double d = Math.hypot(cx - centro.getX(), cz - centro.getZ());
+				if (d < min || d > max) continue;
+				int y = nivel.getHeight(Heightmap.Types.MOTION_BLOCKING, cx, cz) - 1;
+				BlockPos sup = new BlockPos(cx, y, cz);
+				BlockState b = nivel.getBlockState(sup);
+				boolean sirve = lava ? b.is(Blocks.LAVA) : b.is(Blocks.WATER);
+				if (sirve && nivel.getBlockState(sup.above()).isAir() && nivel.getBlockState(sup.above(2)).isAir()) return sup;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Un punto en superficie a entre min y max bloques (en horizontal) del centro; null si no encontró ninguno.

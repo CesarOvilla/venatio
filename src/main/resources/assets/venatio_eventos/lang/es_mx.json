@@ -65,5 +65,8 @@
   "venatio.ayudas.tienda.descuento_corto": "−%s %%",
   "subtitles.venatio.evento_anuncio": "Evento sorpresa anunciado",
   "subtitles.venatio.evento_inicio": "Empieza el evento",
-  "subtitles.venatio.switcheroo_cambio": "Cambio de item"
+  "subtitles.venatio.switcheroo_cambio": "Cambio de item",
+  "venatio.evento.teletransporte.agua": "¡Al agua!",
+  "venatio.evento.teletransporte.lava": "¡A la lava! Tienes 6 s de resistencia al fuego: ¡sal ya!",
+  "venatio.evento.teletransporte.altura": "¡Desde las alturas! Busca dónde caer"
 }

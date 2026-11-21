@@ -61,8 +61,13 @@ public final class Eventos {
 	/** Si al llegar su hora el evento no se puede (alguien a medio salto para el intercambio…), se espera hasta estos segundos. */
 	private static final int ESPERA_MAXIMA = 5;
 	private static final int DIA = 24000, MEDIANOCHE = 18000;
-	/** Ticks después de un rayo en que el fuego no lastima a quien lo recibió. */
-	private static final int FUEGO_DE_RAYO = 100;
+	/** Daño de un rayo a un participante (vanilla: 5) y lo más que dura encendido después (vanilla: 8 s). */
+	private static final float DANO_RAYO = 3f;
+	private static final int FUEGO_RAYO_MAX = 40;
+	/** Para no volver a recortar el daño que aplicamos nosotros mismos. */
+	private static boolean aplicandoRayo;
+	/** Pruebas: obliga el destino del próximo teletransporte (null = al azar). */
+	public static LugarSeguro.Destino forzarDestino;
 
 	/** Comida, hierro, carbón y troncos: de cada fila cae el primero que no pida la partida, en tantas piezas de tanto. */
 	private static final Item[][] LLUVIA = {
@@ -98,21 +103,23 @@ public final class Eventos {
 	}
 
 	/**
-	 * Engancha lo que no depende de una partida: durante la tormenta, los rayos no lastiman a los participantes, ni el
-	 * fuego que dejan en los 5 s siguientes (les da tiempo de salirse).
+	 * Engancha lo que no depende de una partida: en la partida los rayos lastiman, pero moderado. Hacen 1.5 corazones
+	 * (en vez de 2.5) y el jugador arde como mucho 2 s (en vez de 8), así que un rayo cuesta unos 2.5 corazones en
+	 * total. El fuego que dejan en el suelo es el normal.
 	 */
 	public static void registrar() {
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entidad, fuente, cantidad) -> {
-			if (!(entidad instanceof ServerPlayer p)) return true;
-			boolean rayo = fuente.is(DamageTypes.LIGHTNING_BOLT);
-			if (!rayo && !fuente.is(DamageTypeTags.IS_FIRE)) return true;
+			if (aplicandoRayo || !(entidad instanceof ServerPlayer p) || !fuente.is(DamageTypes.LIGHTNING_BOLT)) return true;
 			Partida partida = Juego.INSTANCIA.partida();
 			if (partida == null || !partida.participa(p)) return true;
-			Eventos ev = partida.eventos;
-			int ahora = p.level().getServer().getTickCount();
-			if (rayo && ev.activo == TipoEvento.TORMENTA) ev.rayos.put(p.getUUID(), ahora);
-			else if (rayo || ahora - ev.rayos.getOrDefault(p.getUUID(), Integer.MIN_VALUE / 2) > FUEGO_DE_RAYO) return true;
-			p.clearFire();
+			if (p.getRemainingFireTicks() > FUEGO_RAYO_MAX) p.setRemainingFireTicks(FUEGO_RAYO_MAX);
+			if (cantidad <= DANO_RAYO) return true;
+			aplicandoRayo = true;
+			try {
+				p.hurtServer(p.level(), fuente, DANO_RAYO);
+			} finally {
+				aplicandoRayo = false;
+			}
 			return false;
 		});
 	}
@@ -369,6 +376,14 @@ public final class Eventos {
 	}
 
 	/** Cada jugador del mundo normal, a un punto seguro en superficie a 150–300 bloques. Los del Nether o el End se salvan. */
+	private LugarSeguro.Destino sortearDestino() {
+		float r = rnd.nextFloat();
+		if (r < 0.04f) return LugarSeguro.Destino.LAVA;
+		if (r < 0.12f) return LugarSeguro.Destino.AGUA;
+		if (r < 0.20f) return LugarSeguro.Destino.ALTURA;
+		return LugarSeguro.Destino.SUELO;
+	}
+
 	private void teletransportar() {
 		ServerLevel mundo = partida.mundos.mundo();
 		for (ServerPlayer p : jugadores()) {
@@ -376,7 +391,14 @@ public final class Eventos {
 				p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.fuera").withStyle(ChatFormatting.GRAY));
 				continue;
 			}
-			BlockPos destino = LugarSeguro.lejos(mundo, p.blockPosition(), 150, 300, rnd);
+			// Casi siempre a suelo firme; a veces al agua (8 %), desde lo alto (8 %) o a la lava (4 %, con resistencia
+			// al fuego unos segundos para poder salir).
+			LugarSeguro.Destino tipo = forzarDestino != null ? forzarDestino : sortearDestino();
+			BlockPos destino = LugarSeguro.arriesgado(mundo, p.blockPosition(), 150, 300, rnd, tipo);
+			if (destino == null && tipo != LugarSeguro.Destino.SUELO) {
+				tipo = LugarSeguro.Destino.SUELO;
+				destino = LugarSeguro.lejos(mundo, p.blockPosition(), 150, 300, rnd);
+			}
 			if (destino == null) {
 				p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.sin_lugar").withStyle(ChatFormatting.GRAY));
 				continue;
@@ -387,6 +409,14 @@ public final class Eventos {
 			p.resetFallDistance();
 			destinos.put(p.getUUID(), destino);
 			p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.llegaste", distancia).withStyle(ChatFormatting.LIGHT_PURPLE));
+			if (tipo == LugarSeguro.Destino.LAVA) {
+				p.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 6 * 20, 0, false, true, true));
+			}
+			if (tipo != LugarSeguro.Destino.SUELO) {
+				Component aviso = Component.translatable("venatio.evento.teletransporte." + tipo.name().toLowerCase(java.util.Locale.ROOT));
+				p.sendSystemMessage(aviso.copy().withStyle(ChatFormatting.GOLD));
+				p.sendOverlayMessage(aviso);
+			}
 		}
 	}
 
