@@ -2,12 +2,15 @@ package dev.venatio;
 
 import dev.venatio.info.Fichas;
 import dev.venatio.ayudas.Ayudas;
+import dev.venatio.juego.Espectadores;
 import dev.venatio.juego.Juego;
 import dev.venatio.localizador.Localizador;
 import dev.venatio.minimapa.ComandoMinimapaDev;
 import dev.venatio.red.Paquetes;
 import dev.venatio.red.PaquetesAyudas;
+import dev.venatio.red.PaquetesRuta;
 import dev.venatio.red.PaquetesStats;
+import dev.venatio.ruta.GrabadoraRuta;
 import dev.venatio.stats.ModuloStats;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -24,11 +27,14 @@ public final class Venatio implements ModInitializer {
 		Paquetes.registrar();
 		PaquetesAyudas.registrar();
 		PaquetesStats.registrar();
+		PaquetesRuta.registrar();
 		Fichas.registrar();
 		Juego.INSTANCIA.registrar();
 		ModuloStats.registrar();
 		Ayudas.registrar();
 		Localizador.registrar();
+		Espectadores.registrar();
+		GrabadoraRuta.registrar();
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> Comandos.registrar(dispatcher));
 		ComandoMinimapaDev.registrar(); // solo pruebas: /venatiodev minimapa <segundos> <radio>
 	}

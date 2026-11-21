@@ -4,6 +4,7 @@ import dev.venatio.Venatio;
 import dev.venatio.cliente.minimapa.Minimapa;
 import dev.venatio.cliente.fichas.FichasCliente;
 import dev.venatio.cliente.localizador.LocalizadorCliente;
+import dev.venatio.cliente.ruta.RutaCliente;
 import dev.venatio.red.Paquetes;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -26,6 +27,7 @@ public final class VenatioCliente implements ClientModInitializer {
 	private static KeyMapping ayudas;
 	private static KeyMapping marca;
 	private static KeyMapping minimapa;
+	private static KeyMapping ruta;
 
 	@Override
 	public void onInitializeClient() {
@@ -33,6 +35,7 @@ public final class VenatioCliente implements ClientModInitializer {
 		ayudas = tecla("ayudas", InputConstants.KEY_H);
 		marca = tecla("marca", InputConstants.KEY_N);
 		minimapa = tecla("minimapa", InputConstants.KEY_M);
+		ruta = tecla("ruta", InputConstants.KEY_R);
 		Minimapa.registrar(minimapa, () -> EstadoCliente.estado);
 
 		ClientPlayNetworking.registerGlobalReceiver(Paquetes.Estado.TYPE, (estado, ctx) -> EstadoCliente.recibir(estado));
@@ -52,6 +55,8 @@ public final class VenatioCliente implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(VenatioCliente::alTick);
 		ServidorEnLista.registrar();
 		HudEfectos.registrar(); // después de AyudasCliente: envuelve sus receptores para los sonidos propios
+		RutaCliente.registrar();
+		EspectadorCliente.registrar();
 	}
 
 	static KeyMapping teclaCarton() {
@@ -62,7 +67,11 @@ public final class VenatioCliente implements ClientModInitializer {
 		return ayudas;
 	}
 
-	private static KeyMapping tecla(String nombre, int codigo) {
+	static KeyMapping teclaRuta() {
+		return ruta;
+	}
+
+	static KeyMapping tecla(String nombre, int codigo) {
 		return KeyMappingHelper.registerKeyMapping(new KeyMapping("key.venatio." + nombre, codigo, CATEGORIA));
 	}
 
@@ -75,6 +84,9 @@ public final class VenatioCliente implements ClientModInitializer {
 			if (mc.gui.screen() == null) AyudasCliente.abrirTienda(mc);
 		}
 		while (marca.consumeClick()) AyudasCliente.ponerMarca();
+		while (ruta.consumeClick()) {
+			if (mc.gui.screen() == null) RutaCliente.pedir(mc);
+		}
 		// La M (minimapa) la atiende el módulo Minimapa.
 	}
 }

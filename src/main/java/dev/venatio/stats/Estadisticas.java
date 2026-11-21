@@ -113,6 +113,7 @@ public final class Estadisticas {
 
 	/** Suma una ayuda comprada al jugador. La llama el módulo de ayudas al cobrar. */
 	public static void registrarAyuda(UUID jugador) {
+		dev.venatio.ruta.GrabadoraRuta.ayuda(jugador); // queda marcada en la ruta de la partida
 		if (datos == null || jugador == null) return;
 		Jugador j = jugador(jugador);
 		j.ayudas++;

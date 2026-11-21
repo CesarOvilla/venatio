@@ -33,7 +33,7 @@ public final class PantallaCarton extends Screen {
 	private static final int ALTO_PIE = 26;
 
 	/** Equipo cuyo cartón se está viendo; -1 = el mío. */
-	private int vista = -1;
+	private int vista = EspectadorCliente.equipoVisto(-1);
 	private int equiposConBoton = -1;
 	/** Momento en que se abrió, para la entrada de las casillas; -1 hasta el primer init. */
 	private long abierta = -1;

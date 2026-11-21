@@ -26,7 +26,6 @@ import net.minecraft.world.scores.TeamColor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,7 +125,7 @@ public final class Juego {
 			ServerPlayer p = server.getPlayerList().getPlayer(entrada.getKey());
 			if (p == null) continue;
 			if (partida != null && partida.participa(p)) partida.alReconectar(p);
-			else Lobby.enviar(p);
+			else if (!Espectadores.alEntrar(partida, p, !equipos.containsKey(p.getUUID()))) Lobby.enviar(p);
 			actualizarTableros();
 			enviarEstadoATodos();
 		}
@@ -264,15 +263,15 @@ public final class Juego {
 		List<ServerPlayer> jugadores = server.getPlayerList().getPlayers();
 		if (jugadores.isEmpty()) return Component.translatable("venatio.error.sin_jugadores");
 
-		// Quien no eligió equipo va al equipo con menos gente (entre los ya usados), o a Rojo.
-		for (ServerPlayer p : jugadores) {
-			if (equipos.containsKey(p.getUUID())) continue;
-			ColorEquipo destino = equipoMenosPoblado(jugadores);
-			equipos.put(p.getUUID(), destino);
-			ponerEnEquipoDelMarcador(p, destino);
-		}
+		// Juega quien tiene equipo; quien no eligió equipo (por ejemplo, el anfitrión que no juega) mira como espectador.
 		Map<UUID, ColorEquipo> participantes = new LinkedHashMap<>();
-		for (ServerPlayer p : jugadores) participantes.put(p.getUUID(), equipos.get(p.getUUID()));
+		List<ServerPlayer> sinEquipo = new ArrayList<>();
+		for (ServerPlayer p : jugadores) {
+			ColorEquipo c = equipos.get(p.getUUID());
+			if (c != null) participantes.put(p.getUUID(), c);
+			else sinEquipo.add(p);
+		}
+		if (participantes.isEmpty()) return Component.translatable("venatio.error.sin_equipos");
 
 		long semilla = config.semilla != null ? config.semilla : new Random().nextLong();
 		boolean esRastreo = config.modo.esRastreo();
@@ -280,18 +279,10 @@ public final class Juego {
 		Rastreo rastreo = esRastreo ? Rastreo.crear(pool, semilla, config.rastreoIndependiente) : null;
 		MundosPartida mundos = MundosPartida.crear(server, semilla, config.pvp, config.conservarInventario);
 		partida = new Partida(this, config.copia(), semilla, carton, rastreo, mundos, participantes);
+		Espectadores.alIniciar(sinEquipo);
 		difundir(Component.translatable("venatio.partida.preparando", config.modo.nombre(), String.valueOf(semilla)));
 		enviarEstadoATodos();
 		return null;
-	}
-
-	private ColorEquipo equipoMenosPoblado(List<ServerPlayer> jugadores) {
-		Map<ColorEquipo, Integer> conteo = new EnumMap<>(ColorEquipo.class);
-		for (ServerPlayer p : jugadores) {
-			ColorEquipo c = equipos.get(p.getUUID());
-			if (c != null) conteo.merge(c, 1, Integer::sum);
-		}
-		return conteo.entrySet().stream().min(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(ColorEquipo.ROJO);
 	}
 
 	/** /venatio saltar: en Rastreo, pasar al siguiente item. */
@@ -312,6 +303,7 @@ public final class Juego {
 		if (partida == null) return;
 		Partida p = partida;
 		partida = null; // desde aquí, quien reaparezca va al lobby
+		Espectadores.alCerrar(server);
 		for (ServerPlayer j : List.copyOf(server.getPlayerList().getPlayers())) {
 			if (!p.participa(j) && !MundosPartida.esDePartida(j.level())) continue;
 			// Quien está en la pantalla de muerte no se puede teletransportar: se le hace reaparecer y alReaparecer lo lleva al lobby.

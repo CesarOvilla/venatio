@@ -2,6 +2,7 @@ package dev.venatio.stats;
 
 import dev.venatio.Venatio;
 import dev.venatio.juego.ColorEquipo;
+import dev.venatio.juego.Espectadores;
 import dev.venatio.juego.Juego;
 import dev.venatio.juego.Modo;
 import dev.venatio.juego.Partida;
@@ -9,6 +10,7 @@ import dev.venatio.juego.ResumenPartida;
 import dev.venatio.lobby.TablerosLobby;
 import dev.venatio.panel.PanelAnfitrion;
 import dev.venatio.red.PaquetesStats;
+import dev.venatio.ruta.GrabadoraRuta;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -56,6 +58,12 @@ public final class ModuloStats {
 	/** La llama Partida al declarar el final. Un fallo aquí no debe cortar el final de la partida. */
 	public static void partidaTerminada(Partida partida) {
 		try {
+			// La ruta primero: así ya está guardada cuando se dibuja el tablero de la última partida.
+			GrabadoraRuta.terminar(partida);
+		} catch (RuntimeException e) {
+			Venatio.LOG.error("No se pudo armar la ruta de la partida", e);
+		}
+		try {
 			ResumenPartida r = ResumenPartida.de(partida);
 			Estadisticas.registrarPartida(r);
 			actualizarTableros();
@@ -86,7 +94,8 @@ public final class ModuloStats {
 			r.empate(), !r.cancelada(), r.duracion(), r.totalCasillas(), hitos, equipos,
 			d == null ? "" : r.nombre(d.jugador()), d == null ? 0 : d.casillas());
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-			if (r.participantes().containsKey(p.getUUID()) && ServerPlayNetworking.canSend(p, PaquetesStats.FinalPartida.TYPE)) {
+			boolean veFinal = r.participantes().containsKey(p.getUUID()) || Espectadores.es(p);
+			if (veFinal && ServerPlayNetworking.canSend(p, PaquetesStats.FinalPartida.TYPE)) {
 				ServerPlayNetworking.send(p, paquete);
 			}
 		}
@@ -94,7 +103,7 @@ public final class ModuloStats {
 
 	// ---------------------------------------------------------------- tableros del lobby
 
-	static void actualizarTableros() {
+	public static void actualizarTableros() {
 		if (!Estadisticas.cargadas()) return;
 		tableroRanking();
 		tableroUltima();
@@ -139,6 +148,10 @@ public final class ModuloStats {
 			if (c == null) continue;
 			lineas.add(Component.translatable(u.cancelada ? "venatio.stats.tablero.ultima.equipo_sin_puntos" : "venatio.stats.tablero.ultima.equipo",
 				e.puesto + ".º", c.nombre(), e.casillas, e.puntos));
+		}
+		// La ruta se puede volver a ver hasta que empiece otra partida (y cabe si sobra una línea en el tablero).
+		if (GrabadoraRuta.ultima() != null && lineas.size() < FILAS_TABLERO) {
+			lineas.add(Component.translatable("venatio.ruta.tablero").withStyle(ChatFormatting.GRAY));
 		}
 		TablerosLobby.actualizar(TablerosLobby.Tablero.ULTIMA_PARTIDA, titulo, lineas);
 	}
