@@ -17,7 +17,7 @@ $ProgressPreference = 'SilentlyContinue'
 function Decir([string]$texto) { Write-Host $texto }
 function Fallar([string]$texto) { Write-Host ""; Write-Host "❌ $texto" -ForegroundColor Red; throw $texto }
 
-$PaqueteUrl = if ($env:VENATIO_PAQUETE) { $env:VENATIO_PAQUETE } else { 'https://raw.githubusercontent.com/USUARIO/venatio/main/instalador/paquete.txt' }
+$PaqueteUrl = if ($env:VENATIO_PAQUETE) { $env:VENATIO_PAQUETE } else { 'https://raw.githubusercontent.com/CesarOvilla/venatio/main/instalador/paquete.txt' }
 $PerfilId = 'venatio'
 $Utf8SinBom = New-Object System.Text.UTF8Encoding $false
 

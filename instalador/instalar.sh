@@ -11,7 +11,7 @@
 #   VENATIO_MINECRAFT  carpeta de Minecraft a usar
 set -eu
 
-PAQUETE_URL="${VENATIO_PAQUETE:-https://raw.githubusercontent.com/USUARIO/venatio/main/instalador/paquete.txt}"
+PAQUETE_URL="${VENATIO_PAQUETE:-https://raw.githubusercontent.com/CesarOvilla/venatio/main/instalador/paquete.txt}"
 PERFIL_ID="venatio"
 
 decir() { printf '%s\n' "$*"; }

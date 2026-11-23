@@ -5,13 +5,13 @@ Necesitas el launcher oficial de Minecraft (Java Edition) y haberlo abierto al m
 **Mac o Linux**: abre la Terminal y pega:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/USUARIO/venatio/main/instalador/instalar.sh | sh
+curl -fsSL https://raw.githubusercontent.com/CesarOvilla/venatio/main/instalador/instalar.sh | sh
 ```
 
 **Windows**: abre PowerShell y pega:
 
 ```powershell
-irm https://raw.githubusercontent.com/USUARIO/venatio/main/instalador/instalar.ps1 | iex
+irm https://raw.githubusercontent.com/CesarOvilla/venatio/main/instalador/instalar.ps1 | iex
 ```
 
 Después abre el launcher, elige el perfil **Venatio** y dale a **Jugar**. El server ya aparece en la lista de Multijugador.
