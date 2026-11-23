@@ -193,15 +193,29 @@ public final class Ayudas {
 		}
 		Precios pr = precios();
 		if (!Cobro.cobrar(p, precioPara(p, TipoAyuda.MINIMAPA), TipoAyuda.MINIMAPA)) return;
-		// Comprar con minimapa activo suma tiempo al que queda.
-		long hasta = Math.max(ticks, minimapaHasta.getOrDefault(p.getUUID(), 0L)) + pr.minimapaSegundos * 20L;
-		minimapaHasta.put(p.getUUID(), hasta);
 		ponerEnfriamiento(p, TipoAyuda.MINIMAPA);
-		int segundos = (int) ((hasta - ticks) / 20);
-		ServerPlayNetworking.send(p, new PaquetesAyudas.PermisoMinimapa(segundos, pr.minimapaRadio));
+		int segundos = activarMinimapa(p);
 		p.sendSystemMessage(Component.translatable("venatio.ayudas.minimapa.comprado",
 			String.format("%d:%02d", segundos / 60, segundos % 60), pr.minimapaRadio).withStyle(ChatFormatting.GREEN));
 		enviarTienda(p);
+	}
+
+	/** Da el tiempo de minimapa de una compra; con minimapa activo se suma al que queda. Devuelve los segundos totales. */
+	private static int activarMinimapa(ServerPlayer p) {
+		Precios pr = precios();
+		long hasta = Math.max(ticks, minimapaHasta.getOrDefault(p.getUUID(), 0L)) + pr.minimapaSegundos * 20L;
+		minimapaHasta.put(p.getUUID(), hasta);
+		int segundos = (int) ((hasta - ticks) / 20);
+		ServerPlayNetworking.send(p, new PaquetesAyudas.PermisoMinimapa(segundos, pr.minimapaRadio));
+		return segundos;
+	}
+
+	/** Bloque de la suerte: minimapa sin cobrar ni poner enfriamiento. Devuelve los segundos, o -1 si no se puede dar. */
+	public static int regalarMinimapa(ServerPlayer p) {
+		if (!puedeUsar(p) || !ServerPlayNetworking.canSend(p, PaquetesAyudas.PermisoMinimapa.TYPE)) return -1;
+		int segundos = activarMinimapa(p);
+		enviarTienda(p);
+		return segundos;
 	}
 
 	// ---------------------------------------------------------------- consultas (pruebas y otros módulos)

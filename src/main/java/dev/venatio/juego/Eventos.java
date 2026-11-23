@@ -346,9 +346,30 @@ public final class Eventos {
 	}
 
 	private void efectos(TipoEvento t, Holder<MobEffect> a, int nivelA, Holder<MobEffect> b, int nivelB) {
-		for (ServerPlayer p : jugadores()) {
-			p.addEffect(new MobEffectInstance(a, t.segundos * 20, nivelA, false, true, true));
-			if (b != null) p.addEffect(new MobEffectInstance(b, t.segundos * 20, nivelB, false, true, true));
+		for (ServerPlayer p : jugadores()) efectosA(p, t, a, nivelA, b, nivelB);
+	}
+
+	private static void efectosA(ServerPlayer p, TipoEvento t, Holder<MobEffect> a, int nivelA, Holder<MobEffect> b, int nivelB) {
+		p.addEffect(new MobEffectInstance(a, t.segundos * 20, nivelA, false, true, true));
+		if (b != null) p.addEffect(new MobEffectInstance(b, t.segundos * 20, nivelB, false, true, true));
+	}
+
+	/**
+	 * Bloques de la suerte: el evento le pasa solo a quien abrió el bloque. No entra al calendario de eventos ni al HUD.
+	 * Noche, tormenta e intercambio no están porque afectarían a más jugadores ({@link BloquesSuerte#EVENTOS}).
+	 */
+	void aplicarSoloA(TipoEvento t, ServerPlayer p) {
+		switch (t) {
+			case VELOCIDAD -> efectosA(p, t, MobEffects.SPEED, 1, MobEffects.HASTE, 1);
+			case LUNAR -> efectosA(p, t, MobEffects.JUMP_BOOST, 2, MobEffects.SLOW_FALLING, 0);
+			case NIEBLA -> efectosA(p, t, MobEffects.DARKNESS, 0, null, 0);
+			case BRILLO -> efectosA(p, t, MobEffects.GLOWING, 0, null, 0);
+			case TELETRANSPORTE -> teletransportarA(partida.mundos.mundo(), p);
+			case HORDA -> hordaA(partida.mundos.mundo(), p, tiposHorda());
+			case LLUVIA -> lluviaA(p, premioLluvia());
+			case MERCADER -> mercaderA(partida.mundos.mundo(), p);
+			case EXPERIENCIA -> experienciaA(p);
+			default -> throw new IllegalArgumentException("Evento que no es personal: " + t);
 		}
 	}
 
@@ -386,37 +407,39 @@ public final class Eventos {
 
 	private void teletransportar() {
 		ServerLevel mundo = partida.mundos.mundo();
-		for (ServerPlayer p : jugadores()) {
-			if (p.level() != mundo) {
-				p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.fuera").withStyle(ChatFormatting.GRAY));
-				continue;
-			}
-			// Casi siempre a suelo firme; a veces al agua (8 %), desde lo alto (8 %) o a la lava (4 %, con resistencia
-			// al fuego unos segundos para poder salir).
-			LugarSeguro.Destino tipo = forzarDestino != null ? forzarDestino : sortearDestino();
-			BlockPos destino = LugarSeguro.arriesgado(mundo, p.blockPosition(), 150, 300, rnd, tipo);
-			if (destino == null && tipo != LugarSeguro.Destino.SUELO) {
-				tipo = LugarSeguro.Destino.SUELO;
-				destino = LugarSeguro.lejos(mundo, p.blockPosition(), 150, 300, rnd);
-			}
-			if (destino == null) {
-				p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.sin_lugar").withStyle(ChatFormatting.GRAY));
-				continue;
-			}
-			int distancia = (int) Math.round(Math.sqrt(p.blockPosition().distSqr(destino.atY(p.getBlockY()))));
-			if (p.isPassenger()) p.stopRiding();
-			p.teleportTo(mundo, destino.getX() + 0.5, destino.getY(), destino.getZ() + 0.5, Set.of(), p.getYRot(), p.getXRot(), true);
-			p.resetFallDistance();
-			destinos.put(p.getUUID(), destino);
-			p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.llegaste", distancia).withStyle(ChatFormatting.LIGHT_PURPLE));
-			if (tipo == LugarSeguro.Destino.LAVA) {
-				p.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 6 * 20, 0, false, true, true));
-			}
-			if (tipo != LugarSeguro.Destino.SUELO) {
-				Component aviso = Component.translatable("venatio.evento.teletransporte." + tipo.name().toLowerCase(java.util.Locale.ROOT));
-				p.sendSystemMessage(aviso.copy().withStyle(ChatFormatting.GOLD));
-				p.sendOverlayMessage(aviso);
-			}
+		for (ServerPlayer p : jugadores()) teletransportarA(mundo, p);
+	}
+
+	private void teletransportarA(ServerLevel mundo, ServerPlayer p) {
+		if (p.level() != mundo) {
+			p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.fuera").withStyle(ChatFormatting.GRAY));
+			return;
+		}
+		// Casi siempre a suelo firme; a veces al agua (8 %), desde lo alto (8 %) o a la lava (4 %, con resistencia
+		// al fuego unos segundos para poder salir).
+		LugarSeguro.Destino tipo = forzarDestino != null ? forzarDestino : sortearDestino();
+		BlockPos destino = LugarSeguro.arriesgado(mundo, p.blockPosition(), 150, 300, rnd, tipo);
+		if (destino == null && tipo != LugarSeguro.Destino.SUELO) {
+			tipo = LugarSeguro.Destino.SUELO;
+			destino = LugarSeguro.lejos(mundo, p.blockPosition(), 150, 300, rnd);
+		}
+		if (destino == null) {
+			p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.sin_lugar").withStyle(ChatFormatting.GRAY));
+			return;
+		}
+		int distancia = (int) Math.round(Math.sqrt(p.blockPosition().distSqr(destino.atY(p.getBlockY()))));
+		if (p.isPassenger()) p.stopRiding();
+		p.teleportTo(mundo, destino.getX() + 0.5, destino.getY(), destino.getZ() + 0.5, Set.of(), p.getYRot(), p.getXRot(), true);
+		p.resetFallDistance();
+		destinos.put(p.getUUID(), destino);
+		p.sendSystemMessage(Component.translatable("venatio.evento.teletransporte.llegaste", distancia).withStyle(ChatFormatting.LIGHT_PURPLE));
+		if (tipo == LugarSeguro.Destino.LAVA) {
+			p.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 6 * 20, 0, false, true, true));
+		}
+		if (tipo != LugarSeguro.Destino.SUELO) {
+			Component aviso = Component.translatable("venatio.evento.teletransporte." + tipo.name().toLowerCase(java.util.Locale.ROOT));
+			p.sendSystemMessage(aviso.copy().withStyle(ChatFormatting.GOLD));
+			p.sendOverlayMessage(aviso);
 		}
 	}
 
@@ -454,19 +477,36 @@ public final class Eventos {
 	/** 2 o 3 monstruos cerca de cada jugador del mundo normal. En el Nether no cuadran: ahí no salen. */
 	private void horda() {
 		ServerLevel mundo = partida.mundos.mundo();
+		List<EntityType<?>> tipos = tiposHorda();
+		for (ServerPlayer p : enMundoNormal()) hordaA(mundo, p, tipos);
+	}
+
+	private List<EntityType<?>> tiposHorda() {
 		List<EntityType<?>> tipos = new ArrayList<>(List.of(EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.SPIDER));
 		if (partida.segundos() >= CREEPERS_DESDE) tipos.add(EntityTypes.CREEPER);
-		for (ServerPlayer p : enMundoNormal()) {
-			int n = 2 + rnd.nextInt(2);
-			for (int i = 0; i < n; i++) {
-				BlockPos pos = LugarSeguro.cerca(mundo, p.blockPosition(), 7, 12, rnd);
-				if (pos != null) tipos.get(rnd.nextInt(tipos.size())).spawn(mundo, pos, EntitySpawnReason.EVENT);
-			}
+		return tipos;
+	}
+
+	private void hordaA(ServerLevel mundo, ServerPlayer p, List<EntityType<?>> tipos) {
+		int n = 2 + rnd.nextInt(2);
+		for (int i = 0; i < n; i++) {
+			BlockPos pos = LugarSeguro.cerca(mundo, p.blockPosition(), 7, 12, rnd);
+			if (pos != null) tipos.get(rnd.nextInt(tipos.size())).spawn(mundo, pos, EntitySpawnReason.EVENT);
 		}
+	}
+
+	/** Bloques de la suerte: unos monstruos alrededor de quien abrió el bloque. */
+	void monstruosPara(ServerPlayer p) {
+		hordaA(partida.mundos.mundo(), p, tiposHorda());
 	}
 
 	/** Comida, hierro, carbón y troncos caen alrededor de cada jugador, sin regalar nada que pida la partida. */
 	private void lluvia() {
+		List<ItemStack> premio = premioLluvia();
+		for (ServerPlayer p : jugadores()) lluviaA(p, premio);
+	}
+
+	private List<ItemStack> premioLluvia() {
 		List<ItemStack> premio = new ArrayList<>();
 		for (int fila = 0; fila < LLUVIA.length; fila++) {
 			for (Item item : LLUVIA[fila]) {
@@ -475,19 +515,21 @@ public final class Eventos {
 				break;
 			}
 		}
-		for (ServerPlayer p : jugadores()) {
-			ServerLevel nivel = p.level();
-			for (ItemStack st : premio) {
-				double x = p.getX() + (rnd.nextDouble() - 0.5) * 4, z = p.getZ() + (rnd.nextDouble() - 0.5) * 4;
-				ItemEntity item = new ItemEntity(nivel, x, alturaLibre(nivel, p, x, z), z, st.copy());
-				item.setDeltaMovement((rnd.nextDouble() - 0.5) * 0.08, 0, (rnd.nextDouble() - 0.5) * 0.08);
-				nivel.addFreshEntity(item);
-			}
+		return premio;
+	}
+
+	private void lluviaA(ServerPlayer p, List<ItemStack> premio) {
+		ServerLevel nivel = p.level();
+		for (ItemStack st : premio) {
+			double x = p.getX() + (rnd.nextDouble() - 0.5) * 4, z = p.getZ() + (rnd.nextDouble() - 0.5) * 4;
+			ItemEntity item = new ItemEntity(nivel, x, alturaLibre(nivel, p, x, z), z, st.copy());
+			item.setDeltaMovement((rnd.nextDouble() - 0.5) * 0.08, 0, (rnd.nextDouble() - 0.5) * 0.08);
+			nivel.addFreshEntity(item);
 		}
 	}
 
 	/** true si el item cuenta para el cartón o para la lista del Rastreo de esta partida. */
-	private boolean pideLaPartida(ItemStack st) {
+	boolean pideLaPartida(ItemStack st) {
 		for (Carton.Casilla cas : partida.carton.casillas) if (cas.objetivo.cumple(st)) return true;
 		return partida.rastreo != null && partida.rastreo.pide(st);
 	}
@@ -509,20 +551,24 @@ public final class Eventos {
 		ServerLevel mundo = partida.mundos.mundo();
 		Map<ColorEquipo, ServerPlayer> uno = new EnumMap<>(ColorEquipo.class);
 		for (ServerPlayer p : enMundoNormal()) uno.putIfAbsent(partida.equipoDe(p), p);
-		for (ServerPlayer p : uno.values()) {
-			BlockPos pos = LugarSeguro.cerca(mundo, p.blockPosition(), 3, 6, rnd);
-			WanderingTrader mercader = EntityTypes.WANDERING_TRADER.spawn(mundo, pos != null ? pos : p.blockPosition(), EntitySpawnReason.EVENT);
-			if (mercader != null) mercader.setDespawnDelay(3 * 60 * 20);
-		}
+		for (ServerPlayer p : uno.values()) mercaderA(mundo, p);
+	}
+
+	private void mercaderA(ServerLevel mundo, ServerPlayer p) {
+		BlockPos pos = LugarSeguro.cerca(mundo, p.blockPosition(), 3, 6, rnd);
+		WanderingTrader mercader = EntityTypes.WANDERING_TRADER.spawn(mundo, pos != null ? pos : p.blockPosition(), EntitySpawnReason.EVENT);
+		if (mercader != null) mercader.setDespawnDelay(3 * 60 * 20);
 	}
 
 	/** Orbes de experiencia que caen alrededor de cada jugador (unos 5 niveles). */
 	private void experiencia() {
-		for (ServerPlayer p : jugadores()) {
-			for (int i = 0; i < 8; i++) {
-				double x = p.getX() + (rnd.nextDouble() - 0.5) * 3, z = p.getZ() + (rnd.nextDouble() - 0.5) * 3;
-				ExperienceOrb.award(p.level(), new Vec3(x, alturaLibre(p.level(), p, x, z), z), 7);
-			}
+		for (ServerPlayer p : jugadores()) experienciaA(p);
+	}
+
+	private void experienciaA(ServerPlayer p) {
+		for (int i = 0; i < 8; i++) {
+			double x = p.getX() + (rnd.nextDouble() - 0.5) * 3, z = p.getZ() + (rnd.nextDouble() - 0.5) * 3;
+			ExperienceOrb.award(p.level(), new Vec3(x, alturaLibre(p.level(), p, x, z), z), 7);
 		}
 	}
 }

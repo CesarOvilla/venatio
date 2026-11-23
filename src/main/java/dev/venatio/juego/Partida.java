@@ -77,6 +77,7 @@ public final class Partida {
 	private final Map<ColorEquipo, Integer> progresoRastreo = new EnumMap<>(ColorEquipo.class);
 	/** Eventos sorpresa y lo que va a la línea de tiempo sin ser casilla. */
 	final Eventos eventos;
+	final BloquesSuerte suerte;
 	/** Cartón oculto, draft, casilla secreta y relevo. */
 	final Variantes variantes;
 
@@ -92,6 +93,7 @@ public final class Partida {
 		this.variantes = new Variantes(this);
 		planificarSpawns();
 		this.eventos = new Eventos(this);
+		this.suerte = new BloquesSuerte(this);
 	}
 
 	public Fase fase() {
@@ -117,6 +119,10 @@ public final class Partida {
 
 	public MundosPartida mundos() {
 		return mundos;
+	}
+
+	public BloquesSuerte suerte() {
+		return suerte;
 	}
 
 	public Eventos eventos() {
@@ -285,6 +291,7 @@ public final class Partida {
 		if (ticksJuego % 20 == 0) {
 			Switcheroo.tick(this);
 			eventos.alSegundo();
+			suerte.alSegundo();
 		}
 		int limite = cfg.limiteSegundos();
 		if (fase == Fase.JUGANDO && limite > 0 && segundos() >= limite) terminarPorTiempo();
@@ -593,6 +600,11 @@ public final class Partida {
 	}
 
 	/** Salida del End para un jugador: su cama si está en el mundo de la partida, si no el punto de su equipo. */
+	boolean cercaDeUnSpawn(BlockPos pos, int bloques) {
+		for (BlockPos s : spawns.values()) if (s.closerThan(pos, bloques)) return true;
+		return false;
+	}
+
 	public BlockPos spawnDe(ServerPlayer p) {
 		return spawns.get(equipoDe(p));
 	}

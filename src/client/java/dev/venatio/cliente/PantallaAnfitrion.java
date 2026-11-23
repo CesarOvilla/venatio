@@ -42,7 +42,7 @@ public final class PantallaAnfitrion extends Screen {
 	private static final String[] PESTANAS = {"venatio.stats.panel.pestana.partida", "venatio.stats.panel.pestana.opciones", "venatio.stats.panel.pestana.variantes"};
 	/** Opciones que cambian las reglas del juego: van en la pestaña Variantes. Las demás, en Opciones. */
 	private static final java.util.Set<String> VARIANTES = java.util.Set.of(
-		"rastreo_independiente", "logros", "cantidades", "eventos", "descuento", "oculto", "draft", "secreta", "relevo");
+		"rastreo_independiente", "logros", "cantidades", "eventos", "suerte", "descuento", "oculto", "draft", "secreta", "relevo");
 	private static int pestana;
 	private int pagina;
 	private Component textoPagina;

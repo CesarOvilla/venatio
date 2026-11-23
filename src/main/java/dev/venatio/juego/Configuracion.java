@@ -37,6 +37,8 @@ public final class Configuracion {
 	public boolean localizadorRivales = true;
 	/** Eventos sorpresa para todos cada cierto tiempo (noche eterna, horda, lluvia de items…). */
 	public boolean eventos = false;
+	/** Bloques de la suerte regados por el mapa: al romperlos sale algo bueno, inútil, malo o un evento solo para quien lo abrió. */
+	public boolean suerte = false;
 	/** Las ayudas cuestan 20 % menos al equipo que va en último lugar por 2 o más. */
 	public boolean descuento = true;
 	/** Switcheroo: minutos que dura cada item antes de cambiar solo (1, 2, 3 o 5). */
@@ -92,6 +94,7 @@ public final class Configuracion {
 		c.finAutomatico = finAutomatico;
 		c.meta = meta;
 		c.rastreoIndependiente = rastreoIndependiente;
+		c.suerte = suerte;
 		c.localizador = localizador;
 		c.localizadorRivales = localizadorRivales;
 		c.dificultad = dificultad;

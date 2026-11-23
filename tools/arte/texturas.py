@@ -879,6 +879,36 @@ def hoja_de_contacto(ruta, icono):
     hoja.save(ruta)
 
 
+def bloque_suerte():
+    """Bloque de la suerte: oro vivo para verlo de lejos, marco de cobre y un trébol de madera oscura. Va al atlas de bloques."""
+    img = lienzo(16, 16, O3)
+    for y in range(16):
+        for x in range(16):
+            if (x * 3 + y * 7) % 11 == 0:
+                img.putpixel((x, y), O4)
+            elif (x * 5 + y * 2) % 13 == 0:
+                img.putpixel((x, y), O2)
+    marco(img, 0, 0, 15, 15, N)
+    marco(img, 1, 1, 14, 14, C2)
+    for x, y in ((1, 1), (14, 1), (1, 14), (14, 14)):
+        img.putpixel((x, y), C4)
+    for x, y in ((2, 1), (1, 2), (13, 1), (14, 2), (1, 13), (2, 14), (14, 13), (13, 14)):
+        img.putpixel((x, y), C3)
+    trebol = mapa([
+        "...oo..oo...",
+        "..oOOooOOo..",
+        "..oOBOOBOo..",
+        "...oOOOOo...",
+        "..oOOooOOo..",
+        "..oOBooBOo..",
+        "...oo.so....",
+        "......ss....",
+        ".......ss...",
+    ], {".": T, "o": N, "O": M2, "B": M4, "s": M1}, 12)
+    img.alpha_composite(trebol, (2, 3))
+    return img
+
+
 def main():
     marco_carton()
     marco_pantalla()
@@ -916,6 +946,9 @@ def main():
             ruta_meta.write_text(json.dumps(meta, indent=2) + "\n")
         elif ruta_meta.exists():
             ruta_meta.unlink()
+    ruta_bloque = ASSETS / "textures/block/bloque_suerte.png"
+    ruta_bloque.parent.mkdir(parents=True, exist_ok=True)
+    bloque_suerte().save(ruta_bloque)
     icono = icono_mod()
     icono.save(ASSETS / "icon.png")
     print(f"{len(SALIDA)} sprites en {SPRITES.relative_to(RAIZ)} e icon.png")

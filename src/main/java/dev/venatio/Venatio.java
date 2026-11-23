@@ -2,6 +2,7 @@ package dev.venatio;
 
 import dev.venatio.info.Fichas;
 import dev.venatio.ayudas.Ayudas;
+import dev.venatio.juego.BloquesSuerte;
 import dev.venatio.juego.Eventos;
 import dev.venatio.juego.Espectadores;
 import dev.venatio.juego.Juego;
@@ -35,6 +36,7 @@ public final class Venatio implements ModInitializer {
 		Fichas.registrar();
 		Juego.INSTANCIA.registrar();
 		Eventos.registrar();
+		BloquesSuerte.registrar();
 		ModuloStats.registrar();
 		Ayudas.registrar();
 		Localizador.registrar();

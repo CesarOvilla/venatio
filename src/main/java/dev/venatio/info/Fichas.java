@@ -114,6 +114,11 @@ public final class Fichas {
 		gruposPool = List.copyOf(grupos);
 	}
 
+	/** Recetas que producen el item (vacío si el índice aún no está listo). */
+	public static List<net.minecraft.world.item.crafting.display.RecipeDisplay> recetasDe(Item item) {
+		return recetas == null ? List.of() : recetas.de(item);
+	}
+
 	private static void responderFicha(ServerPlayer jugador, Identifier itemId) {
 		if (recetas == null || fuentes == null) return;
 		Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId).filter(i -> i != Items.AIR);

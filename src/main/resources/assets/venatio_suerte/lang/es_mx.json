@@ -1,0 +1,21 @@
+{
+  "block.venatio.bloque_suerte": "Bloque de la suerte",
+  "venatio.opcion.suerte": "Bloques de la suerte",
+  "venatio.suerte.bueno": "¡Suerte! Te tocó: %s",
+  "venatio.suerte.parte": "¡Suerte! %s: te sirve para craftear algo que te falta",
+  "venatio.suerte.minimapa": "¡Suerte! Minimapa gratis por %s (tecla M)",
+  "venatio.suerte.inutil": "Te tocó: %s. Felicidades, supongo.",
+  "venatio.suerte.nada": "El bloque estaba vacío. Nada de nada.",
+  "venatio.suerte.gallina": "¡Una gallina legendaria! No hace nada.",
+  "venatio.suerte.gallina.1": "Sir Cacareo",
+  "venatio.suerte.gallina.2": "Doña Pechuga",
+  "venatio.suerte.gallina.3": "Licenciado Pollo",
+  "venatio.suerte.gallina.4": "La Decepción",
+  "venatio.suerte.malo.monstruos": "¡Mala suerte! Tienes visitas",
+  "venatio.suerte.malo.telaranas": "¡Mala suerte! Quedaste enredado en telarañas",
+  "venatio.suerte.malo.ceguera": "¡Mala suerte! Ceguera por 8 s",
+  "venatio.suerte.malo.lentitud": "¡Mala suerte! Lentitud por 20 s",
+  "venatio.suerte.malo.hambre": "¡Mala suerte! Hambre por 20 s",
+  "venatio.suerte.malo.tnt": "¡Mala suerte! TNT encendida: ¡corre, tienes 5 s!",
+  "venatio.suerte.evento": "Evento solo para ti: %s"
+}
