@@ -24,7 +24,8 @@
 			"dev.venatio.prueba.PruebaRutaEspectador",
 			"dev.venatio.prueba.PruebaRendimiento",
 			"dev.venatio.prueba.PruebaDedicado",
-			"dev.venatio.prueba.PruebaSuerte"
+			"dev.venatio.prueba.PruebaSuerte",
+			"dev.venatio.prueba.PruebaActualizador"
 		]
 	},
 	"depends": {

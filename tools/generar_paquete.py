@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import pathlib
+import subprocess
 import urllib.request
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
@@ -94,6 +95,8 @@ def main():
 
     pathlib.Path(a.salida).write_text("\n".join(lineas) + "\n", encoding="utf-8")
     print(f"Paquete escrito en {a.salida}")
+    if not a.local:
+        subprocess.run(["java", str(RAIZ / "tools" / "FirmarPaquete.java"), "firmar", a.salida], check=True)
 
 
 if __name__ == "__main__":

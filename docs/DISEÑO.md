@@ -153,7 +153,7 @@ Qué hace, sin tocar sus otros mods ni mundos:
 
 **Actualizaciones (hecho):** volver a ejecutar el mismo comando. Si alguien entra con otra versión del mod, el server lo rechaza con un mensaje en español que dice que vuelva a ejecutar el instalador. `tools/generar_paquete.py` arma `paquete.txt` desde Modrinth y el jar compilado.
 
-**Actualizaciones automáticas (pendiente):** AutoModpack descargaría del propio server lo nuevo al entrar. Hay que probar que funcione detrás del proxy de exaroton.
+**Actualizaciones automáticas (hecho, `cliente/actualizador/`):** en el menú principal el mod revisa `instalador/paquete.txt`. Si hay una versión más nueva ofrece "Actualizar y cerrar": baja solo los jars que cambian, y un proceso aparte (`Aplicador`) los cambia cuando Minecraft ya cerró; si falla, deja `mods/` como estaba. Si la versión cambia Minecraft o Fabric, ofrece copiar el comando del instalador. Solo acepta un paquete firmado con Ed25519, más nuevo que el instalado, con jars de Modrinth o de los releases de Venatio y con su SHA-512. La clave privada está en `~/.config/venatio/firma-paquete.key`, fuera del repo; `tools/generar_paquete.py` firma con ella. Si se pierde hay que crear otra y todos vuelven a correr el instalador una vez.
 
 **Otros launchers:** el mismo paquete se exporta como `.mrpack` (Modrinth App, Prism, ATLauncher) y como zip de CurseForge para quien use esos.
 

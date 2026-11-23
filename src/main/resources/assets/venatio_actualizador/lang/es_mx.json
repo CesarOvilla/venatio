@@ -1,0 +1,14 @@
+{
+  "venatio.actualizador.titulo": "Nueva versión de Venatio",
+  "venatio.actualizador.versiones": "Tienes la %s · ya salió la %s",
+  "venatio.actualizador.pregunta": "Minecraft se va a cerrar para instalarla. Después ábrelo otra vez y dale a Jugar.",
+  "venatio.actualizador.manual": "Esta versión cambia Minecraft o Fabric. Copia el comando, cierra Minecraft y pégalo en la terminal (PowerShell en Windows).",
+  "venatio.actualizador.descargando": "Descargando… %s de %s",
+  "venatio.actualizador.cerrando": "Listo. Cerrando Minecraft… ábrelo otra vez y dale a Jugar.",
+  "venatio.actualizador.error": "No se pudo actualizar. Revisa tu internet e inténtalo otra vez. No se cambió nada.",
+  "venatio.actualizador.actualizar": "Actualizar y cerrar",
+  "venatio.actualizador.reintentar": "Reintentar",
+  "venatio.actualizador.copiar": "Copiar comando",
+  "venatio.actualizador.copiado": "¡Comando copiado!",
+  "venatio.actualizador.ahora_no": "Ahora no"
+}

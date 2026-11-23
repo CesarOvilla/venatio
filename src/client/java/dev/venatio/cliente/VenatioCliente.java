@@ -1,6 +1,7 @@
 package dev.venatio.cliente;
 
 import dev.venatio.Venatio;
+import dev.venatio.cliente.actualizador.ActualizadorCliente;
 import dev.venatio.cliente.minimapa.Minimapa;
 import dev.venatio.cliente.fichas.FichasCliente;
 import dev.venatio.cliente.localizador.LocalizadorCliente;
@@ -58,6 +59,7 @@ public final class VenatioCliente implements ClientModInitializer {
 		HudSorpresas.registrar(); // después de HudEfectos y del cartón: se engancha detrás de los dos
 		RutaCliente.registrar();
 		EspectadorCliente.registrar();
+		ActualizadorCliente.registrar();
 	}
 
 	static KeyMapping teclaCarton() {
