@@ -1,5 +1,5 @@
 # Paquete de Venatio: lo lee el instalador (instalar.sh / instalar.ps1). Generado con tools/generar_paquete.py
-version 0.2.0
+version 0.3.0
 minecraft 26.3
 fabric 0.20.1
 servidor venatio.exaroton.me Venatio
@@ -15,4 +15,4 @@ mod cloth-config-fabric-26.3.159.jar 8924e19d41845096724fa10f3717bc51964a0edbbbc
 mod dynamic-fps-3.11.10+minecraft-26.3.0-fabric.jar 7976d11411babfa3ac0c38898f26ee6192f22a4f595b637eeae3cc5185f326c0e4b9fd7d00b3d7e8d020dd861295f0df52f9a9d7c67e88946d0ba9fff4a9f894 https://cdn.modrinth.com/data/LQ3K71Q1/versions/Jwq069rR/dynamic-fps-3.11.10%2Bminecraft-26.3.0-fabric.jar
 mod BadOptimizations-2.4.1-26.3-fabric.jar 048a0979807afb96bae7801b7445746c985081bb55fab9b80b286036234a9869cc84f83c40ab77a2600b7e06ad44178ee17935b706b751c9b38f87ebc6e180f8 https://cdn.modrinth.com/data/g96Z4WVZ/versions/Sp0ctspw/BadOptimizations-2.4.1-26.3-fabric.jar
 mod krypton-0.3.2.jar d1d57ebd41395b75b01f130cd9503eb8d208212424a399ff9f367f50be8fbc1c6472442b33c686e777c3148f6a609520e8fb732c755157c358cb207fd4d1123a https://cdn.modrinth.com/data/fQEb0iXm/versions/UugdIYJw/krypton-0.3.2.jar
-mod venatio-0.2.0.jar 98732b2ff3dcb87e0300d3ae59a061ea4560b9b3517fb49af1ee8fb5845feae88f224a53b2f565e72b4cc0a7c61dab49c144d960eab87780791d93a03382d132 https://github.com/CesarOvilla/venatio/releases/download/v0.2.0/venatio-0.2.0.jar
+mod venatio-0.3.0.jar 3c1d16225307feaad9e291c250a383a730f1956fb2546eb064bb22269aebe4b0255768d987f85c82ff60c9f5014cdee2bb3bef6588b68ad5cf32c8a65304c104 https://github.com/CesarOvilla/venatio/releases/download/v0.3.0/venatio-0.3.0.jar
